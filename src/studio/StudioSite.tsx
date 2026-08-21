@@ -17,7 +17,6 @@ import { estimate, type EstimateAnswers, type Purpose, type Scale, type Feature,
 import { C, D, SERIF, SANS } from './theme';
 import { Band, H2, Note, IconCheck, IconArrow, IconChat, IconCopy } from './ui';
 import { logEvent } from '../lib/onboardingAnalytics';
-import { StudioWordmark } from '../components/Logo';
 
 const FilmTab = lazy(() => import('./FilmTab'));
 
@@ -51,9 +50,10 @@ const pathOf = (t: TabId) => (t === 'home' ? '/studio' : `/studio/${t}`);
 // ---- タブごとの title / description (映像は検索の入口が別なので分ける) ----
 // 正本は studio.html / studio-film.html の静的メタ。ここを変えたら向こうも合わせる。
 const SEO = {
-  // v2 (2026-08-22): v1 は旧価格 (¥29,800) と旧見出しのまま。ファイル名を変えないと
-  // X/Facebook/LINE のキャッシュが差し替わらないので、更新時は必ず版番号を上げる。
-  ogImage: 'https://core-prism-app.vercel.app/og-studio-film-v2.png',
+  // v3 (2026-08-22): v2は価格修正のみの黒背景版。起動画面ロゴ (2026-08-21支給) を
+  // 切り抜き・反転した実ロゴへ差し替え、サイト本体と同じ白基調のカードに刷新。
+  // ファイル名を変えないと X/Facebook/LINE のキャッシュが差し替わらないので版番号を上げる。
+  ogImage: 'https://core-prism-app.vercel.app/og-studio-film-v3.png',
   default: {
     title: 'CORE Studio — 成果から逆算する、ウェブ制作と受託開発',
     description: 'COREは、AIプロダクトを自社で開発・運営する制作スタジオです。戦略設計からデザイン・実装・公開後の運用改善まで一貫体制で、貴社の事業を前に進めるウェブをつくります。',
@@ -168,8 +168,8 @@ export default function StudioSite() {
       {/* ヘッダー */}
       <header style={{ position: 'sticky', top: 0, zIndex: 20, background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', borderBottom: `1px solid ${C.line}`, paddingTop: 'env(safe-area-inset-top)' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', maxWidth: 760, margin: '0 auto', padding: '15px 20px 9px' }}>
-          <button onClick={() => go('home')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, textAlign: 'left' }}>
-            <StudioWordmark size={17} tone="light" />
+          <button onClick={() => go('home')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, textAlign: 'left', display: 'inline-flex' }}>
+            <img src="/core-studio-logo.png" alt="CORE Studio" style={{ height: 22, width: 'auto', display: 'block' }} />
           </button>
           <a href="/corp" style={{ fontSize: 12, color: C.mute, textDecoration: 'none', letterSpacing: '0.05em', minHeight: 44, display: 'inline-flex', alignItems: 'center' }}>CORE公式サイト</a>
         </div>
@@ -198,7 +198,7 @@ export default function StudioSite() {
       {/* フッター */}
       <footer style={{ borderTop: `1px solid ${C.line}`, background: C.alt, padding: '32px 20px calc(32px + env(safe-area-inset-bottom))', textAlign: 'center' }}>
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 10 }}>
-          <StudioWordmark size={18} tone="light" />
+          <img src="/core-studio-logo.png" alt="CORE Studio" style={{ height: 24, width: 'auto', display: 'block' }} />
         </div>
         <a href={`mailto:${STUDIO.email}`} style={{ fontSize: 12.5, color: C.mute, textDecoration: 'underline', minHeight: 44, display: 'inline-flex', alignItems: 'center', padding: '0 8px' }}>{STUDIO.email}</a>
         <div style={{ fontSize: 11.5, color: C.mute, marginTop: 10, letterSpacing: '0.04em', lineHeight: 1.9 }}>
