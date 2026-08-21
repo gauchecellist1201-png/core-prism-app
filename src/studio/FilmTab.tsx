@@ -9,9 +9,10 @@ import { C, D, SERIF, SANS } from './theme';
 import { Band, H2, Note, IconCheck, IconChat, IconCopy } from './ui';
 import { STUDIO, CONTACT } from './plans';
 import {
-  FILM, studioProjects, FEATURED, WHAT_WE_CREATE, FILM_PROCESS, PROCESS_STATEMENT,
-  FILM_PLANS, MONTHLY_LEAD, MONTHLY_PLANS, MONTHLY_TERMS, PRICE_NOTE, SIGNATURE, TARGETS,
-  COMPARISON, PHILOSOPHY, FILM_CTA, INQUIRY_FIELDS,
+  FILM, WHY_CORE, AUDIENCE_MATCH, studioProjects, FEATURED, WHAT_WE_CREATE, FILM_PROCESS, PROCESS_STATEMENT,
+  FILM_PLANS, MONTHLY_LEAD, MONTHLY_PLANS, MONTHLY_TERMS, PRICE_NOTE, PRICE_WHY, DECISION_GUIDE,
+  SIGNATURE, FILM_WORKS, TARGETS,
+  COMPARISON, FILM_FAQ, PHILOSOPHY, FILM_CTA, INQUIRY_FIELDS,
   type StudioProject,
 } from './film';
 import { logEvent } from '../lib/onboardingAnalytics';
@@ -68,19 +69,44 @@ export default function FilmTab() {
         .fm-btn-outline { background: transparent; color: #FFFFFF; border: 1px solid rgba(255,255,255,0.5); font-weight: 600; }
         .fm-btn-outline:hover { border-color: ${D.gold}; }
         .fm-rule { border: none; border-top: 1px solid ${C.line}; margin: 0; }
+        .fm-reassure { display: flex; gap: 10px; flex-wrap: wrap; }
+        .fm-reassure-item { font-size: 12px; color: ${D.mute}; display: inline-flex; align-items: center; gap: 6px; }
+        .fm-why-grid { display: grid; grid-template-columns: 1fr; gap: 14px; }
+        @media (min-width: 700px) { .fm-why-grid { grid-template-columns: repeat(3, 1fr); } }
+        .fm-audience-grid { display: grid; grid-template-columns: 1fr; gap: 14px; }
+        @media (min-width: 700px) { .fm-audience-grid { grid-template-columns: repeat(3, 1fr); } }
+        .fm-decision-grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
+        @media (min-width: 640px) { .fm-decision-grid { grid-template-columns: repeat(2, 1fr); } }
+        .fm-works-grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
+        @media (min-width: 700px) { .fm-works-grid { grid-template-columns: repeat(3, 1fr); } }
+        .fm-faq-item { border-top: 1px solid ${C.line}; }
+        .fm-faq-btn { width: 100%; min-height: 52px; background: none; border: none; cursor: pointer; text-align: left;
+          padding: 14px 2px; font-size: 14px; font-weight: 600; color: ${C.ink}; font-family: ${SANS};
+          display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+        .fm-sticky-cta { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; display: none;
+          padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); background: rgba(11,11,12,0.92);
+          backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-top: 1px solid ${D.line}; }
+        @media (max-width: 767px) { .fm-sticky-cta { display: block; } .fm-sticky-pad { height: 68px; } }
       `}</style>
 
       <FilmHero />
       <Showcase />
+      <Pricing />
+      <DecisionGuide />
+      <AudienceMatch />
+      <WhyCore />
+      <FilmWorks />
       <Featured />
       <WhatWeCreate />
       <Process />
-      <Pricing />
       <Signature />
       <Targets />
       <Comparison />
+      <Faq />
       <Philosophy />
+      <div className="fm-sticky-pad" />
       <FinalCta />
+      <MobileStickyCta />
     </div>
   );
 }
@@ -132,6 +158,34 @@ function Reveal({ children, delay = 0 }: { children: ReactNode; delay?: number }
   return <div ref={ref} className="fm-rv" style={{ transitionDelay: `${delay}ms` }}>{children}</div>;
 }
 
+// ---- スマホ専用の固定下部CTA。最終CTAセクション (id=film-inquiry) に入ったら隠す
+// (常時表示だと、そこにある本来のLINEボタン・相談フォームの入力欄に重なるため) ----
+function MobileStickyCta() {
+  const [hidden, setHidden] = useState(false);
+
+  useEffect(() => {
+    const target = document.getElementById('film-inquiry');
+    if (!target || typeof IntersectionObserver === 'undefined') return;
+    const io = new IntersectionObserver(entries => {
+      for (const e of entries) setHidden(e.isIntersecting);
+    }, { rootMargin: '0px' });
+    io.observe(target);
+    return () => io.disconnect();
+  }, []);
+
+  if (hidden) return null;
+
+  return (
+    <div className="fm-sticky-cta">
+      <a className="st-btn fm-btn-light" href={CONTACT.lineUrl} target="_blank" rel="noopener noreferrer"
+        style={{ width: '100%', boxSizing: 'border-box', minHeight: 46, padding: '11px 20px' }}
+        onClick={() => track('studio_film_sticky_cta', { to: 'line' })}>
+        <IconChat /> 制作について相談する
+      </a>
+    </div>
+  );
+}
+
 // ============================================================
 // ヒーロー
 // ============================================================
@@ -155,6 +209,11 @@ function FilmHero() {
             <button className="st-btn fm-btn-outline" onClick={() => { track('studio_film_hero_cta', { to: 'pricing' }); scrollToId('film-pricing'); }}>
               {FILM.heroCtaSub}
             </button>
+          </div>
+          <div className="fm-reassure" style={{ marginTop: 16 }}>
+            {FILM.heroReassure.map(t => (
+              <span key={t} className="fm-reassure-item"><IconCheck color={D.gold} />{t}</span>
+            ))}
           </div>
           <p style={{ fontSize: 12.5, color: D.mute, margin: '14px 0 0', lineHeight: 1.9 }}>{CONTACT.lineNote}</p>
         </Reveal>
@@ -243,6 +302,63 @@ function Showcase() {
         <p style={{ fontSize: 12, lineHeight: 1.9, color: D.mute, margin: 0 }}>{FILM.showcaseNote}</p>
       </div>
     </section>
+  );
+}
+
+// ============================================================
+// なぜ CORE Studio か — AI × STORY × CREATIVE
+// ============================================================
+function WhyCore() {
+  return (
+    <Band pad="56px 0">
+      <Reveal>
+        <div className="st-label" style={{ marginBottom: 12 }}>{WHY_CORE.en}</div>
+        <h2 className="st-serif" style={{ fontSize: 'clamp(22px, 6vw, 30px)', fontWeight: 700, lineHeight: 1.55, color: C.ink, margin: 0, whiteSpace: 'pre-line' }}>
+          {WHY_CORE.title}
+        </h2>
+        <p style={{ fontSize: 14, lineHeight: 2.05, color: C.body, margin: '16px 0 0', maxWidth: 580 }}>{WHY_CORE.lead}</p>
+      </Reveal>
+      <div className="fm-why-grid" style={{ marginTop: 26 }}>
+        {WHY_CORE.pillars.map((p, i) => (
+          <Reveal key={p.key} delay={i * 60}>
+            <div className="st-card" style={{ height: '100%', boxSizing: 'border-box' }}>
+              <div className="st-serif" style={{ fontSize: 20, fontWeight: 700, color: C.goldText, letterSpacing: '0.1em', marginBottom: 10 }}>{p.title}</div>
+              <p style={{ fontSize: 13.5, lineHeight: 1.95, color: C.body, margin: 0 }}>{p.body}</p>
+            </div>
+          </Reveal>
+        ))}
+      </div>
+    </Band>
+  );
+}
+
+// ============================================================
+// あなたにはこれ — 用途から選ぶ
+// ============================================================
+function AudienceMatch() {
+  return (
+    <Band alt pad="56px 0">
+      <Reveal><H2 en="Find Your Fit" sub="用途を選ぶだけで、合う映像の種類がわかります。">あなたにはこれ</H2></Reveal>
+      <div className="fm-audience-grid">
+        {AUDIENCE_MATCH.map((m, i) => (
+          <Reveal key={m.id} delay={i * 60}>
+            <button
+              className="st-card"
+              style={{ height: '100%', boxSizing: 'border-box', width: '100%', textAlign: 'left', cursor: 'pointer', fontFamily: SANS, border: `1px solid ${C.line}` }}
+              onClick={() => { track('studio_film_audience_match', { id: m.id }); scrollToId('film-pricing'); }}
+            >
+              <div style={{ fontSize: 14.5, fontWeight: 700, color: C.ink, lineHeight: 1.6 }}>{m.question}</div>
+              <div className="st-label" style={{ fontSize: 11, marginTop: 10, marginBottom: 12 }}>→ {m.answer}</div>
+              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: 5, borderTop: `1px solid ${C.line}`, paddingTop: 12 }}>
+                {m.sub.map(s => (
+                  <li key={s} style={{ fontSize: 12.5, lineHeight: 1.7, color: C.body }}>{s}</li>
+                ))}
+              </ul>
+            </button>
+          </Reveal>
+        ))}
+      </div>
+    </Band>
   );
 }
 
@@ -384,6 +500,9 @@ function Pricing() {
             </Reveal>
           ))}
         </div>
+        <p style={{ fontSize: 12.5, lineHeight: 1.9, color: C.mute, margin: '16px 2px 0' }}>
+          <span style={{ color: C.ink, fontWeight: 600 }}>制作費は何で変わりますか？ — </span>{PRICE_WHY}
+        </p>
 
         {/* 月額 */}
         <Reveal>
@@ -430,6 +549,85 @@ function Pricing() {
         </div>
       </Band>
     </div>
+  );
+}
+
+// ============================================================
+// 迷った人向け導線 (料金表の直後)
+// ============================================================
+function DecisionGuide() {
+  return (
+    <Band pad="40px 0 56px">
+      <Reveal>
+        <div style={{ textAlign: 'center', marginBottom: 20 }}>
+          <div className="st-serif" style={{ fontSize: 17, fontWeight: 700, color: C.ink, lineHeight: 1.7 }}>
+            どれを選べばいいか分からなくても大丈夫です。
+          </div>
+        </div>
+      </Reveal>
+      <div className="fm-decision-grid">
+        {DECISION_GUIDE.map((d, i) => (
+          <Reveal key={d.q} delay={i * 40}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, padding: '14px 16px', border: `1px solid ${C.line}`, borderRadius: 10, background: '#FFFFFF' }}>
+              <span style={{ fontSize: 13.5, color: C.body }}>{d.q}</span>
+              <span style={{ fontSize: 13, fontWeight: 700, color: C.goldText, whiteSpace: 'nowrap' }}>→ {d.a}</span>
+            </div>
+          </Reveal>
+        ))}
+      </div>
+      <div style={{ marginTop: 18, textAlign: 'center' }}>
+        <a className="st-btn st-btn-ghost" href={CONTACT.lineUrl} target="_blank" rel="noopener noreferrer"
+          onClick={() => track('studio_film_pricing_cta', { plan: 'undecided', to: 'line' })}>
+          <IconChat /> 決めずにまず相談する
+        </a>
+      </div>
+    </Band>
+  );
+}
+
+// ============================================================
+// 制作実績
+// ============================================================
+function WorkCard({ w }: { w: (typeof FILM_WORKS)[number] }) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [playing, setPlaying] = useState(false);
+  const play = () => { videoRef.current?.play().then(() => setPlaying(true)).catch(() => {}); };
+  const pause = () => { videoRef.current?.pause(); setPlaying(false); };
+  const toggle = () => { if (playing) pause(); else play(); };
+
+  return (
+    <article>
+      {w.videoUrl ? (
+        <button type="button" onClick={toggle} onMouseEnter={play} onMouseLeave={pause}
+          aria-label={`${w.client} の制作事例を${playing ? '止める' : '再生する'}`}
+          style={{ display: 'block', width: '100%', padding: 0, border: 'none', background: 'none', cursor: 'pointer' }}>
+          <div className="fm-frame" style={{ aspectRatio: '9 / 16' }}>
+            <video ref={videoRef} src={w.videoUrl} poster={w.poster} muted loop playsInline preload="none" aria-hidden />
+          </div>
+        </button>
+      ) : w.poster ? (
+        <div className="fm-frame" style={{ aspectRatio: '9 / 16' }}><img src={w.poster} alt={`${w.client} の制作事例`} loading="lazy" /></div>
+      ) : null}
+      <div style={{ marginTop: 12 }}>
+        <div className="st-label" style={{ fontSize: 10, marginBottom: 4 }}>{w.category}</div>
+        <div style={{ fontSize: 13.5, fontWeight: 700, color: C.ink }}>{w.client}</div>
+        <p style={{ fontSize: 12.5, lineHeight: 1.8, color: C.body, margin: '6px 0 0' }}>{w.purpose}</p>
+        {w.result && <p style={{ fontSize: 12.5, lineHeight: 1.8, color: C.goldText, margin: '4px 0 0', fontWeight: 600 }}>{w.result}</p>}
+      </div>
+    </article>
+  );
+}
+
+function FilmWorks() {
+  return (
+    <Band alt pad="56px 0">
+      <Reveal><H2 en="Works" sub="実際に制作した映像です。掲載許諾が取れたクライアント事例から、随時追加していきます。">制作実績</H2></Reveal>
+      <div className="fm-works-grid">
+        {FILM_WORKS.map((w, i) => (
+          <Reveal key={w.id} delay={i * 60}><WorkCard w={w} /></Reveal>
+        ))}
+      </div>
+    </Band>
   );
 }
 
@@ -557,6 +755,29 @@ function Comparison() {
 }
 
 // ============================================================
+// FAQ
+// ============================================================
+function Faq() {
+  const [open, setOpen] = useState<number | null>(null);
+  return (
+    <Band alt pad="56px 0">
+      <Reveal><H2 en="FAQ" sub="ご相談前によくいただくご質問です。">よくある質問</H2></Reveal>
+      <div>
+        {FILM_FAQ.map((f, i) => (
+          <div key={f.q} className="fm-faq-item">
+            <button className="fm-faq-btn" onClick={() => setOpen(open === i ? null : i)} aria-expanded={open === i}>
+              <span>Q. {f.q}</span>
+              <span style={{ color: C.goldText, fontSize: 18, lineHeight: 1, flexShrink: 0 }}>{open === i ? '−' : '+'}</span>
+            </button>
+            {open === i && <p style={{ fontSize: 13.5, lineHeight: 1.95, color: C.body, margin: '0 0 16px' }}>{f.a}</p>}
+          </div>
+        ))}
+      </div>
+    </Band>
+  );
+}
+
+// ============================================================
 // 思想
 // ============================================================
 function Philosophy() {
@@ -632,6 +853,11 @@ function FinalCta() {
           <p style={{ fontSize: 14.5, lineHeight: 2.05, color: D.body, margin: '18px 0 0', maxWidth: 560 }}>{FILM_CTA.body}</p>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 18 }}>
             {FILM_CTA.tags.map(t => <span key={t} className="fm-tag">{t}</span>)}
+          </div>
+          <div className="fm-reassure" style={{ marginTop: 18 }}>
+            {FILM_CTA.reassure.map(t => (
+              <span key={t} className="fm-reassure-item"><IconCheck color={D.gold} />{t}</span>
+            ))}
           </div>
         </Reveal>
 

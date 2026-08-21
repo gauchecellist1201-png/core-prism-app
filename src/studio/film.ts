@@ -7,13 +7,58 @@
 export const FILM = {
   label: 'Film & Motion',
   // 375px で1行に収まる長さで改行位置を固定する (自動折返しに任せると「ものか/ら。」で割れる)
-  hero: '映像は、\n撮影するものから。\n創造するものへ。',
-  heroSub: 'CORE Studioは、AIと人間の企画力を組み合わせ、ブランド・人物・商品の世界観を、ショートドラマ、SNS動画、ブランドムービーとして映像化します。撮影できなかった世界まで、つくる。',
-  heroCta: '制作を相談する',
-  heroCtaSub: '制作プランを見る',
+  hero: '物語で、\nブランドを動かす。',
+  heroSub: 'AIと人間の企画力を組み合わせ、ショートドラマ・SNS動画・ブランドムービーを企画から制作までワンストップで。撮影できなかった世界まで、つくる。',
+  heroCta: '映像制作について相談する',
+  heroCtaSub: '料金プランを見る',
+  /** 問い合わせハードルを下げる一言 (安売り感を出さないため短文のみ) */
+  heroReassure: ['企画段階でも相談OK', '予算が決まっていなくてもOK'],
   /** 実映像の掲載状況を正直に添える一文 (架空の実績を作らないため) */
   showcaseNote: '「実写」バッジのあるものは、被写体の掲載許諾を得たうえで公開している実写の参考映像です。それ以外は当社が制作する映像フォーマットのタイトルカードで、実際の制作映像は許諾をいただいたものから順次掲載します。',
 } as const;
+
+// ------------------------------------------------------------
+// なぜ CORE Studio か — AI × STORY × CREATIVE
+// ------------------------------------------------------------
+export const WHY_CORE = {
+  en: 'AI × STORY × CREATIVE',
+  title: 'AIを使って、\n人に見てもらえる映像を企画から作る。',
+  lead: '「AI動画を作れます」だけでは、選ばれる理由になりません。私たちが提供しているのは、その先の3つです。',
+  pillars: [
+    { key: 'AI', title: 'AI', body: '生成AIを活用し、従来の撮影では難しかった世界観・構図・演出を制作します。' },
+    { key: 'STORY', title: 'STORY', body: '映像単体で終わらせず、企画・脚本・シリーズ構成までを設計します。' },
+    { key: 'CREATIVE', title: 'CREATIVE', body: 'ブランドやSNSの文脈に合わせて、実際に見てもらえる表現まで仕上げます。' },
+  ],
+} as const;
+
+// ------------------------------------------------------------
+// あなたにはこれ — 用途からサービスを選べる導線
+// ------------------------------------------------------------
+export type AudienceMatch = { id: string; question: string; answer: string; category: StudioProjectCategory | 'SNS VIDEO'; sub: string[] };
+
+export const AUDIENCE_MATCH: AudienceMatch[] = [
+  {
+    id: 'sns',
+    question: 'SNSを伸ばしたい',
+    answer: 'SNS VIDEO',
+    category: 'SNS VIDEO',
+    sub: ['TikTok', 'Instagram Reels', 'YouTube Shorts', '商品・サービス紹介'],
+  },
+  {
+    id: 'drama',
+    question: 'ストーリーで話題を作りたい',
+    answer: 'SHORT DRAMA',
+    category: 'SHORT DRAMA',
+    sub: ['縦型ショートドラマ', 'シリーズ企画', 'ブランドPR', 'SNSドラマ'],
+  },
+  {
+    id: 'brand',
+    question: 'ブランドの世界観を映像にしたい',
+    answer: 'BRAND FILM',
+    category: 'BRAND FILM',
+    sub: ['企業紹介', '採用', 'ブランドムービー', '商品PR'],
+  },
+];
 
 // ------------------------------------------------------------
 // ショーケース
@@ -94,6 +139,56 @@ export const studioProjects: StudioProject[] = [
     videoUrl: '/studio/film/social-backstage.mp4',
     isReal: true,
   },
+];
+
+// ------------------------------------------------------------
+// 制作実績 (/studio/film の「制作実績」セクションで使用)
+//   クライアント名・動画が増え次第、この配列に1件ずつ追加する。
+//   client を伏せて公開する場合は client を汎用表記にし、result は確認できる事実のみ書く (推測・誇張禁止)。
+// ------------------------------------------------------------
+export type FilmWork = {
+  id: string;
+  client: string;
+  category: StudioProjectCategory;
+  /** 依頼の目的 */
+  purpose: string;
+  /** 確認できている結果。無ければ省略する (無い結果を書かない) */
+  result?: string;
+  poster?: string;
+  videoUrl?: string;
+  /** 公開先URL (あれば) */
+  url?: string;
+};
+
+export const FILM_WORKS: FilmWork[] = [
+  {
+    id: 'work-short-drama-01',
+    client: '井出直毅 (CORE Studio 代表)',
+    category: 'SHORT DRAMA',
+    purpose: '経営者本人を主人公にした、連続もの形式のブランディング企画。',
+    poster: '/studio/film/short-drama.jpg',
+    videoUrl: '/studio/film/short-drama.mp4',
+  },
+  {
+    id: 'work-brand-film-01',
+    client: '井出直毅 (CORE Studio 代表)',
+    category: 'BRAND FILM',
+    purpose: '事業の思想を映像の温度で伝えるブランドフィルム。',
+    poster: '/studio/film/brand-film.jpg',
+    videoUrl: '/studio/film/brand-film.mp4',
+  },
+  {
+    id: 'work-social-01',
+    client: '井出直毅 (CORE Studio 代表)',
+    category: 'SOCIAL',
+    purpose: 'TikTok / Reels 向けの継続発信用ソーシャルクリエイティブ。',
+    poster: '/studio/film/social-backstage.jpg',
+    videoUrl: '/studio/film/social-backstage.mp4',
+  },
+  // 追加予定 (掲載許諾が取れ次第、上と同じ形式でここに追加する):
+  // - 旭川のヴィラ (北海道)
+  // - ギネス世界記録保持企業
+  // - JRC株式会社
 ];
 
 // ------------------------------------------------------------
@@ -227,6 +322,21 @@ export const MONTHLY_TERMS = [
 
 export const PRICE_NOTE = '表示価格は目安です。確定金額はヒアリングの上でお見積りとしてご提示し、以後の追加費用はいただきません。';
 
+/** 料金表の直後に置く「なぜ金額が変わるか」の短い説明。料金体系を複雑に見せないため1文に絞る */
+export const PRICE_WHY = '映像の尺・本数・制作内容によって料金が変わります。まずは用途をお聞きし、最適な制作方法をご提案します。';
+
+// ------------------------------------------------------------
+// 迷った人向けの分岐 (料金表の直後に置く簡易ナビ)
+// ------------------------------------------------------------
+export type DecisionBranch = { q: string; a: string; planId?: FilmPlan['id'] | 'monthly' | 'consult' };
+
+export const DECISION_GUIDE: DecisionBranch[] = [
+  { q: '1本作りたい', a: 'TRIAL または STANDARD', planId: 'standard' },
+  { q: '継続的にSNS動画を作りたい', a: '月額プラン', planId: 'monthly' },
+  { q: '企業・ブランド映像を作りたい', a: 'PREMIUM', planId: 'premium' },
+  { q: 'よく分からない', a: 'まず相談', planId: 'consult' },
+];
+
 // ------------------------------------------------------------
 // 象徴商品 — AI SHORT DRAMA BRANDING
 // ------------------------------------------------------------
@@ -298,6 +408,22 @@ export const COMPARISON = {
 } as const;
 
 // ------------------------------------------------------------
+// FAQ (商談前の不安を解消する。確認できないことは断定しない)
+// ------------------------------------------------------------
+export type FilmFaq = { q: string; a: string };
+
+export const FILM_FAQ: FilmFaq[] = [
+  { q: 'AI動画って品質は大丈夫ですか', a: 'ショーケースの実写映像は、いずれも当社が実際に制作したものです。生成した映像は編集・カラー・字幕まで人の手で仕上げてから納品しますので、まずは仕上がりをご確認のうえご検討ください。' },
+  { q: '企画が決まっていなくても依頼できますか', a: 'できます。「こんな映像が作れますか」という段階からのご相談が前提です。目的や雰囲気を伺いながら、企画そのものから一緒に作ります。' },
+  { q: '1本だけでも依頼できますか', a: 'できます。TRIALプランは初めての方向けの1本かぎりの価格で、実物を見てから継続をご検討いただけます。' },
+  { q: '修正はできますか', a: 'STANDARD以上のプランと月額プランは修正無制限です。TRIALプランは修正2回までとしています。' },
+  { q: 'SNS用の縦動画にも対応していますか', a: '対応しています。TikTok・Instagram Reels・YouTube Shorts向けの9:16縦型を標準フォーマットとしています。' },
+  { q: '実写素材とAIを組み合わせられますか', a: 'ご相談内容によって可能です。実写の方が説得力を出せる場面もあるため、必要に応じて撮影を組み合わせるご提案もします。' },
+  { q: '料金はいくらからですか', a: '単発は¥29,800（TRIAL・初回1本かぎり）から、継続制作は月4本¥198,000からです。詳細は料金セクションをご確認ください。' },
+  { q: '納期はどれくらいですか', a: '本数・内容によって変わります。ヒアリング時に制作スケジュールをご案内します。' },
+];
+
+// ------------------------------------------------------------
 // 思想
 // ------------------------------------------------------------
 export const PHILOSOPHY = {
@@ -314,10 +440,11 @@ export const PHILOSOPHY = {
 // 最終CTA
 // ------------------------------------------------------------
 export const FILM_CTA = {
-  title: 'まだ存在しない映像を、\n一緒につくろう。',
-  body: '「こんな映像は作れますか」という段階からご相談いただけます。用途が決まっていなくても構いません。',
+  title: 'まだ、映像のアイデアがなくても大丈夫です。',
+  body: '目的や予算を伺いながら、最適な映像企画から一緒に考えます。「こんな映像は作れますか」という段階からご相談いただけます。',
   tags: ['AI Short Drama', 'Brand Film', 'SNS Creative', 'Commercial'],
   button: '制作について相談する',
+  reassure: ['企画前でもOK', '単発制作OK', '予算が決まっていなくてもOK'],
 } as const;
 
 // ------------------------------------------------------------
