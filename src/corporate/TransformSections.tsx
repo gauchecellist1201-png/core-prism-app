@@ -22,6 +22,7 @@ import {
   ASSESSMENT_TARGETS, ASSESSMENT_STEPS, USE_CASES, AI_NATIVE_STEPS,
   TECH_GROUPS, BIZDEV_ITEMS, PARTNER_TARGETS, PARTNER_FORMS,
   INVESTMENT_TIERS, CORE_NUMBERS,
+  ENGAGEMENT_STEPS, ENGAGEMENT_TERMS, SECURITY_ITEMS, CORP_FAQ,
 } from './transformData';
 import { useIsMobile } from './useIsMobile';
 
@@ -965,6 +966,126 @@ export function InvestmentSection({ onAnchor }: { onAnchor?: AnchorHandler }) {
           <a href="#contact" onClick={e => onAnchor(e, '#contact')} style={ctaGhost}>まず診断から相談する</a>
         </div>
       )}
+    </Section>
+  );
+}
+
+// ============================================================
+//  進め方（ENGAGEMENT）
+//  法人のお客様が最初に確かめるのは「何ができるか」ではなく
+//  「どう進むのか・誰が出るのか・止められるのか・作ったものは誰のものか」。
+// ============================================================
+export function EngagementSection({ onAnchor }: { onAnchor?: AnchorHandler }) {
+  return (
+    <Section
+      id="engagement"
+      background="radial-gradient(120% 95% at 50% 0%, #0e0b06 0%, #050505 70%)"
+      labelJa="進め方"
+      labelEn="HOW&nbsp;WE&nbsp;WORK"
+      title={<>決めてから動くまでを、<br />見えるようにしておく。</>}
+      lead={<>初めてAIに投資する会社ほど、怖いのは金額ではなく「先が見えないこと」です。<br />進み方と、やめ方を、先に決めてから始めます。</>}
+    >
+      <div className="corp-steps">
+        {ENGAGEMENT_STEPS.map((s, i) => (
+          <motion.div key={s.no} {...reveal} transition={{ ...reveal.transition, delay: i * 0.07 }} className="corp-step">
+            <span style={{ ...stepNumber, fontSize: '1.4rem', display: 'block', marginBottom: '0.7rem' }}>{s.no}</span>
+            <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '1.02rem', fontWeight: 700, color: '#F1E6CE', marginBottom: '0.6rem', letterSpacing: '0.06em' }}>
+              {s.title}
+            </p>
+            <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.85rem', color: TEXT_BODY, lineHeight: 2 }}>{s.body}</p>
+          </motion.div>
+        ))}
+      </div>
+
+      <div className="corp-grid-3" style={{ marginTop: '3.2rem' }}>
+        {ENGAGEMENT_TERMS.map((t, i) => (
+          <motion.div key={t.t} {...reveal} transition={{ ...reveal.transition, delay: i * 0.05 }} style={quietCard}>
+            <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.98rem', fontWeight: 700, color: '#F5EAD4', marginBottom: '0.6rem', letterSpacing: '0.06em' }}>
+              {t.t}
+            </p>
+            <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.88rem', color: TEXT_BODY, lineHeight: 2.05 }}>{t.d}</p>
+          </motion.div>
+        ))}
+      </div>
+
+      <Kicker en="No black box. You can stop, and you keep what we built." />
+
+      {onAnchor && (
+        <div style={{ textAlign: 'center', marginTop: '2.4rem' }}>
+          <a href="#contact" onClick={e => onAnchor(e, '#contact')} style={ctaGhost}>進め方について相談する</a>
+        </div>
+      )}
+    </Section>
+  );
+}
+
+// ============================================================
+//  機密と安全（SECURITY）
+//  取得していない認証は書かない。実際にやっている取り扱いだけを並べる。
+// ============================================================
+export function SecuritySection() {
+  return (
+    <Section
+      id="security"
+      background="#070604"
+      labelJa="機密と安全"
+      labelEn="SECURITY&nbsp;&amp;&nbsp;CONFIDENTIALITY"
+      title={<>会社の中身を預けても、<br />怖くない形にしてから始める。</>}
+      lead={<>AIの導入で最後まで残る不安は、精度ではなく「その情報はどこへ行くのか」です。<br />先に、預かり方を決めます。</>}
+    >
+      <div className="corp-grid-2">
+        {SECURITY_ITEMS.map((s, i) => (
+          <motion.div key={s.t} {...reveal} transition={{ ...reveal.transition, delay: i * 0.06 }} style={quietCard}>
+            <p style={{ fontFamily: FONT_SERIF_JA, fontSize: 'clamp(1rem, 1.6vw, 1.15rem)', fontWeight: 700, color: '#F5EAD4', lineHeight: 1.85, marginBottom: '0.7rem' }}>
+              {s.t}
+            </p>
+            <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.9rem', color: TEXT_BODY, lineHeight: 2.05 }}>{s.d}</p>
+          </motion.div>
+        ))}
+      </div>
+      <p style={{ ...sectionLead, textAlign: 'center', marginTop: '2.4rem', fontSize: '0.84rem', color: TEXT_MUTED, maxWidth: 660 }}>
+        第三者認証（ISO/Pマークなど）は取得していません。取得していないものを、あるようには書きません。
+        御社の情報セキュリティ基準に合わせた運用が必要な場合は、着手前にすり合わせます。
+      </p>
+    </Section>
+  );
+}
+
+// ============================================================
+//  よくあるご質問（FAQ）— 相談ボタンの前に立ちはだかる不安を、先に外す
+// ============================================================
+export function FaqSection() {
+  return (
+    <Section
+      id="faq"
+      background="linear-gradient(180deg,#050505 0%,#0a0805 100%)"
+      labelJa="よくあるご質問"
+      labelEn="FAQ"
+      title={<>聞きにくいことから、先に。</>}
+      lead={<>相談の前に確かめておきたいことを、こちらから書いておきます。</>}
+      narrow
+    >
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
+        {CORP_FAQ.map((f, i) => (
+          <motion.details
+            key={f.q}
+            {...reveal}
+            transition={{ ...reveal.transition, delay: Math.min(i, 5) * 0.05 }}
+            className="corp-faq"
+            style={quietCard}
+          >
+            <summary className="corp-faq-q">
+              <span style={{ fontFamily: FONT_SERIF_JA, fontSize: 'clamp(0.96rem, 1.6vw, 1.08rem)', fontWeight: 700, color: '#F5EAD4', lineHeight: 1.8 }}>
+                {f.q}
+              </span>
+              <span aria-hidden className="corp-faq-mark" style={{ color: GOLD }}>＋</span>
+            </summary>
+            <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.9rem', color: TEXT_BODY, lineHeight: 2.1, marginTop: '0.9rem' }}>
+              {f.a}
+            </p>
+          </motion.details>
+        ))}
+      </div>
     </Section>
   );
 }

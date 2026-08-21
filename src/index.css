@@ -3786,6 +3786,37 @@ body[data-prism-chat-dock] [data-tour-id="kpi-sparkline"] {
   color: rgba(240, 233, 216, 0.36);
 }
 
+/* ── よくあるご質問（FaqSection） ───────────────────────── */
+.corp-faq {
+  cursor: pointer;
+}
+.corp-faq-q {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  min-height: 44px; /* 指で狙える高さ */
+  list-style: none;
+  cursor: pointer;
+}
+.corp-faq-q::-webkit-details-marker {
+  display: none;
+}
+.corp-faq-q:focus-visible {
+  outline: 2px solid rgba(231, 201, 135, 0.9);
+  outline-offset: 6px;
+  border-radius: 10px;
+}
+.corp-faq-mark {
+  flex: none;
+  font-size: 1.05rem;
+  line-height: 1;
+  transition: transform 0.3s ease;
+}
+.corp-faq[open] .corp-faq-mark {
+  transform: rotate(45deg);
+}
+
 @media (max-width: 1024px) {
   .corp-steps { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
