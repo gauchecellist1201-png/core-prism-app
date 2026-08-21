@@ -30,6 +30,7 @@ import {
   AssessmentSection, UseCasesSection, ServiceLayersSection, BusinessDevSection,
   IndustryOsSection, PartnerSection, AiNativeSection, TechnologySection,
   CoreNumbersSection, InvestmentSection,
+  EngagementSection, SecuritySection, FaqSection,
 } from './TransformSections';
 import { ContactSection } from './CorpContactForm';
 
@@ -128,6 +129,7 @@ const SECTION_TAB: Record<string, CoreTabKey> = {
   // サービス — 事業階層・つくり方・技術・事業開発・提携・規模
   services: 'services', 'ai-native': 'services', technology: 'services',
   'business-dev': 'services', partner: 'services', investment: 'services',
+  engagement: 'services', security: 'services',
   // プロダクト — 自社で作って動かしているもの（作れることの証拠）
   finder: 'products', products: 'products', platform: 'products', screens: 'products',
   who: 'products', 'industry-os': 'products', vertical: 'products',
@@ -136,7 +138,7 @@ const SECTION_TAB: Record<string, CoreTabKey> = {
   // 会社
   'philosophy-core': 'company', numbers: 'company',
   mission: 'company', executive: 'company', journey: 'company', about: 'company',
-  contact: 'contact',
+  contact: 'contact', faq: 'contact',
 };
 
 /**
@@ -469,8 +471,12 @@ export default function CoreSite() {
       {tab === 'services' && (
       <>
         <ServiceLayersSection />
+        {/* 「何ができるか」の直後に「どう進むか・やめられるか」を置く（稟議に持ち込める形にする） */}
+        <EngagementSection onAnchor={handleAnchor} />
         <AiNativeSection />
         <TechnologySection />
+        {/* 技術の話の直後に「その情報はどこへ行くのか」を置く */}
+        <SecuritySection />
         <BusinessDevSection />
         <PartnerSection onAnchor={handleAnchor} />
         <InvestmentSection onAnchor={handleAnchor} />
@@ -2010,6 +2016,10 @@ export default function CoreSite() {
       {/*  すべての章の CTA がここに集まる（2026-08-21 §16）。   */}
       {/*  メールだけの窓口から、要件を書いて送れるフォームへ。   */}
       {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
+      {tab === 'contact' && (
+      <FaqSection />
+      )}
+
       {tab === 'contact' && (
       <ContactSection>
         {/* フォームが合わない用件（取材・採用）のための、従来どおりのメール窓口 */}

@@ -10,6 +10,7 @@
 // 1秒未満の速い派手な動きは使わない。
 // ============================================================
 import type { ReactNode } from 'react';
+import { Suspense, lazy, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   FONT_DISPLAY, FONT_SERIF_JA, FONT_SERIF_EN, FONT_SANS,
@@ -22,8 +23,14 @@ import {
   ASSESSMENT_TARGETS, ASSESSMENT_STEPS, USE_CASES, AI_NATIVE_STEPS,
   TECH_GROUPS, BIZDEV_ITEMS, PARTNER_TARGETS, PARTNER_FORMS,
   INVESTMENT_TIERS, CORE_NUMBERS,
+  ENGAGEMENT_STEPS, ENGAGEMENT_TERMS, SECURITY_ITEMS, CORP_FAQ, INDUSTRY_NEXT,
 } from './transformData';
+import { VERTICALS } from '../vertical/verticalData';
 import { useIsMobile } from './useIsMobile';
+
+// 実3Dの図。three.js は重いので、この章に来て初めて読み込む。
+// 読み込み中・WebGL が無い環境では、下の SVG 版がそのまま出る。
+const CompanyOsScene = lazy(() => import('./CompanyOsScene'));
 
 type AnchorHandler = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => void;
 
@@ -352,12 +359,14 @@ export function DifferenceSection() {
 // ============================================================
 function CompanyOsDiagram() {
   const isMobile = useIsMobile('(max-width: 860px)');
+  // WebGL が使えない端末では 3D を諦めて、下の SVG / 金の円に戻す。
+  const [no3d, setNo3d] = useState(false);
 
   if (isMobile) {
     // 狭い画面では放射状の図は文字が読めなくなる。
     // 「バラバラの業務が、下の CORE に集まっていく」縦の図に置き換える。
     return (
-      <div className="corp-os-stack" aria-hidden={false}>
+      <div className={no3d ? 'corp-os-stack' : 'corp-os-stack corp-os-stack-3d'} aria-hidden={false}>
         <div className="corp-os-stack-line" aria-hidden />
         {COMPANY_OS_NODES.map((n, i) => (
           <motion.div
@@ -372,25 +381,44 @@ function CompanyOsDiagram() {
             <span className="corp-os-node-sub">{n.sub}</span>
           </motion.div>
         ))}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.94 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
-          className="corp-os-center"
-        >
-          <span style={{ fontFamily: FONT_DISPLAY, fontSize: '1.15rem', letterSpacing: '0.3em', color: '#14100a', fontWeight: 800, paddingLeft: '0.3em' }}>
-            CORE
-          </span>
-          <span style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.68rem', letterSpacing: '0.12em', color: 'rgba(20,16,10,0.72)', fontWeight: 700 }}>
-            AI COMPANY OS
-          </span>
-        </motion.div>
+        {/* 業務が集まる先。狭い画面でも、ここだけは立体で見せる。 */}
+        {no3d ? (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.94 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
+            className="corp-os-center"
+          >
+            <span style={{ fontFamily: FONT_DISPLAY, fontSize: '1.15rem', letterSpacing: '0.3em', color: '#14100a', fontWeight: 800, paddingLeft: '0.3em' }}>
+              CORE
+            </span>
+            <span style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.68rem', letterSpacing: '0.12em', color: 'rgba(20,16,10,0.72)', fontWeight: 700 }}>
+              AI COMPANY OS
+            </span>
+          </motion.div>
+        ) : (
+          <Suspense fallback={<div className="corp-os3d corp-os3d-core" aria-hidden />}>
+            <CompanyOsScene variant="core" onUnavailable={() => setNo3d(true)} />
+          </Suspense>
+        )}
       </div>
     );
   }
 
-  // ── デスクトップ: CORE を中心に業務が集まる網 ──
+  if (!no3d) {
+    return (
+      <Suspense fallback={<CompanyOsSvg />}>
+        <CompanyOsScene variant="full" onUnavailable={() => setNo3d(true)} />
+      </Suspense>
+    );
+  }
+
+  return <CompanyOsSvg />;
+}
+
+// ── WebGL が無い環境のための平面版（従来の図） ──
+function CompanyOsSvg() {
   const cx = 460, cy = 300, rx = 355, ry = 218;
   const nodes = COMPANY_OS_NODES.map((n, i) => {
     const a = (-90 + (360 / COMPANY_OS_NODES.length) * i) * (Math.PI / 180);
@@ -711,7 +739,8 @@ export function BusinessDevSection() {
 //  10 Industry AI OS
 // ============================================================
 export function IndustryOsSection({ onAnchor }: { onAnchor?: AnchorHandler }) {
-  const industries = SERVICE_LAYERS[3].items;
+  // 「すでに5つの業界で作っている」と書きながら、まだ無い7業界を並べていた。
+  // 動いているものは VERTICALS から数え、これから広げる領域とは分けて出す。
   return (
     <Section
       id="industry-os"
@@ -719,20 +748,40 @@ export function IndustryOsSection({ onAnchor }: { onAnchor?: AnchorHandler }) {
       labelJa="業界OS"
       labelEn="INDUSTRY&nbsp;AI&nbsp;OS"
       title={<>一社の課題解決を、<br />業界全体の仕組みに変える。</>}
-      lead={<>受託で得た知見のうち、その業界の誰もが抱えている部分を製品にします。<br />すでに5つの業界で、業務そのものを引き受けるAIを作っています。</>}
+      lead={<>受託で得た知見のうち、その業界の誰もが抱えている部分を製品にします。<br />いま {VERTICALS.length} つの業界で、業務そのものを引き受けるAIが動いています。</>}
     >
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.55rem', justifyContent: 'center', marginBottom: '2.6rem' }}>
-        {industries.map(t => (
+      <p style={{ fontFamily: FONT_DISPLAY, fontSize: '0.66rem', letterSpacing: '0.3em', color: GOLD, textAlign: 'center', marginBottom: '1rem' }}>
+        IN&nbsp;OPERATION
+      </p>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.55rem', justifyContent: 'center', marginBottom: '2.4rem' }}>
+        {VERTICALS.map(v => (
+          <span key={v.name} style={{
+            display: 'inline-flex', alignItems: 'baseline', gap: '0.6em',
+            fontFamily: FONT_SERIF_JA, fontSize: '0.9rem', color: '#F1E6CE',
+            border: '1px solid rgba(201,169,110,0.4)', background: 'rgba(201,169,110,0.06)',
+            borderRadius: 999, padding: '10px 20px', letterSpacing: '0.08em',
+          }}>
+            {v.industryShort}
+            <span style={{ fontFamily: FONT_DISPLAY, fontSize: '0.62rem', letterSpacing: '0.16em', color: GOLD }}>{v.name}</span>
+          </span>
+        ))}
+      </div>
+
+      <p style={{ fontFamily: FONT_DISPLAY, fontSize: '0.66rem', letterSpacing: '0.3em', color: 'rgba(240,233,216,0.5)', textAlign: 'center', marginBottom: '1rem' }}>
+        NEXT
+      </p>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', justifyContent: 'center', marginBottom: '2.6rem' }}>
+        {INDUSTRY_NEXT.map(t => (
           <span key={t} style={{
-            fontFamily: FONT_SERIF_JA, fontSize: '0.9rem', color: 'rgba(240,233,216,0.86)',
-            border: '1px solid rgba(201,169,110,0.3)', borderRadius: 999, padding: '10px 20px', letterSpacing: '0.08em',
+            fontFamily: FONT_SERIF_JA, fontSize: '0.86rem', color: TEXT_MUTED,
+            border: '1px dashed rgba(201,169,110,0.28)', borderRadius: 999, padding: '9px 18px', letterSpacing: '0.08em',
           }}>
             {t}
           </span>
         ))}
         <span style={{
-          fontFamily: FONT_DISPLAY, fontSize: '0.62rem', letterSpacing: '0.24em', color: '#0d0b06',
-          background: 'linear-gradient(135deg,#E7C987,#C9A96E)', borderRadius: 999, padding: '10px 16px', fontWeight: 700,
+          fontFamily: FONT_DISPLAY, fontSize: '0.6rem', letterSpacing: '0.24em', color: 'rgba(240,233,216,0.55)',
+          border: '1px dashed rgba(201,169,110,0.28)', borderRadius: 999, padding: '9px 14px', fontWeight: 700,
           display: 'inline-flex', alignItems: 'center',
         }}>
           COMING SOON
@@ -965,6 +1014,126 @@ export function InvestmentSection({ onAnchor }: { onAnchor?: AnchorHandler }) {
           <a href="#contact" onClick={e => onAnchor(e, '#contact')} style={ctaGhost}>まず診断から相談する</a>
         </div>
       )}
+    </Section>
+  );
+}
+
+// ============================================================
+//  進め方・体制（ENGAGEMENT）
+//  2026-08-21 追記。「何ができるか」だけでは稟議に持ち込めない。
+//  どう進み、誰が出て、いつ止められて、作ったものが誰のものかを先に書く。
+// ============================================================
+export function EngagementSection({ onAnchor }: { onAnchor?: AnchorHandler }) {
+  return (
+    <Section
+      id="engagement"
+      background="radial-gradient(120% 95% at 50% 0%, #0e0b06 0%, #050505 70%)"
+      labelJa="進め方"
+      labelEn="HOW&nbsp;WE&nbsp;WORK"
+      title={<>決めてから動くまでを、<br />見えるようにしておく。</>}
+      lead={<>初めてAIに投資する会社ほど、怖いのは金額ではなく「先が見えないこと」です。<br />進み方と、やめ方を、先に決めてから始めます。</>}
+    >
+      <div className="corp-steps">
+        {ENGAGEMENT_STEPS.map((s, i) => (
+          <motion.div key={s.no} {...reveal} transition={{ ...reveal.transition, delay: i * 0.07 }} className="corp-step">
+            <span style={{ ...stepNumber, fontSize: '1.4rem', display: 'block', marginBottom: '0.7rem' }}>{s.no}</span>
+            <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '1.02rem', fontWeight: 700, color: '#F1E6CE', marginBottom: '0.6rem', letterSpacing: '0.06em' }}>
+              {s.title}
+            </p>
+            <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.85rem', color: TEXT_BODY, lineHeight: 2 }}>{s.body}</p>
+          </motion.div>
+        ))}
+      </div>
+
+      <div className="corp-grid-3" style={{ marginTop: '3.2rem' }}>
+        {ENGAGEMENT_TERMS.map((t, i) => (
+          <motion.div key={t.t} {...reveal} transition={{ ...reveal.transition, delay: i * 0.05 }} style={quietCard}>
+            <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.98rem', fontWeight: 700, color: '#F5EAD4', marginBottom: '0.6rem', letterSpacing: '0.06em' }}>
+              {t.t}
+            </p>
+            <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.88rem', color: TEXT_BODY, lineHeight: 2.05 }}>{t.d}</p>
+          </motion.div>
+        ))}
+      </div>
+
+      <Kicker en="No black box. You can stop, and you keep what we built." />
+
+      {onAnchor && (
+        <div style={{ textAlign: 'center', marginTop: '2.4rem' }}>
+          <a href="#contact" onClick={e => onAnchor(e, '#contact')} style={ctaGhost}>進め方について相談する</a>
+        </div>
+      )}
+    </Section>
+  );
+}
+
+// ============================================================
+//  機密と安全（SECURITY）
+//  取得していない認証は書かない。実際にやっている取り扱いだけを並べる。
+// ============================================================
+export function SecuritySection() {
+  return (
+    <Section
+      id="security"
+      background="#070604"
+      labelJa="機密と安全"
+      labelEn="SECURITY&nbsp;&amp;&nbsp;CONFIDENTIALITY"
+      title={<>会社の中身を預けても、<br />怖くない形にしてから始める。</>}
+      lead={<>AIの導入で最後まで残る不安は、精度ではなく「その情報はどこへ行くのか」です。<br />先に、預かり方を決めます。</>}
+    >
+      <div className="corp-grid-2">
+        {SECURITY_ITEMS.map((s, i) => (
+          <motion.div key={s.t} {...reveal} transition={{ ...reveal.transition, delay: i * 0.06 }} style={quietCard}>
+            <p style={{ fontFamily: FONT_SERIF_JA, fontSize: 'clamp(1rem, 1.6vw, 1.15rem)', fontWeight: 700, color: '#F5EAD4', lineHeight: 1.85, marginBottom: '0.7rem' }}>
+              {s.t}
+            </p>
+            <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.9rem', color: TEXT_BODY, lineHeight: 2.05 }}>{s.d}</p>
+          </motion.div>
+        ))}
+      </div>
+      <p style={{ ...sectionLead, textAlign: 'center', marginTop: '2.4rem', fontSize: '0.84rem', color: TEXT_MUTED, maxWidth: 660 }}>
+        第三者認証（ISO/Pマークなど）は取得していません。取得していないものを、あるようには書きません。
+        御社の情報セキュリティ基準に合わせた運用が必要な場合は、着手前にすり合わせます。
+      </p>
+    </Section>
+  );
+}
+
+// ============================================================
+//  よくあるご質問（FAQ）— 相談ボタンの前に立ちはだかる不安を、先に外す
+// ============================================================
+export function FaqSection() {
+  return (
+    <Section
+      id="faq"
+      background="linear-gradient(180deg,#050505 0%,#0a0805 100%)"
+      labelJa="よくあるご質問"
+      labelEn="FAQ"
+      title={<>聞きにくいことから、先に。</>}
+      lead={<>相談の前に確かめておきたいことを、こちらから書いておきます。</>}
+      narrow
+    >
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
+        {CORP_FAQ.map((f, i) => (
+          <motion.details
+            key={f.q}
+            {...reveal}
+            transition={{ ...reveal.transition, delay: Math.min(i, 5) * 0.05 }}
+            className="corp-faq"
+            style={quietCard}
+          >
+            <summary className="corp-faq-q">
+              <span style={{ fontFamily: FONT_SERIF_JA, fontSize: 'clamp(0.96rem, 1.6vw, 1.08rem)', fontWeight: 700, color: '#F5EAD4', lineHeight: 1.8 }}>
+                {f.q}
+              </span>
+              <span aria-hidden className="corp-faq-mark" style={{ color: GOLD }}>＋</span>
+            </summary>
+            <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.9rem', color: TEXT_BODY, lineHeight: 2.1, marginTop: '0.9rem' }}>
+              {f.a}
+            </p>
+          </motion.details>
+        ))}
+      </div>
     </Section>
   );
 }

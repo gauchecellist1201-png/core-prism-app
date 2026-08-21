@@ -3799,6 +3799,100 @@ details[open] > summary .disclosure-chev {
   box-shadow: 0 20px 60px -20px rgba(201, 169, 110, 0.75);
 }
 
+/* ── AI COMPANY OS の実3D図（CompanyOsScene.tsx） ─────────────
+   canvas は絶対配置で敷き、その上に HTML のラベルを毎フレーム置く。
+   文字を WebGL に焼かないので、日本語がぼやけない・読み上げにも乗る。 */
+.corp-os3d {
+  position: relative;
+  width: 100%;
+}
+/* 図の中身（横に広い楕円の軌道）とほぼ同じ比率にしておく。
+   箱だけ高くすると、上下に何も無い帯ができて「間が抜けた」図に見える。 */
+.corp-os3d-full {
+  aspect-ratio: 1.82;
+  max-height: 600px;
+  min-height: 360px;
+}
+.corp-os3d-core {
+  height: 200px;
+  margin-top: 0.6rem;
+}
+/* 3D の核を置いたときは、縦線を核の手前で止める（線が球を貫かないように）。 */
+.corp-os-stack-3d .corp-os-stack-line {
+  bottom: 162px;
+}
+.corp-os3d-pill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  opacity: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  white-space: nowrap;
+  padding: 0.55rem 1.15rem;
+  border-radius: 999px;
+  border: 1px solid rgba(201, 169, 110, 0.34);
+  background: rgba(8, 7, 5, 0.74);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  box-shadow: 0 18px 44px -26px rgba(201, 169, 110, 0.6);
+  will-change: transform, opacity;
+}
+.corp-os3d-center {
+  position: absolute;
+  left: 0;
+  top: 0;
+  opacity: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  white-space: nowrap;
+  will-change: transform;
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.8);
+}
+/* 軌道の線が文字の上を通ると「AI COMPANY OS」が金の線に溶ける。
+   文字の後ろだけを、輪郭の出ない形で暗く沈める。 */
+.corp-os3d-center::before {
+  content: '';
+  position: absolute;
+  inset: -22px -40px;
+  z-index: -1;
+  background: radial-gradient(58% 62% at 50% 50%, rgba(4, 3, 2, 0.88), rgba(4, 3, 2, 0));
+}
+
+/* ── よくあるご質問（FaqSection） ───────────────────────── */
+.corp-faq {
+  cursor: pointer;
+}
+.corp-faq-q {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  min-height: 44px; /* 指で狙える高さ */
+  list-style: none;
+  cursor: pointer;
+}
+.corp-faq-q::-webkit-details-marker {
+  display: none;
+}
+.corp-faq-q:focus-visible {
+  outline: 2px solid rgba(231, 201, 135, 0.9);
+  outline-offset: 6px;
+  border-radius: 10px;
+}
+.corp-faq-mark {
+  flex: none;
+  font-size: 1.05rem;
+  line-height: 1;
+  transition: transform 0.3s ease;
+}
+.corp-faq[open] .corp-faq-mark {
+  transform: rotate(45deg);
+}
+
 /* 相談フォームの入力欄。焦点が見えないと、どこを触っているか分からなくなる。 */
 #contact input:focus,
 #contact textarea:focus {
