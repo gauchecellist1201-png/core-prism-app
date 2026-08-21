@@ -284,7 +284,7 @@ function ProjectCard({ p }: { p: StudioProject }) {
 
 function Showcase() {
   return (
-    <section style={{ background: D.bg, padding: '8px 0 56px' }}>
+    <section id="film-showcase" style={{ background: D.bg, padding: '8px 0 56px', scrollMarginTop: 96 }}>
       <div className="st-inner">
         <Reveal>
           <div className="st-label" style={{ color: D.gold, marginBottom: 10 }}>Showcase</div>
@@ -436,7 +436,7 @@ function WhatWeCreate() {
 // ============================================================
 function Process() {
   return (
-    <Band pad="56px 0">
+    <Band id="film-process" pad="56px 0">
       <Reveal><H2 en="Process" sub="ご相談から納品まで、6つの工程で進めます。各工程の進捗は随時ご報告します。">制作の流れ</H2></Reveal>
       <ol style={{ listStyle: 'none', padding: 0, margin: 0 }}>
         {FILM_PROCESS.map((s, i) => (
@@ -812,7 +812,7 @@ function Comparison() {
 function Faq() {
   const [open, setOpen] = useState<number | null>(null);
   return (
-    <Band alt pad="56px 0">
+    <Band id="film-faq" alt pad="56px 0">
       <Reveal><H2 en="FAQ" sub="ご相談前によくいただくご質問です。">よくある質問</H2></Reveal>
       <div>
         {FILM_FAQ.map((f, i) => (
