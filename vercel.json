@@ -179,6 +179,14 @@
       "destination": "/continuum.html"
     },
     {
+      "source": "/corp/sier",
+      "destination": "/corp-sier.html"
+    },
+    {
+      "source": "/corp/sier/",
+      "destination": "/corp-sier.html"
+    },
+    {
       "source": "/corp",
       "destination": "/corp.html"
     },

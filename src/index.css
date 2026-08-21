@@ -3893,14 +3893,19 @@ details[open] > summary .disclosure-chev {
   transform: rotate(45deg);
 }
 
-/* 相談フォームの入力欄。焦点が見えないと、どこを触っているか分からなくなる。 */
+/* 相談フォームの入力欄。焦点が見えないと、どこを触っているか分からなくなる。
+   #sier-contact (/corp/sier) も同じフォーム部品を使うため同じルールを当てる。 */
 #contact input:focus,
-#contact textarea:focus {
+#contact textarea:focus,
+#sier-contact input:focus,
+#sier-contact textarea:focus {
   border-color: rgba(231, 201, 135, 0.9);
   box-shadow: 0 0 0 3px rgba(201, 169, 110, 0.2);
 }
 #contact input::placeholder,
-#contact textarea::placeholder {
+#contact textarea::placeholder,
+#sier-contact input::placeholder,
+#sier-contact textarea::placeholder {
   color: rgba(240, 233, 216, 0.36);
 }
 

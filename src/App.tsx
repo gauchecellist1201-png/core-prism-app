@@ -66,6 +66,7 @@ const PrivacyPolicy = lazy(() => import('./legal/PrivacyPolicy'));
 const TermsOfService = lazy(() => import('./legal/TermsOfService'));
 const CoreSite = lazy(() => import('./corporate/CoreSite'));
 const CorpStickyCta = lazy(() => import('./corporate/CorpStickyCta'));
+const SierLanding = lazy(() => import('./corporate/SierLanding'));
 const StudioSite = lazy(() => import('./studio/StudioSite'));
 const ContinuumLanding = lazy(() => import('./corporate/ContinuumLanding'));
 const StrategyDashboard = lazy(() => import('./corporate/StrategyDashboard'));
@@ -297,6 +298,14 @@ function isCorpPath(): boolean {
   return p === '/corp' || p.startsWith('/corp/') || p === '/corp.html' || p === '/company' || p.startsWith('/company/');
 }
 
+/** /corp/sier — SIer向けAI開発パートナーLP。isCorpPath() より前に判定する
+ *  必要がある（/corp/(.*) に含まれるため、後に置くと CoreSite に吸われる）。 */
+function isSierPath(): boolean {
+  if (typeof window === 'undefined') return false;
+  const p = window.location.pathname;
+  return p === '/corp/sier' || p.startsWith('/corp/sier/');
+}
+
 function isStudioPath(): boolean {
   if (typeof window === 'undefined') return false;
   const p = window.location.pathname;
@@ -480,6 +489,11 @@ function AppRoutes() {
   // /studio — CORE Studio (サイト制作・受託開発スタジオ)
   if (isStudioPath()) {
     return <Suspense fallback={<RouteFallback />}><StudioSite /></Suspense>;
+  }
+
+  // /corp/sier — SIer向けAI開発パートナーLP（isCorpPath() より前に判定）
+  if (isSierPath()) {
+    return <Suspense fallback={<RouteFallback />}><SierLanding /></Suspense>;
   }
 
   // /corp — CORE 法人 LP

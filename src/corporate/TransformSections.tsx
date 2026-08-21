@@ -35,7 +35,8 @@ const CompanyOsScene = lazy(() => import('./CompanyOsScene'));
 type AnchorHandler = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => void;
 
 // ── 章の共通の器 ──────────────────────────────────
-function Section({
+// SierLanding.tsx など、同じ見た目で章を並べたい他ページからも使うため export する。
+export function Section({
   id, background, children, labelJa, labelEn, title, lead, narrow,
 }: {
   id: string;
@@ -65,7 +66,7 @@ function Section({
 }
 
 /** 章の中の小見出し（英語の副題つき）。 */
-function Kicker({ en }: { en: string }) {
+export function Kicker({ en }: { en: string }) {
   return (
     <p style={{
       fontFamily: FONT_SERIF_EN, fontStyle: 'italic', fontSize: 'clamp(0.85rem, 1.3vw, 1rem)',
@@ -77,7 +78,7 @@ function Kicker({ en }: { en: string }) {
 }
 
 /** 業務の流れ（A → B → C）。狭い画面では縦に折れる。 */
-function FlowChain({ steps, accent }: { steps: string[]; accent: string }) {
+export function FlowChain({ steps, accent }: { steps: string[]; accent: string }) {
   return (
     <div className="corp-chain">
       {steps.map((s, i) => (
@@ -909,11 +910,15 @@ export function PartnerSection({ onAnchor }: { onAnchor?: AnchorHandler }) {
         ))}
       </div>
 
-      {onAnchor && (
-        <div style={{ textAlign: 'center', marginTop: '3rem' }}>
+      <div style={{ textAlign: 'center', marginTop: '3rem', display: 'flex', flexWrap: 'wrap', gap: '1rem', justifyContent: 'center' }}>
+        {onAnchor && (
           <a href="#contact" onClick={e => onAnchor(e, '#contact')} style={ctaHero}>パートナー提携について相談する</a>
-        </div>
-      )}
+        )}
+        {/* 2026-08-21 追加: SIer・システム開発会社向けの専用ページへの導線。
+            /corp は6タブで既にモバイル横スクロールぎりぎりのため、タブを増やさず
+            この章からの独立ページ導線として置く（[[ux_one_screen_tab_doctrine]]）。 */}
+        <a href="/corp/sier" style={ctaGhost}>SIer・開発会社の方はこちら →</a>
+      </div>
     </Section>
   );
 }

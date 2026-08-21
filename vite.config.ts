@@ -19,6 +19,7 @@ export default defineConfig({
         main: resolve(__dirname, 'index.html'),
         iris: resolve(__dirname, 'iris.html'),
         corp: resolve(__dirname, 'corp.html'),
+        corpSier: resolve(__dirname, 'corp-sier.html'),
         crystal: resolve(__dirname, 'crystal.html'),
         continuum: resolve(__dirname, 'continuum.html'),
         keynote: resolve(__dirname, 'keynote.html'),
