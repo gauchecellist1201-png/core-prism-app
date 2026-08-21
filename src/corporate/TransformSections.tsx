@@ -165,7 +165,7 @@ export function PhilosophyCore() {
           <span style={sectionLabelSub}>WHAT STAYS</span>
         </p>
         <motion.h2 {...reveal} style={{ ...sectionH2, lineHeight: 1.7, textAlign: 'left' }}>
-          AIブームに、乗るための会社ではありません。
+          変わらない本質のために、最新の技術を使う。
         </motion.h2>
         <div style={{
           fontFamily: FONT_SERIF_JA, color: TEXT_BODY, fontSize: 'clamp(0.95rem, 1.4vw, 1.05rem)',
@@ -176,13 +176,12 @@ export function PhilosophyCore() {
             五年前に正しかった構成は、五年後には残っていないかもしれません。
           </p>
           <p style={{ marginBottom: '1.8rem' }}>
-            しかし、人の役に立つこと。企業が価値を生むこと。本質的な問題を解決すること。
-            <strong style={{ color: '#F1E6CE', fontWeight: 700 }}>その核は、変わりません。</strong>
+            人の役に立つこと。企業が価値を生むこと。本質的な問題を解決すること。
+            <strong style={{ color: '#F1E6CE', fontWeight: 700 }}>その核だけは、時代が変わっても同じです。</strong>
           </p>
           <p style={{ marginBottom: '1.8rem' }}>
-            だから CORE は、流行している技術から話を始めません。
-            御社の事業のどこに無理があり、どこに伸びしろがあるのかから始めます。
-            その答えとして AI が要らないなら、要らないと申し上げます。
+            だから CORE は、御社の事業のどこに無理があり、どこに伸びしろがあるのかから話を始めます。
+            技術の検討は、その後です。AIが答えになると判断した領域にだけ、確かな技術を充てます。
           </p>
           <p>
             「すべての時代の、核となるものを。」
