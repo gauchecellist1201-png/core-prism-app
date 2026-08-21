@@ -2224,9 +2224,8 @@ export default function CoreSite() {
 //  CoreOrb — 中央の白光と虹色光線 (荘厳に、控えめに)
 // ============================================================
 function HeroVideo({ onAnchor }: { onAnchor?: (e: ReactMouseEvent<HTMLAnchorElement>, href: string) => void }) {
-  const vref = useRef<HTMLVideoElement | null>(null);
   const secRef = useRef<HTMLElement | null>(null);
-  const [muted, setMuted] = useState(true);
+  const copyRef = useRef<HTMLDivElement | null>(null);
 
   /**
    * ヒーローの高さを「1画面目の残り」に合わせる。
@@ -2240,9 +2239,7 @@ function HeroVideo({ onAnchor }: { onAnchor?: (e: ReactMouseEvent<HTMLAnchorElem
   useEffect(() => {
     const measure = () => {
       const el = secRef.current;
-      if (!el) return;
-      // scrollY に依存しないよう offsetTop（＝告知バー＋ヘッダーの高さ）で測る
-      setChromeH(el.offsetTop);
+      if (el) setChromeH(el.offsetTop); // scrollY に依存しないよう offsetTop（＝告知バー＋ヘッダーの高さ）で測る
     };
     measure();
     window.addEventListener('resize', measure);
@@ -2252,53 +2249,19 @@ function HeroVideo({ onAnchor }: { onAnchor?: (e: ReactMouseEvent<HTMLAnchorElem
       window.removeEventListener('orientationchange', measure);
     };
   }, []);
-  // スマホ縦は横長動画だと左右が見切れるため、縦(9:16)再編集版に切り替える。
-  const [portrait, setPortrait] = useState(false);
+  // ロゴ画像に焼き込み済みの「CORE / AI TRANSFORMATION COMPANY」が、
+  // 下のコピー帯（暗幕グラデーション）に被って消える事故を防ぐため、
+  // コピー帯の実測高さぶん画像側の表示枠を上に切り詰める（横長・低いビューポートほど致命的）。
+  // window resize だけだとフォント読み込み後の再レイアウトを取りこぼすため、
+  // コピー帯の実サイズ変化そのものを ResizeObserver で監視する。
+  const [copyH, setCopyH] = useState(0);
   useEffect(() => {
-    const mq = window.matchMedia('(max-width: 768px) and (orientation: portrait)');
-    const update = () => setPortrait(mq.matches);
-    update();
-    mq.addEventListener('change', update);
-    return () => mq.removeEventListener('change', update);
+    const el = copyRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => setCopyH(el.offsetHeight));
+    ro.observe(el);
+    return () => ro.disconnect();
   }, []);
-  const src = portrait ? '/corp-hero-portrait.mp4' : '/corp-hero.mp4';
-  const poster = portrait ? '/corp-hero-portrait-poster.jpg' : '/corp-hero-poster.jpg';
-  // iOS Safari 自動再生の根治:
-  // React は muted を「プロパティ」でしか設定せず HTML 属性に書かないため、
-  // iOS が「音声付き動画」と誤判定して自動再生を拒否する(再生ボタン表示の正体)。
-  // → 属性を直接刻み、再生を明示的に試行。失敗時は最初のタッチ/スクロールで再試行。
-  useEffect(() => {
-    const v = vref.current;
-    if (!v) return;
-    v.defaultMuted = true;
-    v.muted = true;
-    v.setAttribute('muted', '');
-    v.setAttribute('playsinline', '');
-    v.setAttribute('webkit-playsinline', '');
-    const tryPlay = () => { if (v.paused) void v.play().catch(() => {}); };
-    tryPlay();
-    v.addEventListener('loadedmetadata', tryPlay);
-    v.addEventListener('canplay', tryPlay);
-    // 低電力モード等で拒否されても、最初の操作(タッチ/スクロール)で必ず動き出す
-    const onFirstGesture = () => { tryPlay(); };
-    window.addEventListener('touchstart', onFirstGesture, { once: true, passive: true });
-    window.addEventListener('scroll', onFirstGesture, { once: true, passive: true });
-    document.addEventListener('visibilitychange', tryPlay);
-    return () => {
-      v.removeEventListener('loadedmetadata', tryPlay);
-      v.removeEventListener('canplay', tryPlay);
-      window.removeEventListener('touchstart', onFirstGesture);
-      window.removeEventListener('scroll', onFirstGesture);
-      document.removeEventListener('visibilitychange', tryPlay);
-    };
-  }, [src]);
-  const toggle = () => {
-    const v = vref.current;
-    if (!v) return;
-    v.muted = !v.muted;
-    setMuted(v.muted);
-    if (!v.muted) void v.play().catch(() => {});
-  };
   return (
     <section
       id="top"
@@ -2314,43 +2277,30 @@ function HeroVideo({ onAnchor }: { onAnchor?: (e: ReactMouseEvent<HTMLAnchorElem
         background: '#000',
       }}
     >
-      <video
-        key={src}
-        ref={vref}
-        autoPlay
-        muted
-        loop
-        playsInline
-        preload="auto"
-        poster={poster}
-        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', zIndex: 0 }}
-      >
-        <source src={src} type="video/mp4" />
-      </video>
       <div
-        /* 2026-08-21: 文が「CORE →肩書き→説明→CTA」と増えたぶん、コピーの帯が
-           映像の明るい中央にかかるようになった。下半分の暗幕を濃くして、
-           金の見出しと白い本文が映像の白い画面に負けないようにする。 */
-        style={{ position: 'absolute', inset: 0, zIndex: 1, pointerEvents: 'none', background: 'linear-gradient(180deg, rgba(0,0,0,0.32) 0%, rgba(0,0,0,0.04) 22%, rgba(0,0,0,0.58) 54%, rgba(0,0,0,0.93) 100%)' }}
-      />
-      <button
-        onClick={toggle}
-        aria-label={muted ? '音を出す' : '消音'}
-        className="lp-tap-link"
-        style={{ position: 'absolute', top: 'calc(env(safe-area-inset-top, 0px) + 5rem)', right: '1.1rem', zIndex: 4, display: 'inline-flex', alignItems: 'center', gap: '0.4rem', padding: '0.5rem 0.85rem', borderRadius: 999, cursor: 'pointer', background: 'rgba(0,0,0,0.42)', border: '1px solid rgba(255,255,255,0.3)', color: '#fff', fontSize: '0.78rem', backdropFilter: 'blur(6px)' }}
+        /* 画像はコピー帯と重ならない上側の枠に閉じ込める。
+           横長で低いビューポート（デスクトップ等）では画像が縦いっぱいまで
+           拡大されるため、コピー帯の暗幕にロゴの文字部分が沈んで消える。 */
+        style={{ position: 'absolute', inset: 0, bottom: copyH || undefined, zIndex: 0 }}
       >
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
-          {muted ? <line x1="22" y1="9" x2="16" y2="15" /> : <path d="M15.5 8.5a5 5 0 0 1 0 7" />}
-        </svg>
-        {muted ? '音を出す' : '消音'}
-      </button>
+        <img
+          src="/corp-hero-logo.webp"
+          alt="CORE — AI Transformation Company"
+          width={1536}
+          height={1024}
+          fetchPriority="high"
+          /* 画像の地は #000（section と同色）なので object-fit:contain で
+             トリミングせず全体を見せても、レターボックスが継ぎ目なく馴染む。 */
+          style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+        />
+      </div>
       {/*
         最初の3秒で「CORE」「AI Transformation Company」「何をする会社か」「相談の入口」
         の4つまで届かせる（オーナー指示 2026-08-21 §3 / §19）。
         iPhone の1画面目に4つとも収めるため、行間と余白は .corp-hero-copy で詰める。
       */}
       <div
+        ref={copyRef}
         className="corp-hero-copy"
         /* 動画は流れているので、明るいフレームでは見出しが白い画面に重なる
            （本番実測: Lume の画面が出るコマで h1 の下段がその上に乗った）。
@@ -2362,21 +2312,7 @@ function HeroVideo({ onAnchor }: { onAnchor?: (e: ReactMouseEvent<HTMLAnchorElem
           background: 'linear-gradient(180deg, rgba(4,3,2,0) 0%, rgba(4,3,2,0.62) 26%, rgba(4,3,2,0.88) 58%, rgba(4,3,2,0.96) 100%)',
         }}
       >
-        {/* ブランドの刻印 — 動画の上に、金の一行 */}
-        <p style={{
-          fontFamily: FONT_DISPLAY, fontSize: 'clamp(0.66rem, 1.6vw, 0.82rem)', letterSpacing: '0.52em',
-          color: 'rgba(231,201,135,0.9)', textTransform: 'uppercase', marginBottom: '0.5rem', paddingLeft: '0.52em',
-          textShadow: '0 2px 18px rgba(0,0,0,0.6)',
-        }}>
-          CORE
-        </p>
-        <p style={{
-          fontFamily: FONT_DISPLAY, fontSize: 'clamp(0.56rem, 1.3vw, 0.68rem)', letterSpacing: '0.34em',
-          color: 'rgba(255,255,255,0.72)', textTransform: 'uppercase', marginBottom: '1rem', paddingLeft: '0.34em',
-          textShadow: '0 2px 18px rgba(0,0,0,0.6)',
-        }}>
-          AI Transformation Company
-        </p>
+        {/* 「CORE」「AI Transformation Company」はヒーロー画像側に焼き込み済みのため、ここでは重複させない */}
         <h1 style={{
           fontFamily: FONT_SERIF_JA, fontWeight: 700, fontSize: 'clamp(1.45rem, 5.2vw, 2.9rem)',
           lineHeight: 1.55, letterSpacing: '0.06em', margin: '0 0 1rem',
