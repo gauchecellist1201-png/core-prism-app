@@ -182,6 +182,14 @@ export type FilmWork = {
 
 export const FILM_WORKS: FilmWork[] = [
   {
+    id: 'work-asahikawa-villa-01',
+    client: '株式会社グローバルジョイントコミットメント',
+    category: 'BRAND FILM',
+    purpose: '北海道旭川に建つヴィラの魅力を伝える紹介映像。竣工間近のヴィラを舞台に、当事者目線のドラマ仕立てで制作。',
+    poster: '/studio/film/asahikawa-villa.jpg',
+    videoUrl: '/studio/film/asahikawa-villa.mp4',
+  },
+  {
     id: 'work-jrc-01',
     client: 'JRC 日本記録協会',
     category: 'BRAND FILM',
@@ -214,8 +222,6 @@ export const FILM_WORKS: FilmWork[] = [
     poster: '/studio/film/social-backstage.jpg',
     videoUrl: '/studio/film/social-backstage.mp4',
   },
-  // 追加予定 (掲載許諾が取れ次第、上と同じ形式でここに追加する):
-  // - 旭川のヴィラ (北海道)
 ];
 
 // ------------------------------------------------------------
