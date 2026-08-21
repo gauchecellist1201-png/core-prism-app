@@ -992,6 +992,57 @@ export function SomaLogo({ size = 28, withWordmark = true, variant = 'default', 
 }
 
 // ─────────────────────────────────────────────
+//  CORE Studio — ワードマーク (アイコンなし、文字組のみ)
+//  参考: 黒地に白の起動画面ロゴ (2026-08-21 オーナー支給)。
+//  「CORE」太字レター・「Studio」細字イタリックの金、間に短い縦線を挟む二層構成
+// ─────────────────────────────────────────────
+export function StudioWordmark({
+  size = 20,
+  tone = 'light',
+  className,
+}: {
+  size?: number;
+  tone?: 'light' | 'dark'; // light = 白背景 (濃色文字) / dark = 黒背景 (白文字)
+  className?: string;
+}) {
+  const coreColor = tone === 'dark' ? '#FFFFFF' : '#111827';
+  const goldColor = tone === 'dark' ? '#D4A94F' : '#8a6a2d';
+  const dividerColor = tone === 'dark' ? 'rgba(255,255,255,0.28)' : 'rgba(17,24,39,0.22)';
+
+  return (
+    <span
+      className={className}
+      style={{ display: 'inline-flex', alignItems: 'baseline', gap: size * 0.32, lineHeight: 1 }}
+    >
+      <span
+        style={{
+          fontFamily: '"Inter", "Helvetica Neue", "Noto Sans JP", system-ui, sans-serif',
+          fontWeight: 800,
+          fontSize: size,
+          letterSpacing: '0.1em',
+          color: coreColor,
+        }}
+      >
+        CORE
+      </span>
+      <span aria-hidden style={{ display: 'inline-block', width: 1, height: size * 0.78, background: dividerColor }} />
+      <span
+        style={{
+          fontFamily: '"Cormorant Garamond", "Playfair Display", "Noto Serif JP", serif',
+          fontStyle: 'italic',
+          fontWeight: 500,
+          fontSize: size * 1.05,
+          letterSpacing: '0.01em',
+          color: goldColor,
+        }}
+      >
+        Studio
+      </span>
+    </span>
+  );
+}
+
+// ─────────────────────────────────────────────
 //  CORE Vertical 第5弾 — Tabitto（出張・経費精算 AI）
 //  スーツケース＋話しかけるAI＝「話すだけで出張申請が終わる」を1本のラインで表す
 // ─────────────────────────────────────────────

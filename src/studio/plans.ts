@@ -24,7 +24,7 @@ export const STUDIO = {
 // 稟議に添付できる文面でもない。同じ枠で、法人が実際に確認する条件 (無料の範囲・NDA・支払) を書く。
 export const CONTACT = {
   lineUrl: 'https://lin.ee/XVR8ySP',
-  lineLabel: '相談・お見積りを依頼する',
+  lineLabel: 'LINEで相談・お見積りを依頼する',
   lineNote: 'ご相談からお見積りのご提示までは無料です。NDAの締結・請求書払いにも対応します。',
   /** ボタンの行き先を偽らないための一言 (押す前に何が開くかを必ず出す) */
   lineChannelNote: 'LINEのトーク画面が開きます。',

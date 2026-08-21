@@ -17,6 +17,7 @@ import { estimate, type EstimateAnswers, type Purpose, type Scale, type Feature,
 import { C, D, SERIF, SANS } from './theme';
 import { Band, H2, Note, IconCheck, IconArrow, IconChat, IconCopy } from './ui';
 import { logEvent } from '../lib/onboardingAnalytics';
+import { StudioWordmark } from '../components/Logo';
 
 const FilmTab = lazy(() => import('./FilmTab'));
 
@@ -166,7 +167,7 @@ export default function StudioSite() {
       <header style={{ position: 'sticky', top: 0, zIndex: 20, background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', borderBottom: `1px solid ${C.line}`, paddingTop: 'env(safe-area-inset-top)' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', maxWidth: 760, margin: '0 auto', padding: '15px 20px 9px' }}>
           <button onClick={() => go('home')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, textAlign: 'left' }}>
-            <span className="st-serif" style={{ fontSize: 17, fontWeight: 700, letterSpacing: '0.16em', color: C.ink }}>CORE <span style={{ color: C.goldText }}>STUDIO</span></span>
+            <StudioWordmark size={17} tone="light" />
           </button>
           <a href="/corp" style={{ fontSize: 12, color: C.mute, textDecoration: 'none', letterSpacing: '0.05em', minHeight: 44, display: 'inline-flex', alignItems: 'center' }}>CORE公式サイト</a>
         </div>
@@ -194,7 +195,9 @@ export default function StudioSite() {
 
       {/* フッター */}
       <footer style={{ borderTop: `1px solid ${C.line}`, background: C.alt, padding: '32px 20px calc(32px + env(safe-area-inset-bottom))', textAlign: 'center' }}>
-        <div className="st-serif" style={{ fontSize: 14, fontWeight: 700, letterSpacing: '0.2em', color: C.ink, marginBottom: 8 }}>CORE STUDIO</div>
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 10 }}>
+          <StudioWordmark size={18} tone="light" />
+        </div>
         <a href={`mailto:${STUDIO.email}`} style={{ fontSize: 12.5, color: C.mute, textDecoration: 'underline', minHeight: 44, display: 'inline-flex', alignItems: 'center', padding: '0 8px' }}>{STUDIO.email}</a>
         <div style={{ fontSize: 11.5, color: C.mute, marginTop: 10, letterSpacing: '0.04em', lineHeight: 1.9 }}>
           CORE（設立準備中）<br />代表 井出直毅
