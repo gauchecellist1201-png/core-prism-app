@@ -124,12 +124,21 @@ export default function FilmTab() {
            スマホでは画面幅いっぱい × 9:16 をそのまま出す (crop 0)。
            1画面目からはみ出すぶんは、常時出ている固定下部CTAで受ける。 */
         .fm-hero { position: relative; width: 100%; background: #000;
-          display: flex; justify-content: center; }
-        .fm-hero-frame { position: relative; width: 100%; aspect-ratio: 9 / 16;
+          display: flex; justify-content: center; overflow: hidden; }
+        .fm-hero-frame { position: relative; z-index: 2; width: 100%; aspect-ratio: 9 / 16;
           overflow: hidden; background: #000; }
-        /* 広い画面では縦型のまま中央に立てる (横に引き伸ばさない) */
+        /* 広い画面 — 縦型を横に引き伸ばす/切り抜くと必ず崩れるので、
+           画そのものは縦型のまま中央に立て、両脇の余白は同じ画をぼかして敷く。
+           黒い空き地にするより「その映像の中に居る」画面になる。 */
+        .fm-hero-amb { display: none; }
         @media (min-width: 700px) {
-          .fm-hero-frame { width: auto; height: min(calc(100dvh - 150px), 760px); }
+          .fm-hero-frame { width: auto; height: min(calc(100dvh - 132px), 860px);
+            box-shadow: 0 30px 90px rgba(0,0,0,0.62); }
+          .fm-hero-amb { display: block; position: absolute; inset: -10%; z-index: 0;
+            background: url('/studio/film/hero-reel-poster.jpg') center / cover no-repeat;
+            filter: blur(52px) saturate(1.15) brightness(0.42); transform: scale(1.06); }
+          .fm-hero::after { content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none;
+            background: radial-gradient(115% 78% at 50% 42%, rgba(11,11,12,0) 34%, rgba(11,11,12,0.78) 100%); }
         }
         .fm-hero video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
         /* 自動再生が拒否された端末 (低電力モード等) では静止画のまま何も起きないので、
@@ -285,6 +294,7 @@ function FilmHero() {
       {/* 映像そのものがヒーロー。文字は重ねず、下の帯に置く。
           素材は縦型なので、切り抜かずに画面幅いっぱいの 9:16 で出す。 */}
       <div className="fm-hero">
+        <div className="fm-hero-amb" aria-hidden="true" />
         <div className="fm-hero-frame">
           <video
             ref={videoRef}
