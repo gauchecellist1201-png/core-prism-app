@@ -9,8 +9,9 @@ import { C, D } from './theme';
 export const Band = ({ alt, dark, children, pad = '52px 0', id }: {
   alt?: boolean; dark?: boolean; children: ReactNode; pad?: string; id?: string;
 }) => (
-  // 固定ヘッダー(約80px)の下に見出しが潜らないよう、アンカー着地位置を下げる
-  <section id={id} style={{ background: dark ? D.bg : alt ? C.alt : C.bg, padding: pad, scrollMarginTop: 88 }}>
+  // 固定ヘッダーの下に見出しが潜らないよう、アンカー着地位置を下げる
+  <section id={id} style={{ background: dark ? D.bg : alt ? C.alt : C.bg, padding: pad, scrollMarginTop: id ? 96 : undefined }}>
+
     <div className="st-inner">{children}</div>
   </section>
 );

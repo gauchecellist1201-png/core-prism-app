@@ -340,7 +340,7 @@ function ProjectCard({ p }: { p: StudioProject }) {
 
 function Showcase() {
   return (
-    <section id="film-showcase" style={{ background: D.bg, padding: '8px 0 56px', scrollMarginTop: 88 }}>
+    <section id="film-showcase" style={{ background: D.bg, padding: '8px 0 56px', scrollMarginTop: 96 }}>
       <div className="st-inner">
         <Reveal>
           <div className="st-label" style={{ color: D.gold, marginBottom: 10 }}>Showcase</div>
