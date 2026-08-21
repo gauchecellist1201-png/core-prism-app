@@ -11,7 +11,7 @@ import { STUDIO, CONTACT } from './plans';
 import {
   FILM, WHY_CORE, BRIDGE, AUDIENCE_MATCH, studioProjects, FEATURED, FILM_PROCESS, PROCESS_STATEMENT,
   FILM_PLANS, MONTHLY_LEAD, MONTHLY_PLANS, MONTHLY_TERMS, PRICE_NOTE, PRICE_WHY, DECISION_GUIDE,
-  SIGNATURE, FILM_WORKS, TARGETS, REVISION, TERMS, AI_TERMS,
+  SIGNATURE, FILM_WORKS, TARGETS, REVISION, TERMS, AI_TERMS, VALUE, monthlySavings, yen,
   COMPARISON, FILM_FAQ, PHILOSOPHY, FILM_CTA, INQUIRY_FIELDS,
   type StudioProject,
 } from './film';
@@ -97,25 +97,53 @@ export default function FilmTab() {
         @media (min-width: 640px) { .fm-chip-grid { grid-template-columns: repeat(3, 1fr); } }
         .fm-terms-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
         @media (min-width: 700px) { .fm-terms-grid { grid-template-columns: 1fr 1fr; } }
+        /* ヒーロー直下の数字バー。375pxで2列、広い画面で4列。
+           1列に落とすと4行=約210pxを食い、CTAが1画面目から押し出される */
+        .fm-proof { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: ${D.line};
+          border: 1px solid ${D.line}; border-radius: 12px; overflow: hidden; }
+        @media (min-width: 700px) { .fm-proof { grid-template-columns: repeat(4, 1fr); } }
+        .fm-proof-item { background: ${D.bg}; padding: 14px 14px 13px; }
+        .fm-proof-value { font-size: 19px; font-weight: 700; color: ${D.gold}; line-height: 1.35; letter-spacing: 0.01em; }
+        .fm-proof-label { font-size: 11px; color: ${D.mute}; line-height: 1.6; margin-top: 5px; letter-spacing: 0.02em; }
+        /* 相場との対比表。狭い画面では表を横に潰さず、1件=1ブロックの縦積みに切り替える
+           (3列を375pxに押し込むと各セルが5〜6行に折れて読めなくなる) */
+        .fm-cmp { display: grid; gap: 10px; }
+        .fm-cmp-row { border: 1px solid ${C.line}; border-radius: 10px; background: #FFFFFF; overflow: hidden; }
+        .fm-cmp-row[data-hl="1"] { border-color: ${C.goldLine}; }
+        .fm-cmp-item { font-size: 12.5px; font-weight: 700; color: ${C.ink}; line-height: 1.6;
+          padding: 11px 14px; background: ${C.alt}; border-bottom: 1px solid ${C.line}; }
+        .fm-cmp-vals { display: grid; grid-template-columns: 1fr 1fr; }
+        .fm-cmp-val { padding: 11px 14px; font-size: 12.5px; line-height: 1.7; }
+        .fm-cmp-val + .fm-cmp-val { border-left: 1px solid ${C.line}; }
+        .fm-cmp-cap { display: block; font-size: 10px; letter-spacing: 0.1em; color: ${C.mute};
+          margin-bottom: 4px; font-weight: 600; }
+        /* 月額に切り替えた場合の差額。3列 (単発合計 / 月額 / 差額) */
+        .fm-save { display: grid; gap: 10px; }
+        @media (min-width: 700px) { .fm-save { grid-template-columns: repeat(3, 1fr); } }
         .fm-sticky-cta { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; display: none;
           padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); background: rgba(11,11,12,0.92);
           backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-top: 1px solid ${D.line}; }
         @media (max-width: 767px) { .fm-sticky-cta { display: block; } .fm-sticky-pad { height: 68px; } }
       `}</style>
 
+      {/* 章の並び (2026-08-21 改編)。
+          旧構成は情緒4章 → 料金 → 契約条項22枚 → 実績、の順で、
+          発注判断に必要な証拠 (実績) が16画面下にあり、買う気になった直後に契約条項の壁が来ていた。
+          proof (実績) を上へ、契約条項は折りたたみ、料金の直前に費用構造の章を挟む形に組み替えている。 */}
       <FilmHero />
       <SectionNav />
       <Showcase />
+      <FilmWorks />
       <Bridge />
       <Featured />
       <WhyCore />
       <Comparison />
       <Process />
+      <Value />
       <Pricing />
-      <Terms />
       <ChooseGuide />
-      <FilmWorks />
       <Signature />
+      <Terms />
       <Faq />
       <Philosophy />
       <div className="fm-sticky-pad" />
@@ -194,7 +222,7 @@ function MobileStickyCta() {
       <a className="st-btn fm-btn-light" href={CONTACT.lineUrl} target="_blank" rel="noopener noreferrer"
         style={{ width: '100%', boxSizing: 'border-box', minHeight: 46, padding: '11px 20px' }}
         onClick={() => track('studio_film_sticky_cta', { to: 'line' })}>
-        <IconChat /> 制作について相談する
+        <IconChat /> {CONTACT.lineLabel}
       </a>
     </div>
   );
@@ -205,31 +233,44 @@ function MobileStickyCta() {
 // ============================================================
 function FilmHero() {
   return (
-    <section style={{ background: D.bg, padding: '64px 0 56px' }}>
+    <section style={{ background: D.bg, padding: '40px 0 52px' }}>
       <div className="st-inner">
         <Reveal>
-          <div className="st-label" style={{ color: D.gold, marginBottom: 20 }}>{FILM.label}</div>
+          <div className="st-label" style={{ color: D.gold, marginBottom: 16 }}>{FILM.label}</div>
           <h1 className="st-serif" style={{ fontSize: 'clamp(28px, 7.6vw, 44px)', fontWeight: 700, lineHeight: 1.5, letterSpacing: '0.02em', margin: 0, color: D.ink, whiteSpace: 'pre-line' }}>
             {FILM.hero}
           </h1>
           <p style={{ fontSize: 15, lineHeight: 2.1, color: D.body, margin: '24px 0 0', maxWidth: 620 }}>
             {FILM.heroSub}
           </p>
-          <div style={{ display: 'flex', gap: 12, marginTop: 32, flexWrap: 'wrap' }}>
+          {/* CTA は数字バーより前に置く。
+              数字バーを先に置いた版では、その153pxぶん主CTAが押し下げられ、
+              375x812 の実測で折り目 (597px = 812 − 固定ナビ115 − アドレスバー約100) の
+              99px 下に落ちていた。順序は 見出し → 要約 → CTA → 証拠。 */}
+          <div style={{ display: 'flex', gap: 12, marginTop: 26, flexWrap: 'wrap' }}>
             <a className="st-btn fm-btn-light" href={CONTACT.lineUrl} target="_blank" rel="noopener noreferrer"
               onClick={() => track('studio_film_hero_cta', { to: 'line' })}>
-              <IconChat /> {CONTACT.lineLabel}
+              <IconChat /> {FILM.heroCta}
             </a>
-            <button className="st-btn fm-btn-outline" onClick={() => { track('studio_film_hero_cta', { to: 'pricing' }); scrollToId('film-pricing'); }}>
-              {FILM.heroCtaSub}
+            <button className="st-btn fm-btn-outline" onClick={() => { track('studio_film_hero_cta', { to: 'works' }); scrollToId('film-works'); }}>
+              {FILM.heroCtaWorks}
             </button>
           </div>
-          <div className="fm-reassure" style={{ marginTop: 16 }}>
-            {FILM.heroReassure.map(t => (
-              <span key={t} className="fm-reassure-item"><IconCheck color={D.gold} />{t}</span>
+          <p style={{ fontSize: 12.5, color: D.mute, margin: '12px 0 0', lineHeight: 1.9 }}>
+            {CONTACT.lineNote}<br />{CONTACT.lineChannelNote}
+          </p>
+
+          {/* 数字のバー。確かめられる事実だけを4つ。
+              旧「企画段階でも相談OK / 予算が決まっていなくてもOK」は、
+              発注側にとっての条件ではなく、こちらの都合の宣言でしかなかった */}
+          <div className="fm-proof" style={{ marginTop: 24 }}>
+            {FILM.proof.map(p => (
+              <div key={p.label} className="fm-proof-item">
+                <div className="st-serif fm-proof-value">{p.value}</div>
+                <div className="fm-proof-label">{p.label}</div>
+              </div>
             ))}
           </div>
-          <p style={{ fontSize: 12.5, color: D.mute, margin: '14px 0 0', lineHeight: 1.9 }}>{CONTACT.lineNote}</p>
 
           {/* 法人向けの取引条件を1行で。詳細は「お取引の条件」の章へ送る */}
           <div style={{ marginTop: 24, paddingTop: 18, borderTop: `1px solid ${D.line}` }}>
@@ -256,8 +297,9 @@ function FilmHero() {
 // 章の目次 — 20画面近い1枚ものを、必要な章から読めるようにする
 // ============================================================
 const NAV_ITEMS: Array<{ id: string; label: string }> = [
-  { id: 'film-showcase', label: '制作事例' },
+  { id: 'film-works', label: '制作実績' },
   { id: 'film-process', label: '制作の流れ' },
+  { id: 'film-value', label: '費用の構造' },
   { id: 'film-pricing', label: '料金' },
   { id: 'film-terms', label: 'お取引の条件' },
   { id: 'film-faq', label: 'よくある質問' },
@@ -419,8 +461,113 @@ function WhyCore() {
 }
 
 // ============================================================
+// 費用の構造 — 「お得かどうか」を読む人に計算させない章。
+//
+// 料金表の直前に置く。価格を裸で見せる前に、
+//   (1) 相場との差 → (2) その差が生まれる理由 → (3) 月額に切り替えた実額
+// の順で通す。理由 (2) を挟まずに安さだけを見せると、品質への不信に変わる。
+// ============================================================
+function Value() {
+  return (
+    <Band alt pad="56px 0" id="film-value">
+      <Reveal>
+        <div className="st-label" style={{ marginBottom: 12 }}>{VALUE.en}</div>
+        <h2 className="st-serif" style={{ fontSize: 'clamp(22px, 6vw, 30px)', fontWeight: 700, lineHeight: 1.55, color: C.ink, margin: 0, whiteSpace: 'pre-line' }}>
+          {VALUE.title}
+        </h2>
+        <p style={{ fontSize: 14, lineHeight: 2.05, color: C.body, margin: '16px 0 0', maxWidth: 620 }}>{VALUE.lead}</p>
+      </Reveal>
+
+      {/* 相場との対比 */}
+      <Reveal delay={60}>
+        <div className="fm-cmp" style={{ marginTop: 26 }}>
+          {VALUE.table.map(r => (
+            <div key={r.item} className="fm-cmp-row" data-hl={r.highlight ? '1' : '0'}>
+              <div className="fm-cmp-item">{r.item}</div>
+              <div className="fm-cmp-vals">
+                <div className="fm-cmp-val" style={{ color: C.mute }}>
+                  <span className="fm-cmp-cap">{VALUE.tableHead.market}</span>{r.market}
+                </div>
+                <div className="fm-cmp-val" style={{ color: r.highlight ? C.goldText : C.ink, fontWeight: r.highlight ? 700 : 600 }}>
+                  <span className="fm-cmp-cap">{VALUE.tableHead.core}</span>{r.core}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+        <p style={{ fontSize: 11.5, lineHeight: 1.85, color: C.mute, margin: '12px 2px 0' }}>{VALUE.tableNote}</p>
+      </Reveal>
+
+      {/* 差が生まれる理由。ここが無いと、上の表はただの安売りの主張になる */}
+      <Reveal>
+        <div style={{ marginTop: 40 }}>
+          <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.12em', color: C.mute, marginBottom: 14 }}>
+            {VALUE.reasonsTitle}
+          </div>
+          {VALUE.reasons.map((r, i) => (
+            <div key={r.no} style={{ display: 'flex', gap: 16, padding: '16px 0', borderTop: i === 0 ? `1px solid ${C.line}` : `1px solid ${C.line}` }}>
+              <span className="st-serif" style={{ fontSize: 14, fontWeight: 700, color: C.goldText, flexShrink: 0, minWidth: 26, paddingTop: 2 }}>{r.no}</span>
+              <div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: C.ink, lineHeight: 1.65 }}>{r.title}</div>
+                <p style={{ fontSize: 13.5, lineHeight: 1.95, color: C.body, margin: '5px 0 0' }}>{r.body}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </Reveal>
+
+      {/* 月額に切り替えた場合の差額。数字は film.ts の実データから計算する */}
+      <Reveal>
+        <div style={{ marginTop: 40 }}>
+          <h3 className="st-serif" style={{ fontSize: 19, fontWeight: 700, color: C.ink, margin: 0, lineHeight: 1.6 }}>{VALUE.monthly.title}</h3>
+          <p style={{ fontSize: 13.5, lineHeight: 1.95, color: C.body, margin: '8px 0 18px' }}>{VALUE.monthly.body}</p>
+          <div className="fm-save">
+            {MONTHLY_PLANS.map(m => {
+              const s = monthlySavings(m);
+              return (
+                <div key={m.id} style={{ border: `1px solid ${m.featured ? C.goldLine : C.line}`, borderRadius: 12, background: '#FFFFFF', padding: '16px 17px' }}>
+                  <div className="st-label" style={{ fontSize: 10.5, marginBottom: 12 }}>{m.volume} / 月</div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, fontSize: 12.5, color: C.mute, lineHeight: 1.9 }}>
+                    <span>{VALUE.monthly.colOneOff}</span>
+                    {/* 高いほうに取り消し線を引くと比較の向きが一目で分かる */}
+                    <span style={{ textDecoration: 'line-through' }}>{yen(s.oneOffTotal)}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, fontSize: 12.5, color: C.body, lineHeight: 1.9 }}>
+                    <span>{VALUE.monthly.colMonthly}</span>
+                    <span style={{ fontWeight: 700, color: C.ink }}>{m.price}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'baseline', marginTop: 10, paddingTop: 10, borderTop: `1px solid ${C.line}` }}>
+                    <span style={{ fontSize: 12.5, color: C.body }}>{VALUE.monthly.colDiff}</span>
+                    <span className="st-serif" style={{ fontSize: 18, fontWeight: 700, color: C.goldText }}>
+                      −{yen(s.diff)}
+                    </span>
+                  </div>
+                  <div style={{ fontSize: 11.5, color: C.mute, textAlign: 'right', marginTop: 4, lineHeight: 1.7 }}>
+                    約{s.percent}%減 / 年間 −{yen(s.yearlyDiff)}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <p style={{ fontSize: 11.5, lineHeight: 1.85, color: C.mute, margin: '12px 2px 0' }}>{VALUE.monthly.note}</p>
+        </div>
+      </Reveal>
+
+      {/* 実写に分がある案件は、そう言う。ここで盛ると最初の1本で信用を失う */}
+      <Reveal>
+        <div style={{ marginTop: 30, background: '#FFFFFF', borderLeft: `3px solid ${C.gold}`, borderRadius: 4, padding: '16px 17px' }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: C.ink, lineHeight: 1.7 }}>{VALUE.honest.title}</div>
+          <p style={{ fontSize: 13, lineHeight: 1.95, color: C.body, margin: '7px 0 0' }}>{VALUE.honest.body}</p>
+        </div>
+      </Reveal>
+    </Band>
+  );
+}
+
+// ============================================================
 // お取引の条件 — 修正規定・権利・NDA・支払・納期。
 // 発注前に法人が確認する事項が1章も無かったため新設した。
+// カード22枚あり、既定で開いていると買う判断の直前に壁になるため折りたたむ。
 // ============================================================
 function TermRows({ rows }: { rows: readonly { label: string; body: string }[] }) {
   return (
@@ -435,14 +582,59 @@ function TermRows({ rows }: { rows: readonly { label: string; body: string }[] }
   );
 }
 
+// 折りたたみ。details/summary を使うとブラウザ既定の三角と行の高さが混ざるので、
+// 44px を確保したボタンと状態表示を自前で持つ。
+function Disclosure({ title, note, children, defaultOpen = false }: {
+  title: string; note?: string; children: ReactNode; defaultOpen?: boolean;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div style={{ border: `1px solid ${C.line}`, borderRadius: 12, background: '#FFFFFF', overflow: 'hidden' }}>
+      <button type="button" aria-expanded={open}
+        onClick={() => { setOpen(v => !v); if (!open) track('studio_film_terms_open', { section: title }); }}
+        style={{
+          width: '100%', minHeight: 56, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          gap: 12, padding: '15px 17px', background: 'none', border: 'none', cursor: 'pointer',
+          textAlign: 'left', fontFamily: SANS,
+        }}>
+        <span>
+          <span style={{ display: 'block', fontSize: 14.5, fontWeight: 700, color: C.ink, lineHeight: 1.6 }}>{title}</span>
+          {note && <span style={{ display: 'block', fontSize: 12, color: C.mute, lineHeight: 1.7, marginTop: 3 }}>{note}</span>}
+        </span>
+        <span aria-hidden style={{ color: C.goldText, fontSize: 20, lineHeight: 1, flexShrink: 0 }}>{open ? '−' : '+'}</span>
+      </button>
+      {open && <div style={{ padding: '0 17px 20px', borderTop: `1px solid ${C.line}`, paddingTop: 18 }}>{children}</div>}
+    </div>
+  );
+}
+
 function Terms() {
   return (
     <Band alt pad="56px 0" id="film-terms">
-      {/* 1. 修正のお約束 — 一番聞かれるので先頭に置く */}
       <Reveal>
-        <H2 en={REVISION.en} sub={REVISION.lead}>{REVISION.title}</H2>
+        <H2 en="Terms & Conditions" sub="修正の範囲、権利の帰属、支払条件、AI制作特有の論点まで、発注前にご確認いただく事項をすべて公開しています。稟議に必要な項目は、この3つに揃えています。">
+          お取引の条件
+        </H2>
       </Reveal>
 
+      <div style={{ display: 'grid', gap: 12 }}>
+        <Disclosure title={REVISION.title} note={REVISION.lead}>
+          <TermsRevision />
+        </Disclosure>
+        <Disclosure title={TERMS.title} note={TERMS.lead}>
+          <TermRows rows={TERMS.rows} />
+        </Disclosure>
+        <Disclosure title={AI_TERMS.title} note={AI_TERMS.lead}>
+          <TermRows rows={AI_TERMS.rows} />
+        </Disclosure>
+      </div>
+    </Band>
+  );
+}
+
+function TermsRevision() {
+  return (
+    <>
       <Reveal>
         <div className="st-card st-card-featured" style={{ background: '#FFFFFF' }}>
           <div style={{ fontSize: 13.5, fontWeight: 700, color: C.ink, marginBottom: 7 }}>{REVISION.unit.title}</div>
@@ -502,22 +694,7 @@ function Terms() {
         ))}
       </div>
 
-      {/* 2. お取引の条件 */}
-      <Reveal>
-        <div style={{ marginTop: 44 }}>
-          <H2 en={TERMS.en} sub={TERMS.lead}>{TERMS.title}</H2>
-        </div>
-      </Reveal>
-      <TermRows rows={TERMS.rows} />
-
-      {/* 3. AIについて */}
-      <Reveal>
-        <div style={{ marginTop: 44 }}>
-          <H2 en={AI_TERMS.en} sub={AI_TERMS.lead}>{AI_TERMS.title}</H2>
-        </div>
-      </Reveal>
-      <TermRows rows={AI_TERMS.rows} />
-    </Band>
+    </>
   );
 }
 
@@ -528,7 +705,7 @@ function Terms() {
 function ChooseGuide() {
   return (
     <Band pad="56px 0" id="film-choose">
-      <Reveal><H2 en="Find Your Fit" sub="用途から選べます。決めきれないまま、ご相談いただいても構いません。">どれを選べばいいか</H2></Reveal>
+      <Reveal><H2 en="Find Your Fit" sub="用途と目的からプランが決まります。判断がつかない場合は、ヒアリングのうえ当社から構成をご提案します。">どのプランを選ぶか</H2></Reveal>
 
       {/* 用途 → 映像の種類 */}
       <div className="fm-audience-grid">
@@ -581,7 +758,7 @@ function ChooseGuide() {
       <div style={{ marginTop: 22, textAlign: 'center' }}>
         <a className="st-btn st-btn-ghost" href={CONTACT.lineUrl} target="_blank" rel="noopener noreferrer"
           onClick={() => track('studio_film_pricing_cta', { plan: 'undecided', to: 'line' })}>
-          <IconChat /> 決めずにまず相談する
+          <IconChat /> 要件整理からご相談ください
         </a>
       </div>
     </Band>
@@ -726,20 +903,34 @@ function Pricing() {
                 </div>
                 <div style={{ fontSize: 12, color: C.mute, marginTop: 6, letterSpacing: '0.02em' }}>{p.terms}</div>
                 <div style={{ fontSize: 12, color: C.goldText, marginTop: 4, fontWeight: 600, letterSpacing: '0.02em' }}>{p.delivery}</div>
-                <div style={{ fontSize: 14, fontWeight: 600, color: C.ink, margin: '10px 0 12px', lineHeight: 1.8 }}>{p.lead}</div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: C.ink, margin: '10px 0 6px', lineHeight: 1.8 }}>{p.lead}</div>
+                {/* どの会社向けかを1行で。プラン選択を読む人に丸投げしない */}
+                <div style={{ fontSize: 12.5, color: C.goldText, lineHeight: 1.8, marginBottom: 12 }}>{p.fit}</div>
                 <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: 6, borderTop: `1px solid ${C.line}`, paddingTop: 14 }}>
                   {p.includes.map(x => (
                     <li key={x} style={{ display: 'flex', gap: 8, fontSize: 13.5, lineHeight: 1.7, color: C.body }}><IconCheck />{x}</li>
                   ))}
                 </ul>
+                {/* 含まれないもの。書かない見積りは必ず後で揉める。書くこと自体が信頼になる */}
+                <div style={{ marginTop: 14, paddingTop: 13, borderTop: `1px solid ${C.line}` }}>
+                  <div style={{ fontSize: 11.5, fontWeight: 600, letterSpacing: '0.1em', color: C.mute, marginBottom: 8 }}>含まれないもの</div>
+                  <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: 5 }}>
+                    {p.excludes.map(x => (
+                      <li key={x} style={{ display: 'flex', gap: 8, fontSize: 12.5, lineHeight: 1.7, color: C.mute }}>
+                        <span aria-hidden style={{ flexShrink: 0, marginTop: 1 }}>—</span>{x}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
                 <div style={{ marginTop: 16 }}>
                   {p.checkout ? (
                     <>
                       <FilmCheckoutButton plan={p.id} mode="payment" label={p.cta} />
+                      {/* 決済ボタンの控え。実測19pxだったので、44pxの当たりを確保する */}
                       <a href={CONTACT.lineUrl} target="_blank" rel="noopener noreferrer"
-                        style={{ display: 'block', textAlign: 'center', fontSize: 12.5, color: C.mute, marginTop: 10 }}
+                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 44, textAlign: 'center', fontSize: 12.5, color: C.mute, marginTop: 4 }}
                         onClick={() => track('studio_film_pricing_cta', { plan: p.id, to: 'line' })}>
-                        先にLINEで相談する
+                        発注前に要件を相談する
                       </a>
                     </>
                   ) : (
@@ -777,7 +968,7 @@ function Pricing() {
                 <div style={{ fontSize: 12, color: C.mute, marginTop: 4 }}>{m.unitPrice}</div>
                 <p style={{ fontSize: 13, lineHeight: 1.9, color: C.body, margin: '10px 0 0 0' }}>{m.body}</p>
                 <div style={{ marginTop: 14 }}>
-                  <FilmCheckoutButton plan={m.id} mode="subscription" label="このプランで申し込む" />
+                  <FilmCheckoutButton plan={m.id} mode="subscription" label="この本数で契約する" />
                 </div>
               </div>
             </Reveal>
@@ -800,7 +991,7 @@ function Pricing() {
         <div style={{ marginTop: 20, textAlign: 'center' }}>
           <a className="st-btn st-btn-ghost" href={CONTACT.lineUrl} target="_blank" rel="noopener noreferrer"
             onClick={() => track('studio_film_pricing_cta', { plan: 'monthly', to: 'line' })}>
-            <IconChat /> 決める前にLINEで相談する
+            <IconChat /> 本数を相談してから決める
           </a>
           <Note>{PRICE_NOTE}</Note>
         </div>
@@ -839,7 +1030,7 @@ function WorkCard({ w }: { w: (typeof FILM_WORKS)[number] }) {
         {w.result && <p style={{ fontSize: 12.5, lineHeight: 1.8, color: C.goldText, margin: '4px 0 0', fontWeight: 600 }}>{w.result}</p>}
         {w.url && (
           <a href={w.url} target="_blank" rel="noopener noreferrer"
-            style={{ display: 'inline-block', fontSize: 11.5, color: C.body, margin: '6px 0 0', textDecoration: 'underline', textUnderlineOffset: 2 }}>
+            style={{ display: 'inline-flex', alignItems: 'center', minHeight: 44, fontSize: 11.5, color: C.body, textDecoration: 'underline', textUnderlineOffset: 2 }}>
             {w.client} 公式サイト ↗
           </a>
         )}
@@ -851,9 +1042,9 @@ function WorkCard({ w }: { w: (typeof FILM_WORKS)[number] }) {
 // 9:16 の縦型を1列で積むとスマホで3本 = 約2,300px を占めるため、ショーケースと同じ横スクロールに揃える。
 function FilmWorks() {
   return (
-    <section style={{ background: C.alt, padding: '56px 0', scrollMarginTop: 88 }}>
+    <section id="film-works" style={{ background: C.alt, padding: '56px 0', scrollMarginTop: 96 }}>
       <div className="st-inner">
-        <Reveal><H2 en="Works" sub="実際に制作した映像です。掲載許諾が取れたクライアント事例から、随時追加していきます。">制作実績</H2></Reveal>
+        <Reveal><H2 en="Works" sub="実際に納品した映像です。掲載は貴社の許可をいただいたもののみで、非公開のご希望があれば一切掲載しません。">制作実績</H2></Reveal>
       </div>
       <Reveal delay={60}>
         <div className="fm-scroller">
@@ -905,7 +1096,7 @@ function Signature() {
       <div style={{ marginTop: 22, textAlign: 'center' }}>
         <a className="st-btn st-btn-primary" href={CONTACT.lineUrl} target="_blank" rel="noopener noreferrer"
           onClick={() => track('studio_film_pricing_cta', { plan: 'signature', to: 'line' })}>
-          <IconChat /> この座組みをLINEで相談する
+          <IconChat /> この座組みについて相談する
         </a>
       </div>
     </Band>
@@ -1114,7 +1305,11 @@ function FinalCta() {
               ? 'LINEを開くと同時に、選んだ内容をコピーします。トークに貼り付けて送信してください。'
               : CONTACT.lineNote}
             <br />
-            LINEをお使いでない場合は <a href={`mailto:${STUDIO.email}?subject=${encodeURIComponent('【CORE Studio】映像制作のご相談')}`} style={{ color: D.body }}>{STUDIO.email}</a> でも承ります。
+            LINEをお使いでない場合は、メールでも承ります。<br />
+            <a href={`mailto:${STUDIO.email}?subject=${encodeURIComponent('【CORE Studio】映像制作のご相談')}`}
+              style={{ display: 'inline-flex', alignItems: 'center', minHeight: 44, color: D.body, textDecoration: 'underline', textUnderlineOffset: 3 }}>
+              {STUDIO.email}
+            </a>
           </p>
         </div>
 
