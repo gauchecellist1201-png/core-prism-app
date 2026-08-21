@@ -38,7 +38,7 @@ import {
   Sparkles, TrendingUp, Search, Mail, Film, MessageSquare, Edit3,
   Camera, HeartPulse, Leaf, UsersRound, Users, Handshake, FileText,
   Menu as MenuIcon, Gift, Palette, ArrowLeft, Clapperboard, CalendarClock,
-  Download, Clipboard, Wand2,
+  Clipboard, Wand2,
   Bookmark, BookmarkPlus, Send, Trash2, Brain, User,
   Wallet, Calendar, Hourglass, ShieldAlert, Inbox, Lock,
   CheckCircle2, AlertTriangle, Bot, Lightbulb,
@@ -3747,16 +3747,31 @@ function TeamView({ bg, team, desk, myDeals }: {
     setOpen(false);
   };
 
-  const exportJson = () => {
+  const exportJson = async () => {
     const json = team.exportTeam();
-    void copyText(json, 'チーム情報', { silentSuccess: true });
-    notifyInApp({ kind: 'success', title: 'チーム情報をコピーしました', body: '仲間に渡してください。' });
+    // copyText は「失敗したときだけ」自分で警告を出す (成功は silentSuccess で黙る)。
+    // 以前はここで結果を見ずに必ず「コピーしました」と出していたので、
+    // コピーできなかった回に警告と成功が同時に出ていた＝画面が嘘をついていた。
+    const ok = await copyText(json, 'チーム情報', { silentSuccess: true });
+    if (!ok) return;
+    notifyInApp({
+      kind: 'success',
+      title: `メンバー ${team.members.length} 人と共有テンプレ ${team.templates.length} 個をコピーしました`,
+      body: 'LINE やメールに貼り付けて、仲間に送ってください。',
+    });
   };
   const tryImport = () => {
     if (!importText.trim()) return;
     const r = team.importTeam(importText);
-    if (r.error) { notifyInApp({ kind: 'warn', title: 'インポートできませんでした', body: r.error }); return; }
-    notifyInApp({ kind: 'success', title: `${r.added} 件追加しました` });
+    if (r.error) { notifyInApp({ kind: 'warn', title: '取り込めませんでした', body: r.error }); return; }
+    // 全員が既にいると added=0 になる。それを緑の「0 件追加しました」で出すと
+    // 「うまくいったのに何も増えない」と読めるので、増えなかった理由のほうを言う。
+    if (r.added === 0) {
+      notifyInApp({ kind: 'warn', title: '新しく増えた人はいませんでした', body: '貼り付けた人と共有テンプレは、すでに全部このチームに入っています。' });
+      setImportText('');
+      return;
+    }
+    notifyInApp({ kind: 'success', title: `${r.added} 件を取り込みました`, body: 'この下のカードに出ています。' });
     setImportText('');
   };
 
@@ -3782,6 +3797,19 @@ function TeamView({ bg, team, desk, myDeals }: {
           {open ? '閉じる' : '+ メンバー追加'}
         </button>
       </div>
+
+      {/* 3 秒でわかる説明。見出しは「みんなで、咲く。」だけで、初見の人には
+          何をする画面か 1 文字も書いていなかった (Iris の説明ゼロ画面の 1 枚)。
+          空のときのカードは「登録すると交通整理ができます」と言っているが、
+          それは 1 人でも登録すると消える＝2 人目からは説明が無くなる。 */}
+      <IrisIntro
+        id="team"
+        bg={bg}
+        icon={Users}
+        what="一緒に動いてくれる人（マネージャー・編集さん・コラボ相手）を登録して、どの案件を誰がやるかを決める場所です。"
+        tryThis="右上の「+ メンバー追加」を押して、名前だけ入れて「追加」。あとから直せます。"
+        example="登録すると、下の「案件のアサイン」で案件ごとに担当を選べて、その人の進行中の件数と累計報酬がカードに出ます"
+      />
 
       {open && (
         <Card bg={bg}>
@@ -3811,12 +3839,19 @@ function TeamView({ bg, team, desk, myDeals }: {
         </Card>
       )}
 
-      {team.members.length === 0 && (
+      {/* 空のとき。旧文は「一緒に動いてくれる人 (マネージャー / 編集 / コラボ仲間) を登録すると…」で、
+          真上の 3 秒説明とほぼ同じことを二度言っていた。ここは繰り返さず、
+          「今どうなっているか・登録すると何が変わるか・どこを押すか」の 3 点だけにして、
+          押せる入口 (上の「+ メンバー追加」と同じ動き) をその場に置く。 */}
+      {team.members.length === 0 && !open && (
         <Card bg={bg}>
-          <p style={{ textAlign: 'center', color: bg.inkSoft, padding: '2rem 0' }}>
-            まだメンバーがいません。<br />
-            一緒に動いてくれる人 (マネージャー / 編集 / コラボ仲間) を登録すると、案件の交通整理ができます。
-          </p>
+          <div style={{ textAlign: 'center', padding: '1.5rem 0.5rem' }}>
+            <p style={{ color: bg.ink, fontWeight: 700, margin: 0 }}>まだ 1 人も登録していません。</p>
+            <p style={{ color: bg.inkSoft, fontSize: '0.85rem', margin: '0.4rem 0 1rem', lineHeight: 1.6 }}>
+              登録すると、案件ごとに「これは誰がやるか」を選べるようになります。名前だけで登録できます。
+            </p>
+            <button onClick={() => setOpen(true)} style={btnPrimary(bg)}>最初の 1 人を登録する</button>
+          </div>
         </Card>
       )}
 
@@ -3904,21 +3939,31 @@ function TeamView({ bg, team, desk, myDeals }: {
 
       <Card bg={bg}>
         <p style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: '1.3rem', color: bg.ink, marginBottom: '0.75rem' }}>
-          チームと共有する
+          この名簿を、仲間にも渡す
         </p>
         <p style={{ color: bg.inkSoft, fontSize: '0.85rem', marginBottom: '0.75rem' }}>
-          仲間とテンプレ・案件情報を JSON 経由で共有できます (将来サーバ連携で同期予定)。
+          {/* 旧文は「テンプレ・案件情報を JSON 経由で共有できます」。
+              実際に持ち出せるのはメンバーと共有テンプレだけで、案件は入っていない
+              (team.exportTeam) ＝ 押す前の約束と中身が違っていた。
+              「将来サーバ連携で同期予定」も、今できないことを画面で約束していたので外す。 */}
+          いま登録しているメンバーと、保存した共有テンプレを、まとめて文字にして写し取ります。
+          案件そのものは入りません。まだ自動では繋がらないので、写した文字は自分で仲間に送ってください。
         </p>
         <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.75rem' }}>
-          <button onClick={exportJson} style={btnPrimary(bg)}><span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Download size={14} /> JSON でエクスポート</span></button>
+          {/* 旧: 「JSON でエクスポート」＋ダウンロードの絵。
+              実際はファイルは 1 つも落ちてこず、クリップボードに写るだけだった。 */}
+          <button onClick={exportJson} style={btnPrimary(bg)}><span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Clipboard size={14} /> メンバーとテンプレを写し取る</span></button>
         </div>
+        <p style={{ color: bg.inkSoft, fontSize: '0.8rem', margin: '0 0 0.4rem' }}>
+          仲間から文字が送られてきたら、こちらに貼り付けます。
+        </p>
         <textarea
           style={{ ...inp(bg), width: '100%', minHeight: 90, marginBottom: '0.5rem', fontFamily: 'monospace', fontSize: '0.78rem' }}
-          placeholder="ここに仲間からもらった JSON を貼り付け"
+          placeholder="仲間から送られてきた文字を、ここに貼り付けてください"
           value={importText}
           onChange={e => setImportText(e.target.value)}
         />
-        <button onClick={tryImport} disabled={!importText.trim()} style={btnSecondary(bg)}><span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Send size={14} style={{ transform: 'rotate(90deg)' }} /> インポート</span></button>
+        <button onClick={tryImport} disabled={!importText.trim()} style={btnSecondary(bg)}><span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Send size={14} style={{ transform: 'rotate(90deg)' }} /> 貼り付けた仲間を取り込む</span></button>
       </Card>
 
       <Card bg={bg}>
