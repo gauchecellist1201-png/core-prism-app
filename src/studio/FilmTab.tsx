@@ -118,22 +118,32 @@ export default function FilmTab() {
         /* 月額に切り替えた場合の差額。3列 (単発合計 / 月額 / 差額) */
         .fm-save { display: grid; gap: 10px; }
         @media (min-width: 700px) { .fm-save { grid-template-columns: repeat(3, 1fr); } }
-        /* ヒーロー = 映像そのもの。見出しは画の上に重ねる。
-           高さは dvh で決める (iPhoneのアドレスバーぶんを含めた実寸)。
-           ヘッダー115pxの下に置くので、100dvhにするとCTAが必ず折り目の外へ出る。 */
-        .fm-hero { position: relative; width: 100%; overflow: hidden; background: #000;
-          height: 52dvh; min-height: 340px; max-height: 560px; }
-        @media (min-width: 700px) { .fm-hero { height: 66dvh; border-radius: 0; } }
+        /* ヒーロー = 縦型の映像そのもの。文字は一切かぶせず、映像の下に置く
+           (2026-08-22 オーナー指示「映像をドーンと出し、文字はその下」)。
+           素材は 1080x1920 の縦型。切り抜くと画の大半が捨てられるので、
+           スマホでは画面幅いっぱい × 9:16 をそのまま出す (crop 0)。
+           1画面目からはみ出すぶんは、常時出ている固定下部CTAで受ける。 */
+        .fm-hero { position: relative; width: 100%; background: #000;
+          display: flex; justify-content: center; }
+        .fm-hero-frame { position: relative; width: 100%; aspect-ratio: 9 / 16;
+          overflow: hidden; background: #000; }
+        /* 広い画面では縦型のまま中央に立てる (横に引き伸ばさない) */
+        @media (min-width: 700px) {
+          .fm-hero-frame { width: auto; height: min(calc(100dvh - 150px), 760px); }
+        }
         .fm-hero video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-        /* 文字を読ませるための覆い。下ほど濃く落として見出しのコントラストを確保する */
-        .fm-hero-veil { position: absolute; inset: 0; pointer-events: none;
-          background: linear-gradient(to top, ${D.bg} 0%, rgba(11,11,12,0.86) 22%, rgba(11,11,12,0.28) 58%, rgba(11,11,12,0.12) 100%); }
-        .fm-hero-copy { position: absolute; left: 0; right: 0; bottom: 0; padding: 0 20px 22px;
-          max-width: 760px; margin: 0 auto; pointer-events: none; }
+        /* 自動再生が拒否された端末 (低電力モード等) では静止画のまま何も起きないので、
+           停止中だけ再生ボタンを出す */
+        .fm-hero-play { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+          width: 76px; height: 76px; border-radius: 999px; cursor: pointer;
+          border: 1px solid rgba(255,255,255,0.5); background: rgba(11,11,12,0.55);
+          backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+          color: #FFFFFF; display: flex; align-items: center; justify-content: center; }
+        .fm-hero-label { margin: 0 0 12px; }
         .fm-hero-h1 { font-size: clamp(27px, 7.4vw, 44px); font-weight: 700; line-height: 1.45;
-          letter-spacing: 0.02em; margin: 0; color: #FFFFFF; text-shadow: 0 2px 24px rgba(0,0,0,0.6); }
+          letter-spacing: 0.02em; margin: 0; color: #FFFFFF; }
         .fm-hero-sub { font-size: 13.5px; line-height: 1.95; color: ${D.body}; margin: 12px 0 0; max-width: 560px; }
-        /* 音の切り替え。見出しと反対の角に置く (重ねると縦型の画の顔にかぶる) */
+        /* 音の切り替え。映像の上、右上の角 (顔にかぶらない位置) */
         .fm-hero-sound { position: absolute; top: 14px; right: 16px; min-height: 44px; padding: 10px 16px;
           border-radius: 999px; cursor: pointer; border: 1px solid rgba(255,255,255,0.34);
           background: rgba(11,11,12,0.52); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
@@ -243,11 +253,13 @@ function MobileStickyCta() {
 // ============================================================
 // ヒーローの映像。ページの最初に置く「これを作ります」の実物。
 // 音は既定で切る (自動再生の条件であり、無音でないと再生自体が拒否される)。
-// 音のボタンは映像の上に重ねず、下の帯に置く — 重ねると縦型の画の顔に必ずかぶる。
+// 自動再生は端末側の事情 (低電力モード/データセーバー/背面タブ) で普通に拒否される。
+// その時に何も起きない静止画で終わらせないため、停止中は必ず再生ボタンを出す。
 // ============================================================
 function FilmHero() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [muted, setMuted] = useState(true);
+  const [paused, setPaused] = useState(false);
 
   const toggleSound = () => {
     const v = videoRef.current;
@@ -259,30 +271,48 @@ function FilmHero() {
     track('studio_film_hero_reel_sound', { muted: next });
   };
 
+  const togglePlay = () => {
+    const v = videoRef.current;
+    if (!v) return;
+    const wasPaused = v.paused;
+    if (wasPaused) void v.play().catch(() => {});
+    else v.pause();
+    track('studio_film_hero_reel_play', { play: wasPaused });
+  };
+
   return (
     <section style={{ background: D.bg, paddingBottom: 44 }}>
-      {/* 映像そのものがヒーロー。見出しは画の上に重ねる。
-          縦に並べた版では、映像(422px)＋見出し＋要約でCTAが折り目の200px下に落ちていた(実測)。 */}
+      {/* 映像そのものがヒーロー。文字は重ねず、下の帯に置く。
+          素材は縦型なので、切り抜かずに画面幅いっぱいの 9:16 で出す。 */}
       <div className="fm-hero">
-        <video
-          ref={videoRef}
-          src="/studio/film/hero-reel.mp4"
-          poster="/studio/film/hero-reel-poster.jpg"
-          autoPlay muted loop playsInline preload="metadata"
-          aria-label="CORE Studio が制作した映像"
-        />
-        <div className="fm-hero-veil" />
-        <div className="fm-hero-copy">
-          <div className="st-label" style={{ color: D.gold, marginBottom: 12 }}>{FILM.label}</div>
-          <h1 className="st-serif fm-hero-h1" style={{ whiteSpace: 'pre-line' }}>{FILM.hero}</h1>
-          <p className="fm-hero-sub">{FILM.heroSub}</p>
+        <div className="fm-hero-frame">
+          <video
+            ref={videoRef}
+            src="/studio/film/hero-reel.mp4"
+            poster="/studio/film/hero-reel-poster.jpg"
+            autoPlay muted loop playsInline preload="metadata"
+            aria-label="CORE Studio が制作した映像"
+            onPlay={() => setPaused(false)}
+            onPause={() => setPaused(true)}
+            onLoadedData={e => setPaused(e.currentTarget.paused)}
+          />
+          {paused && (
+            <button type="button" className="fm-hero-play" onClick={togglePlay} aria-label="映像を再生する">
+              <svg width="26" height="30" viewBox="0 0 26 30" aria-hidden="true">
+                <path d="M2 2 L24 15 L2 28 Z" fill="currentColor" />
+              </svg>
+            </button>
+          )}
+          <button type="button" className="fm-hero-sound" onClick={toggleSound} aria-pressed={!muted}>
+            {muted ? '音を出す' : '音を消す'}
+          </button>
         </div>
-        <button type="button" className="fm-hero-sound" onClick={toggleSound} aria-pressed={!muted}>
-          {muted ? '音を出す' : '音を消す'}
-        </button>
       </div>
 
-      <div className="st-inner">
+      <div className="st-inner" style={{ paddingTop: 30 }}>
+        <div className="st-label fm-hero-label" style={{ color: D.gold }}>{FILM.label}</div>
+        <h1 className="st-serif fm-hero-h1" style={{ whiteSpace: 'pre-line' }}>{FILM.hero}</h1>
+        <p className="fm-hero-sub">{FILM.heroSub}</p>
         <p className="fm-hero-note">この映像はすべてAIで制作しました。撮影はしていません。</p>
 
         <div style={{ display: 'flex', gap: 12, marginTop: 20, flexWrap: 'wrap' }}>
