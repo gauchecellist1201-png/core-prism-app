@@ -1,7 +1,14 @@
 // ============================================================
-// CORE — 法人 LP (Corporate Landing)
+// CORE — 法人サイト (Corporate Site)
 // 「すべての時代の、核となるものを。」
 // 配置: /corp ルート（法人化準備中。2026-08-02 検索インデックス解禁）
+//
+// 2026-08-21 オーナー指示で事業の見せ方を全面再定義:
+//   OLD  AIを使って開発する会社
+//   NEW  企業の本質的な課題を見つけ、AI・ソフトウェア・業務設計によって
+//        事業そのものを変革する会社 ＝ AI Transformation Company
+//   ブランド（金×黒・明朝・静かな余白・「核」の思想）は一切壊さない。
+//   自社プロダクト8つは「作れることの証拠」として〈製品〉タブへ移した。
 // ============================================================
 import { useEffect, useState, useRef, type ReactNode, type MouseEvent as ReactMouseEvent } from 'react';
 import { motion } from 'framer-motion';
@@ -12,6 +19,19 @@ import { CONTINUUM_PLANS } from './continuumPlans';
 import ServiceFinder from './ServiceFinder';
 import { VERTICALS } from '../vertical/verticalData';
 import { VerticalIndustryIcon } from '../vertical/VerticalIndustryIcon';
+import {
+  FONT_DISPLAY, FONT_SERIF_JA, FONT_SERIF_EN, FONT_SANS,
+  navLink, ctaSmall, ctaHero, ctaGhost,
+  sectionLabel, sectionLabelMain, sectionLabelSub,
+} from './corpTheme';
+import { useIsMobile } from './useIsMobile';
+import {
+  PhilosophyLead, PhilosophyCore, WhatWeDo, DifferenceSection, CompanyOsSection,
+  AssessmentSection, UseCasesSection, ServiceLayersSection, BusinessDevSection,
+  IndustryOsSection, PartnerSection, AiNativeSection, TechnologySection,
+  CoreNumbersSection, InvestmentSection,
+} from './TransformSections';
+import { ContactSection } from './CorpContactForm';
 
 const COMPANY = {
   nameJa: 'CORE',
@@ -45,29 +65,8 @@ const PLATFORM_PLANS: Array<{
 
 
 
-// 荘厳系フォント
-const FONT_DISPLAY = '"Cinzel", "Noto Serif JP", serif';
-const FONT_SERIF_JA = '"Noto Serif JP", "游明朝", "Yu Mincho", serif';
-const FONT_SERIF_EN = '"EB Garamond", "Cormorant Garamond", "Noto Serif JP", serif';
-const FONT_SANS = '"Noto Sans JP", "Inter", "游ゴシック", sans-serif';
-
-// ============================================================
-//  useIsMobile — iPhone幅かどうか（縦長すぎるLPをモバイルだけ畳むために使う）
-//  デスクトップの見え方は一切変えない。
-// ============================================================
-function useIsMobile(query = '(max-width: 640px)') {
-  const [is, setIs] = useState(
-    () => typeof window !== 'undefined' && window.matchMedia(query).matches
-  );
-  useEffect(() => {
-    const mq = window.matchMedia(query);
-    const onChange = () => setIs(mq.matches);
-    onChange();
-    mq.addEventListener('change', onChange);
-    return () => mq.removeEventListener('change', onChange);
-  }, [query]);
-  return is;
-}
+// 荘厳系フォント・章ラベル・CTA は corpTheme.ts に集約した（2026-08-21）。
+// 新しい章（What We Do / AI COMPANY OS / 診断 …）と同じ出どころを使うため。
 
 // ============================================================
 //  jumpToHash — モバイルの章チップ専用のページ内ジャンプ。
@@ -103,7 +102,7 @@ function jumpToHash(e: ReactMouseEvent<HTMLAnchorElement>, href: string) {
 //      SECTION_TAB でどの章がどのタブに載っているかを引き、
 //      必要ならタブを切り替えてからその章へ送る。
 // ============================================================
-export type CoreTabKey = 'home' | 'vertical' | 'connect' | 'company' | 'contact';
+export type CoreTabKey = 'home' | 'os' | 'services' | 'products' | 'company' | 'contact';
 
 /**
  * short — 狭い画面用の短い名札。
@@ -112,29 +111,50 @@ export type CoreTabKey = 'home' | 'vertical' | 'connect' | 'company' | 'contact'
  * 英字の副題も 640px 以下では隠す（CSS 側）。
  */
 const CORE_TABS: { key: CoreTabKey; label: string; short: string; sub: string }[] = [
-  { key: 'home', label: '自社サービス', short: 'サービス', sub: 'PRODUCTS' },
-  { key: 'vertical', label: '業界特化', short: '業界特化', sub: 'VERTICAL' },
-  { key: 'connect', label: 'つながり', short: 'つながり', sub: 'ONE FLOW' },
+  { key: 'home', label: '変革', short: '変革', sub: 'TRANSFORMATION' },
+  { key: 'os', label: 'AI COMPANY OS', short: 'AI OS', sub: 'FLAGSHIP' },
+  { key: 'services', label: 'サービス', short: 'サービス', sub: 'SERVICES' },
+  { key: 'products', label: 'プロダクト', short: '製品', sub: 'PRODUCTS' },
   { key: 'company', label: '会社について', short: '会社', sub: 'COMPANY' },
-  { key: 'contact', label: 'お問い合わせ', short: '問い合わせ', sub: 'CONTACT' },
+  { key: 'contact', label: 'ご相談', short: '相談', sub: 'CONTACT' },
 ];
 
 /** 章 id → その章が載っているタブ。既存の #リンクを生かすための対応表。 */
 const SECTION_TAB: Record<string, CoreTabKey> = {
-  top: 'home', finder: 'home', products: 'home', platform: 'home', screens: 'home',
-  vertical: 'vertical',
-  'vertical-ultima': 'vertical', 'vertical-anima': 'vertical',
-  'vertical-veritas': 'vertical', 'vertical-soma': 'vertical',
-  connect: 'connect', continuum: 'connect', who: 'connect',
+  // 変革 — この会社が何をするのか
+  top: 'home', philosophy: 'home', whatwedo: 'home', difference: 'home', assessment: 'home',
+  // AI COMPANY OS — 中核商品
+  companyos: 'os', usecases: 'os', connect: 'os', continuum: 'os',
+  // サービス — 事業階層・つくり方・技術・事業開発・提携・規模
+  services: 'services', 'ai-native': 'services', technology: 'services',
+  'business-dev': 'services', partner: 'services', investment: 'services',
+  // プロダクト — 自社で作って動かしているもの（作れることの証拠）
+  finder: 'products', products: 'products', platform: 'products', screens: 'products',
+  who: 'products', 'industry-os': 'products', vertical: 'products',
+  'vertical-ultima': 'products', 'vertical-anima': 'products',
+  'vertical-veritas': 'products', 'vertical-soma': 'products',
+  // 会社
+  'philosophy-core': 'company', numbers: 'company',
   mission: 'company', executive: 'company', journey: 'company', about: 'company',
   contact: 'contact',
 };
 
-/** URL のハッシュから初期タブを決める。共有された #about が直接開けるように。 */
+/**
+ * URL のハッシュから初期タブを決める。共有された #about が直接開けるように。
+ *
+ * 2026-08-21: goTab は章を指定せずに切り替えたとき `#os` `#company` のように
+ * 「タブの名前」をハッシュに書く。ところが SECTION_TAB は「章の id」しか持たないため、
+ * その URL を共有・再読み込みすると home に戻ってしまっていた（往復できていない）。
+ * 章の id で引けなかったら、タブの名前としても引く。
+ */
+const TAB_KEYS = new Set<string>(CORE_TABS.map(t => t.key));
+
 function tabFromHash(): CoreTabKey {
   if (typeof window === 'undefined') return 'home';
   const id = window.location.hash.replace('#', '');
-  return SECTION_TAB[id] ?? 'home';
+  if (SECTION_TAB[id]) return SECTION_TAB[id];
+  if (TAB_KEYS.has(id)) return id as CoreTabKey;
+  return 'home';
 }
 
 /**
@@ -237,15 +257,33 @@ export default function CoreSite() {
     jumpToHash(e, href);
   };
 
-  // 戻る/進むでタブが追従するように
+  /**
+   * 戻る/進む、および素の #リンク（追従CTAなど onClick を通らないもの）でタブを追従させる。
+   *
+   * 2026-08-21: タブを変えるだけだと、前のタブで下まで読んでいたスクロール位置が
+   * そのまま残る。追従CTA「AI・DXについて相談する」(#contact) を長い〈サービス〉タブの
+   * 途中で押すと、切り替わった先の相談タブでも同じ位置＝フッタ付近に着地し、
+   * フォームが画面に無いまま「押しても何も起きない」ように見えていた。
+   * タブを切り替えたら、必ずその章の見出しの真上へ送る。
+   */
   useEffect(() => {
-    const onHash = () => setTab(tabFromHash());
+    const onHash = () => {
+      setTab(tabFromHash());
+      const id = window.location.hash.replace('#', '');
+      requestAnimationFrame(() => {
+        const el = id ? document.getElementById(id) : null;
+        if (!el) { window.scrollTo({ top: 0, behavior: 'instant' }); return; }
+        const header = document.querySelector('header');
+        const offset = (header?.getBoundingClientRect().height ?? 64) + 8;
+        window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - offset, behavior: 'instant' });
+      });
+    };
     window.addEventListener('hashchange', onHash);
     return () => window.removeEventListener('hashchange', onHash);
   }, []);
 
   useEffect(() => {
-    document.title = 'CORE — すべての時代の、核となるものを。';
+    document.title = 'CORE | AI Transformation Company';
 
     // theme-color (金×黒テーマ)
     const themeMeta = document.querySelector('meta[name="theme-color"]');
@@ -277,16 +315,17 @@ export default function CoreSite() {
       }
       m.setAttribute(attr, value);
     };
-    setMeta('meta[property="og:title"]', 'content', 'CORE');
-    setMeta('meta[property="og:description"]', 'content', 'すべての時代の、核となるものを。AI エージェント OS を提供する CORE。');
+    const DESC = 'COREは、AI戦略・業務設計・システム開発・事業開発を通じて、企業のDXとAI Transformationを支援します。';
+    setMeta('meta[property="og:title"]', 'content', 'CORE | AI Transformation Company');
+    setMeta('meta[property="og:description"]', 'content', DESC);
     setMeta('meta[property="og:image"]', 'content', 'https://core-prism-app.vercel.app/og-core-v4.png');
     setMeta('meta[property="og:url"]', 'content', 'https://core-prism-app.vercel.app/corp');
     setMeta('meta[property="og:type"]', 'content', 'website');
     setMeta('meta[name="twitter:card"]', 'content', 'summary_large_image');
     setMeta('meta[name="twitter:image"]', 'content', 'https://core-prism-app.vercel.app/og-core-v4.png');
-    setMeta('meta[name="twitter:title"]', 'content', 'CORE');
-    setMeta('meta[name="twitter:description"]', 'content', 'すべての時代の、核となるものを。');
-    setMeta('meta[name="description"]', 'content', 'CORE — あなたの仕事と SNS を、AI エージェントで一気通貫に。司令塔 Prism に、Instagram の Iris・LINE の Resonance・リンクの Lume がつながる、ひとつの AI エージェント OS。');
+    setMeta('meta[name="twitter:title"]', 'content', 'CORE | AI Transformation Company');
+    setMeta('meta[name="twitter:description"]', 'content', 'すべての時代の、核となるものを。AIとテクノロジーで、企業の仕組みそのものを変える。');
+    setMeta('meta[name="description"]', 'content', DESC);
   }, []);
 
   return (
@@ -324,7 +363,7 @@ export default function CoreSite() {
         zIndex: 60,
         fontFamily: FONT_SERIF_JA,
       }}>
-        Nexus ・ Prism ・ Iris ・ Guild ・ Resonance ・ Lume ・ Crystal ・ Pulse —— 八つのプロダクト、ベータ公開中
+        AI 戦略 ・ 業務設計 ・ システム開発 ・ 事業開発 —— 一気通貫の AI Transformation Company
       </div>
 
       {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
@@ -365,7 +404,7 @@ export default function CoreSite() {
           <nav style={{ display: 'flex', gap: '1.6rem', alignItems: 'center' }}>
             <a href="/continuum" style={navLink} className="lp-nav-link">Continuum</a>
             <a href="/studio" style={navLink} className="lp-nav-link">制作スタジオ</a>
-            <a href="#contact" onClick={e => handleAnchor(e, '#contact')} style={ctaSmall}>お問い合わせ</a>
+            <a href="#contact" onClick={e => handleAnchor(e, '#contact')} style={ctaSmall}>AI・DXの相談</a>
           </nav>
         </div>
 
@@ -393,24 +432,70 @@ export default function CoreSite() {
       </header>
 
       {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
-      {/*  HERO                       */}
+      {/*  01 HERO                    */}
       {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
       {tab === 'home' && (
-      <HeroVideo />
+      <HeroVideo onAnchor={handleAnchor} />
       )}
 
       {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
-      {/*  「あなたにはどれ？」3問診断 ＋ 7つの比較  */}
-      {/*  ヒーロー直下に置く。7つを全部読まないと選べない状態をここで終わらせる */}
+      {/*  02 PHILOSOPHY（短い版）     */}
+      {/*  03 WHAT WE DO（4階層）      */}
+      {/*  DIFFERENCE（開発会社との違い）*/}
+      {/*  04 ASSESSMENT（AI変革診断）  */}
       {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
       {tab === 'home' && (
+      <>
+        <PhilosophyLead onAnchor={handleAnchor} />
+        <WhatWeDo onAnchor={handleAnchor} />
+        <DifferenceSection />
+        <AssessmentSection onAnchor={handleAnchor} />
+      </>
+      )}
+
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
+      {/*  05 AI COMPANY OS ＋ 07 USE CASES  */}
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
+      {tab === 'os' && (
+      <>
+        <CompanyOsSection onAnchor={handleAnchor} />
+        <UseCasesSection />
+      </>
+      )}
+
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
+      {/*  06 SERVICES（4階層の詳細）〜 15 投資規模 */}
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
+      {tab === 'services' && (
+      <>
+        <ServiceLayersSection />
+        <AiNativeSection />
+        <TechnologySection />
+        <BusinessDevSection />
+        <PartnerSection onAnchor={handleAnchor} />
+        <InvestmentSection onAnchor={handleAnchor} />
+      </>
+      )}
+
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
+      {/*  10 INDUSTRY AI OS（プロダクトタブの先頭） */}
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
+      {tab === 'products' && (
+      <IndustryOsSection onAnchor={handleAnchor} />
+      )}
+
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
+      {/*  「あなたにはどれ？」3問診断 ＋ 8つの比較  */}
+      {/*  自社プロダクトを選ぶための道具。製品タブに置く。 */}
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
+      {tab === 'products' && (
       <ServiceFinder />
       )}
 
       {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
       {/*  CONNECT (一気通貫 / つながり)  */}
       {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
-      {tab === 'connect' && (
+      {tab === 'os' && (
       <section
         id="connect"
         className="lp-section-pad"
@@ -547,7 +632,7 @@ export default function CoreSite() {
       {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
       {/*  PRODUCTS                  */}
       {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
-      {tab === 'home' && (
+      {tab === 'products' && (
       <section
         id="products"
         className="lp-section-pad"
@@ -921,7 +1006,7 @@ export default function CoreSite() {
       {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
       {/*  REAL SCREENS — 実物で、ご覧ください（本番スクリーンショット6面の章扉） */}
       {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
-      {tab === 'home' && (
+      {tab === 'products' && (
       <section
         id="screens"
         className="lp-section-pad"
@@ -980,7 +1065,7 @@ export default function CoreSite() {
       {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
       {/*  PLATFORM — 価格グリッド    */}
       {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
-      {tab === 'home' && (
+      {tab === 'products' && (
       <section
         id="platform"
         className="lp-section-pad"
@@ -1059,7 +1144,7 @@ export default function CoreSite() {
       {/*  CORE VERTICAL — 業界特化ライン（プラットフォームとは別の棚） */}
       {/*  第1弾 ULTIMA（建設・電気設備工事） / 第2弾 ANIMA（アニメ制作進行） */}
       {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
-      {tab === 'vertical' && (
+      {tab === 'products' && (
       <section
         id="vertical"
         className="lp-section-pad"
@@ -1199,7 +1284,7 @@ export default function CoreSite() {
       {/*  訴求: 仕事をAIエージェントに全部任せ、仕事時間をほぼゼロへ。 */}
       {/*  空いた時間で人生(人間関係・趣味・家族)を豊かに = ライフプランの見直し。 */}
       {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
-      {tab === 'connect' && (
+      {tab === 'os' && (
       <section
         id="continuum"
         className="lp-section-pad"
@@ -1320,7 +1405,7 @@ export default function CoreSite() {
       {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
       {/*  USE CASES (誰のための CORE か) */}
       {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
-      {tab === 'connect' && (
+      {tab === 'products' && (
       <section
         id="who"
         className="lp-section-pad"
@@ -1376,6 +1461,16 @@ export default function CoreSite() {
           </div>
         </div>
       </section>
+      )}
+
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
+      {/*  13 変わらないもの ＋ 14 数字で見る CORE */}
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
+      {tab === 'company' && (
+      <>
+        <PhilosophyCore />
+        <CoreNumbersSection />
+      </>
       )}
 
       {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
@@ -1911,70 +2006,25 @@ export default function CoreSite() {
       )}
 
       {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
-      {/*  CONTACT                    */}
+      {/*  14 CONTACT                 */}
+      {/*  すべての章の CTA がここに集まる（2026-08-21 §16）。   */}
+      {/*  メールだけの窓口から、要件を書いて送れるフォームへ。   */}
       {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
       {tab === 'contact' && (
-      <section
-        id="contact"
-        className="lp-section-pad"
-        style={{
-          padding: '7rem 1.5rem',
-          background: 'radial-gradient(ellipse at center, rgba(201,169,110,0.10) 0%, #050505 72%)',
-          textAlign: 'center',
-          position: 'relative',
-          overflow: 'hidden',
-        }}
-      >
-        <div style={{ maxWidth: 920, margin: '0 auto', position: 'relative', zIndex: 2 }}>
-          <p style={sectionLabel}>
-            <span style={sectionLabelMain}>お問い合わせ</span>
-            <span style={sectionLabelSub}>CONTACT</span>
+      <ContactSection>
+        {/* フォームが合わない用件（取材・採用）のための、従来どおりのメール窓口 */}
+        <div style={{ marginTop: '3.5rem', textAlign: 'center' }}>
+          <p style={{ fontSize: '0.82rem', color: 'rgba(240,233,216,0.52)', letterSpacing: '0.18em', marginBottom: '1.1rem', fontFamily: FONT_SERIF_EN, textTransform: 'uppercase' }}>
+            Other
           </p>
-          <h2
-            style={{
-              fontFamily: FONT_SERIF_JA,
-              fontSize: 'clamp(1.95rem, 3.8vw, 2.85rem)',
-              fontWeight: 700,
-              marginBottom: '1.25rem',
-              lineHeight: 1.5,
-              letterSpacing: '0.05em',
-              textAlign: 'center',
-            }}
-          >
-            核を、共に。
-          </h2>
-          <p
-            style={{
-              fontFamily: FONT_SERIF_JA,
-              color: 'rgba(240,233,216,0.7)',
-              fontSize: 'clamp(0.95rem, 1.4vw, 1.05rem)',
-              lineHeight: 2.1,
-              marginBottom: '3rem',
-              fontWeight: 400,
-              textAlign: 'center',
-            }}
-          >
-            一通一通、丁寧にお返事します。
-            <br />
-            <span style={{ fontSize: '0.85rem', color: 'rgba(240,233,216,0.55)' }}>
-              通常 24 時間以内にご返信 (土日祝は翌営業日)
-            </span>
-          </p>
-
-          {/* 3 つの窓口 */}
           <div
             className="lp-contact-grid"
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(3, 1fr)',
-              gap: '1rem',
-              marginBottom: '2.5rem',
-            }}
+            style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', marginBottom: '2.5rem' }}
           >
             {[
-              { label: '法人 / 導入相談', desc: 'チーム導入・請求書払い・カスタム要件', subject: '法人導入の相談' },
               { label: '取材 / プレス', desc: 'メディア掲載・登壇依頼・資料請求', subject: '取材依頼' },
               { label: '採用 / 業務委託', desc: 'エンジニア・デザイナー・パートナー', subject: '採用に関心があります' },
+              { label: 'プロダクトのご利用', desc: 'Prism・Resonance ほか各サービスについて', subject: 'プロダクトについて' },
             ].map((c, i) => (
               <a
                 key={i}
@@ -2011,42 +2061,40 @@ export default function CoreSite() {
           </div>
 
           {/* 直接連絡 */}
-          <div style={{ textAlign: 'center' }}>
-            <p style={{ fontSize: '0.82rem', color: 'rgba(240,233,216,0.52)', letterSpacing: '0.18em', marginBottom: '0.85rem', fontFamily: FONT_SERIF_EN, textTransform: 'uppercase' }}>
-              Direct
-            </p>
-            <a
-              href={`mailto:${COMPANY.email}`}
-              style={{
-                ...ctaHero,
-                fontFamily: '"SF Mono", "Menlo", monospace',
-                letterSpacing: '0.05em',
-                fontSize: '0.95rem',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '0.6rem',
-              }}
-            >
-              <MailIcon size={17} strokeWidth={2.2} />
-              {COMPANY.email}
-            </a>
-            {/* メールを書く前に、ほとんどの人が確かめたいのは
-                「誰がやっているのか」「いくらか」「やめられるか」の 3 つ。
-                リンクの文言でそれが分かるようにする（2026-07-31） */}
-            {/* 2026-08-02: 0.48=4.27:1 で AA 落第。料金・解約・データの扱いへの導線＝
-                いちばん薄くしてはいけない一行だった。0.60=6.2:1。 */}
-            <p style={{ fontSize: '0.78rem', color: 'rgba(240,233,216,0.60)', marginTop: '1.25rem', fontFamily: FONT_SERIF_JA, lineHeight: 1.8 }}>
-              <a href="/faq" style={{ color: '#E7C987', textDecoration: 'underline', textUnderlineOffset: 3 }}>よくある質問</a>
-              {' '}に、誰が作っているか・料金・解約・データの扱いをまとめています。
-            </p>
-            {/* 2026-08-03: 「動いているのか」を確かめる場所を、問い合わせる前に置く */}
-            <p style={{ fontSize: '0.78rem', color: 'rgba(240,233,216,0.60)', marginTop: '0.6rem', fontFamily: FONT_SERIF_JA, lineHeight: 1.8 }}>
-              <a href="/status" style={{ color: '#E7C987', textDecoration: 'underline', textUnderlineOffset: 3 }}>いまの稼働状況</a>
-              {' '}では、7つのサービスがこの瞬間ひらけるかを実際に測って出しています。
-            </p>
-          </div>
+          <p style={{ fontSize: '0.82rem', color: 'rgba(240,233,216,0.52)', letterSpacing: '0.18em', marginBottom: '0.85rem', fontFamily: FONT_SERIF_EN, textTransform: 'uppercase' }}>
+            Direct
+          </p>
+          <a
+            href={`mailto:${COMPANY.email}`}
+            style={{
+              ...ctaHero,
+              fontFamily: '"SF Mono", "Menlo", monospace',
+              letterSpacing: '0.05em',
+              fontSize: '0.95rem',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.6rem',
+            }}
+          >
+            <MailIcon size={17} strokeWidth={2.2} />
+            {COMPANY.email}
+          </a>
+          {/* メールを書く前に、ほとんどの人が確かめたいのは
+              「誰がやっているのか」「いくらか」「やめられるか」の 3 つ。
+              リンクの文言でそれが分かるようにする（2026-07-31） */}
+          <p style={{ fontSize: '0.78rem', color: 'rgba(240,233,216,0.60)', marginTop: '1.25rem', fontFamily: FONT_SERIF_JA, lineHeight: 1.8 }}>
+            {/* 文中のリンクなので面は広げられないが、上下に余白を持たせて指で狙える
+                高さ（実測 18px → 44px）にする。行の高さは変わらない。 */}
+            <a href="/faq" style={{ color: '#E7C987', textDecoration: 'underline', textUnderlineOffset: 3, display: 'inline-block', padding: '13px 4px' }}>よくある質問</a>
+            {' '}に、誰が作っているか・料金・解約・データの扱いをまとめています。
+          </p>
+          {/* 2026-08-03: 「動いているのか」を確かめる場所を、問い合わせる前に置く */}
+          <p style={{ fontSize: '0.78rem', color: 'rgba(240,233,216,0.60)', marginTop: '0.6rem', fontFamily: FONT_SERIF_JA, lineHeight: 1.8 }}>
+            <a href="/status" style={{ color: '#E7C987', textDecoration: 'underline', textUnderlineOffset: 3, display: 'inline-block', padding: '13px 4px' }}>いまの稼働状況</a>
+            {' '}では、7つのサービスがこの瞬間ひらけるかを実際に測って出しています。
+          </p>
         </div>
-      </section>
+      </ContactSection>
       )}
 
       {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
@@ -2095,9 +2143,17 @@ export default function CoreSite() {
             <a href="/pulse" style={footLink} className="lp-tap-link">CORE Pulse</a>
           </div>
           <div>
+            <p style={footHead}>サービス</p>
+            <a href="#whatwedo" onClick={e => handleAnchor(e, '#whatwedo')} style={footLink} className="lp-tap-link">事業内容</a>
+            <a href="#companyos" onClick={e => handleAnchor(e, '#companyos')} style={footLink} className="lp-tap-link">AI COMPANY OS</a>
+            <a href="#assessment" onClick={e => handleAnchor(e, '#assessment')} style={footLink} className="lp-tap-link">AI Transformation診断</a>
+            <a href="#ai-native" onClick={e => handleAnchor(e, '#ai-native')} style={footLink} className="lp-tap-link">開発思想と技術</a>
+            <a href="#partner" onClick={e => handleAnchor(e, '#partner')} style={footLink} className="lp-tap-link">パートナー提携</a>
+          </div>
+          <div>
             <p style={footHead}>会社</p>
             <a href="/studio" style={footLink} className="lp-tap-link">制作スタジオ</a>
-            <a href="#mission" onClick={e => handleAnchor(e, '#mission')} style={footLink} className="lp-tap-link">理念</a>
+            <a href="#philosophy-core" onClick={e => handleAnchor(e, '#philosophy-core')} style={footLink} className="lp-tap-link">思想</a>
             <a href="#about" onClick={e => handleAnchor(e, '#about')} style={footLink} className="lp-tap-link">会社概要</a>
             <a href="#contact" onClick={e => handleAnchor(e, '#contact')} style={footLink} className="lp-tap-link">お問い合わせ</a>
           </div>
@@ -2169,9 +2225,35 @@ export default function CoreSite() {
 // ============================================================
 //  CoreOrb — 中央の白光と虹色光線 (荘厳に、控えめに)
 // ============================================================
-function HeroVideo() {
+function HeroVideo({ onAnchor }: { onAnchor?: (e: ReactMouseEvent<HTMLAnchorElement>, href: string) => void }) {
   const vref = useRef<HTMLVideoElement | null>(null);
+  const secRef = useRef<HTMLElement | null>(null);
   const [muted, setMuted] = useState(true);
+
+  /**
+   * ヒーローの高さを「1画面目の残り」に合わせる。
+   *
+   * 100dvh のままだと、上の告知バー＋ヘッダー＋タブ（375px で実測 190px、
+   * 告知文が2行に折れる幅ではさらに伸びる）のぶんだけ下がはみ出し、
+   * いちばん下に置いた CTA が最初の画面に入らない。
+   * 実測して引く（固定値で決め打ちしない）。
+   */
+  const [chromeH, setChromeH] = useState(0);
+  useEffect(() => {
+    const measure = () => {
+      const el = secRef.current;
+      if (!el) return;
+      // scrollY に依存しないよう offsetTop（＝告知バー＋ヘッダーの高さ）で測る
+      setChromeH(el.offsetTop);
+    };
+    measure();
+    window.addEventListener('resize', measure);
+    window.addEventListener('orientationchange', measure);
+    return () => {
+      window.removeEventListener('resize', measure);
+      window.removeEventListener('orientationchange', measure);
+    };
+  }, []);
   // スマホ縦は横長動画だと左右が見切れるため、縦(9:16)再編集版に切り替える。
   const [portrait, setPortrait] = useState(false);
   useEffect(() => {
@@ -2222,8 +2304,17 @@ function HeroVideo() {
   return (
     <section
       id="top"
+      ref={secRef}
       className="lp-safe"
-      style={{ position: 'relative', minHeight: '100dvh', overflow: 'hidden', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', background: '#000' }}
+      style={{
+        position: 'relative',
+        minHeight: chromeH ? `calc(100dvh - ${chromeH}px)` : '100dvh',
+        overflow: 'hidden',
+        display: 'flex',
+        alignItems: 'flex-end',
+        justifyContent: 'center',
+        background: '#000',
+      }}
     >
       <video
         key={src}
@@ -2239,7 +2330,10 @@ function HeroVideo() {
         <source src={src} type="video/mp4" />
       </video>
       <div
-        style={{ position: 'absolute', inset: 0, zIndex: 1, pointerEvents: 'none', background: 'linear-gradient(180deg, rgba(0,0,0,0.28) 0%, rgba(0,0,0,0) 26%, rgba(0,0,0,0) 56%, rgba(0,0,0,0.82) 100%)' }}
+        /* 2026-08-21: 文が「CORE →肩書き→説明→CTA」と増えたぶん、コピーの帯が
+           映像の明るい中央にかかるようになった。下半分の暗幕を濃くして、
+           金の見出しと白い本文が映像の白い画面に負けないようにする。 */
+        style={{ position: 'absolute', inset: 0, zIndex: 1, pointerEvents: 'none', background: 'linear-gradient(180deg, rgba(0,0,0,0.32) 0%, rgba(0,0,0,0.04) 22%, rgba(0,0,0,0.58) 54%, rgba(0,0,0,0.93) 100%)' }}
       />
       <button
         onClick={toggle}
@@ -2253,20 +2347,33 @@ function HeroVideo() {
         </svg>
         {muted ? '音を出す' : '消音'}
       </button>
+      {/*
+        最初の3秒で「CORE」「AI Transformation Company」「何をする会社か」「相談の入口」
+        の4つまで届かせる（オーナー指示 2026-08-21 §3 / §19）。
+        iPhone の1画面目に4つとも収めるため、行間と余白は .corp-hero-copy で詰める。
+      */}
       <div
-        style={{ position: 'relative', zIndex: 3, paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 3.5rem)', textAlign: 'center', width: '100%', padding: '0 1.25rem calc(env(safe-area-inset-bottom, 0px) + 3.5rem)' }}
+        className="corp-hero-copy"
+        style={{ position: 'relative', zIndex: 3, textAlign: 'center', width: '100%', padding: '0 1.25rem calc(env(safe-area-inset-bottom, 0px) + 3.2rem)' }}
       >
         {/* ブランドの刻印 — 動画の上に、金の一行 */}
         <p style={{
           fontFamily: FONT_DISPLAY, fontSize: 'clamp(0.66rem, 1.6vw, 0.82rem)', letterSpacing: '0.52em',
-          color: 'rgba(231,201,135,0.9)', textTransform: 'uppercase', marginBottom: '0.9rem', paddingLeft: '0.52em',
+          color: 'rgba(231,201,135,0.9)', textTransform: 'uppercase', marginBottom: '0.5rem', paddingLeft: '0.52em',
           textShadow: '0 2px 18px rgba(0,0,0,0.6)',
         }}>
           CORE
         </p>
+        <p style={{
+          fontFamily: FONT_DISPLAY, fontSize: 'clamp(0.56rem, 1.3vw, 0.68rem)', letterSpacing: '0.34em',
+          color: 'rgba(255,255,255,0.72)', textTransform: 'uppercase', marginBottom: '1rem', paddingLeft: '0.34em',
+          textShadow: '0 2px 18px rgba(0,0,0,0.6)',
+        }}>
+          AI Transformation Company
+        </p>
         <h1 style={{
-          fontFamily: FONT_SERIF_JA, fontWeight: 700, fontSize: 'clamp(1.5rem, 5.4vw, 2.9rem)',
-          lineHeight: 1.6, letterSpacing: '0.06em', margin: '0 0 1.6rem',
+          fontFamily: FONT_SERIF_JA, fontWeight: 700, fontSize: 'clamp(1.45rem, 5.2vw, 2.9rem)',
+          lineHeight: 1.55, letterSpacing: '0.06em', margin: '0 0 1rem',
           background: 'linear-gradient(115deg, #FDF6E3, #E7C987 60%, #C9A96E)',
           WebkitBackgroundClip: 'text', backgroundClip: 'text', WebkitTextFillColor: 'transparent',
           filter: 'drop-shadow(0 2px 22px rgba(0,0,0,0.65))',
@@ -2275,9 +2382,33 @@ function HeroVideo() {
           <br />
           核となるものを。
         </h1>
-        <a href="#products" style={ctaHero}>プロダクトを見る</a>
-        <div aria-hidden style={{ marginTop: '1.5rem', display: 'flex', justifyContent: 'center' }}>
-          <span style={{ width: 20, height: 20, borderRight: '2px solid rgba(255,255,255,0.85)', borderBottom: '2px solid rgba(255,255,255,0.85)', transform: 'rotate(45deg)' }} />
+        <p style={{
+          fontFamily: FONT_SERIF_JA, fontSize: 'clamp(0.95rem, 2.2vw, 1.25rem)', fontWeight: 600,
+          color: '#F5EAD4', lineHeight: 1.8, letterSpacing: '0.04em', margin: '0 0 0.7rem',
+          textShadow: '0 2px 16px rgba(0,0,0,0.8)',
+        }}>
+          AIとテクノロジーで、企業の仕組みそのものを変える。
+        </p>
+        <p style={{
+          fontFamily: FONT_SERIF_JA, fontSize: 'clamp(0.78rem, 1.4vw, 0.92rem)',
+          color: 'rgba(255,255,255,0.8)', lineHeight: 1.95, maxWidth: 620, margin: '0 auto 1.5rem',
+          textShadow: '0 2px 14px rgba(0,0,0,0.85)',
+        }}>
+          CORE は、AI戦略・業務設計・システム開発・事業開発までを
+          <br className="corp-hero-br" />
+          一気通貫で支援する会社です。
+        </p>
+        <div style={{ display: 'flex', gap: '0.7rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+          <a href="#contact" onClick={e => onAnchor?.(e, '#contact')} style={{ ...ctaHero, padding: '1rem 2rem' }}>
+            AI・DXについて相談する
+          </a>
+          <a
+            href="#services"
+            onClick={e => onAnchor?.(e, '#services')}
+            style={{ ...ctaGhost, background: 'rgba(10,8,5,0.45)', backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)' }}
+          >
+            サービスを見る
+          </a>
         </div>
       </div>
     </section>
@@ -2903,65 +3034,8 @@ function UseCaseCard({ persona, headline, body, tools, lead }: {
 }
 
 // ───────────── スタイル ─────────────
-const navLink: React.CSSProperties = {
-  fontFamily: FONT_SERIF_JA,
-  fontSize: '0.88rem',
-  color: 'rgba(244,239,228,0.78)',
-  textDecoration: 'none',
-  fontWeight: 500,
-  letterSpacing: '0.1em',
-};
-const ctaSmall: React.CSSProperties = {
-  fontFamily: FONT_SERIF_JA,
-  fontSize: '0.85rem',
-  fontWeight: 600,
-  color: '#E7C987',
-  textDecoration: 'none',
-  padding: '0.75rem 1.25rem',
-  border: '1px solid rgba(201,169,110,0.55)',
-  background: 'rgba(201,169,110,0.07)',
-  borderRadius: 999,
-  letterSpacing: '0.1em',
-  display: 'inline-flex',
-  alignItems: 'center',
-  minHeight: 44,
-};
-const ctaHero: React.CSSProperties = {
-  display: 'inline-block',
-  // Continuum と同じ金 — 会社サイト全体を金×黒で統一
-  background: 'linear-gradient(135deg,#F1DCA7,#E7C987 45%,#C9A96E)',
-  backgroundSize: '200% 100%',
-  color: '#14100a',
-  padding: '1.1rem 2.4rem',
-  borderRadius: 999,
-  fontFamily: FONT_SERIF_JA,
-  fontSize: '1rem',
-  fontWeight: 800,
-  textDecoration: 'none',
-  boxShadow: '0 14px 42px -8px rgba(201,169,110,0.55)',
-  letterSpacing: '0.12em',
-};
-const sectionLabel: React.CSSProperties = {
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-  gap: 6,
-  marginBottom: '1.25rem',
-};
-const sectionLabelMain: React.CSSProperties = {
-  fontFamily: FONT_SERIF_JA,
-  fontSize: '0.95rem',
-  letterSpacing: '0.4em',
-  color: 'rgba(240,233,216,0.92)',
-  fontWeight: 700,
-};
-const sectionLabelSub: React.CSSProperties = {
-  fontFamily: FONT_DISPLAY,
-  fontSize: '0.65rem',
-  letterSpacing: '0.45em',
-  color: 'rgba(201,169,110,0.85)',
-  fontWeight: 600,
-};
+// navLink / ctaSmall / ctaHero / sectionLabel* は corpTheme.ts へ移した（2026-08-21）。
+// フッタ専用の2つだけここに残す。
 const footHead: React.CSSProperties = {
   fontFamily: FONT_DISPLAY,
   fontSize: '0.7rem',
