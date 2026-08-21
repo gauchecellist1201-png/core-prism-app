@@ -329,11 +329,11 @@ export default function CoreSite() {
     const DESC = 'COREは、AI戦略・業務設計・システム開発・事業開発を通じて、企業のDXとAI Transformationを支援します。';
     setMeta('meta[property="og:title"]', 'content', 'CORE | AI Transformation Company');
     setMeta('meta[property="og:description"]', 'content', DESC);
-    setMeta('meta[property="og:image"]', 'content', 'https://core-prism-app.vercel.app/og-core-v4.png');
+    setMeta('meta[property="og:image"]', 'content', 'https://core-prism-app.vercel.app/og-core-v5.png');
     setMeta('meta[property="og:url"]', 'content', 'https://core-prism-app.vercel.app/corp');
     setMeta('meta[property="og:type"]', 'content', 'website');
     setMeta('meta[name="twitter:card"]', 'content', 'summary_large_image');
-    setMeta('meta[name="twitter:image"]', 'content', 'https://core-prism-app.vercel.app/og-core-v4.png');
+    setMeta('meta[name="twitter:image"]', 'content', 'https://core-prism-app.vercel.app/og-core-v5.png');
     setMeta('meta[name="twitter:title"]', 'content', 'CORE | AI Transformation Company');
     setMeta('meta[name="twitter:description"]', 'content', 'すべての時代の、核となるものを。AIとテクノロジーで、企業の仕組みそのものを変える。');
     setMeta('meta[name="description"]', 'content', DESC);
@@ -409,7 +409,31 @@ export default function CoreSite() {
             aria-label="CORE"
             className="lp-tap-link"
           >
-            <CoreLogo size={36} withWordmark />
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 12, lineHeight: 1 }}>
+              <img
+                src="/core-logo-mark.png"
+                alt="CORE"
+                width={396}
+                height={240}
+                style={{ height: 36, width: 'auto', flexShrink: 0 }}
+              />
+              <span
+                aria-hidden
+                style={{
+                  fontFamily: '"Cinzel", "Noto Serif JP", serif',
+                  fontSize: 22.32,
+                  fontWeight: 700,
+                  letterSpacing: '0.42em',
+                  color: '#E0F2FE',
+                  background: 'linear-gradient(135deg, #FFFFFF, #BAE6FD, #38BDF8)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  lineHeight: 1,
+                }}
+              >
+                CORE
+              </span>
+            </span>
           </a>
           {/* 別ページ（タブでは切り替わらない別ルート）だけをここに残す */}
           <nav style={{ display: 'flex', gap: '1.6rem', alignItems: 'center' }}>
