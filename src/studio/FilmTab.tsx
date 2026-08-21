@@ -9,9 +9,9 @@ import { C, D, SERIF, SANS } from './theme';
 import { Band, H2, Note, IconCheck, IconChat, IconCopy } from './ui';
 import { STUDIO, CONTACT } from './plans';
 import {
-  FILM, WHY_CORE, AUDIENCE_MATCH, studioProjects, FEATURED, WHAT_WE_CREATE, FILM_PROCESS, PROCESS_STATEMENT,
+  FILM, WHY_CORE, BRIDGE, AUDIENCE_MATCH, studioProjects, FEATURED, FILM_PROCESS, PROCESS_STATEMENT,
   FILM_PLANS, MONTHLY_LEAD, MONTHLY_PLANS, MONTHLY_TERMS, PRICE_NOTE, PRICE_WHY, DECISION_GUIDE,
-  SIGNATURE, FILM_WORKS, TARGETS,
+  SIGNATURE, FILM_WORKS, TARGETS, REVISION, TERMS, AI_TERMS,
   COMPARISON, FILM_FAQ, PHILOSOPHY, FILM_CTA, INQUIRY_FIELDS,
   type StudioProject,
 } from './film';
@@ -83,6 +83,20 @@ export default function FilmTab() {
         .fm-faq-btn { width: 100%; min-height: 52px; background: none; border: none; cursor: pointer; text-align: left;
           padding: 14px 2px; font-size: 14px; font-weight: 600; color: ${C.ink}; font-family: ${SANS};
           display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+        /* 章の目次。長い1枚ものを上から順に読ませない (法人は必要な章だけ見る) */
+        .fm-nav { display: flex; gap: 8px; overflow-x: auto; -webkit-overflow-scrolling: touch;
+          scrollbar-width: none; padding: 2px 20px 0; }
+        .fm-nav::-webkit-scrollbar { display: none; }
+        .fm-nav-item { flex: 0 0 auto; min-height: 40px; display: inline-flex; align-items: center; padding: 9px 14px;
+          border-radius: 999px; border: 1px solid ${D.line}; background: transparent; cursor: pointer;
+          color: ${D.body}; font-size: 12.5px; font-family: ${SANS}; letter-spacing: 0.04em; white-space: nowrap;
+          transition: border-color 140ms ease, color 140ms ease; }
+        .fm-nav-item:hover { border-color: ${D.goldLine}; color: ${D.ink}; }
+        /* 想定顧客・選び方の圧縮グリッド (1行1件の縦積みをやめる) */
+        .fm-chip-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        @media (min-width: 640px) { .fm-chip-grid { grid-template-columns: repeat(3, 1fr); } }
+        .fm-terms-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+        @media (min-width: 700px) { .fm-terms-grid { grid-template-columns: 1fr 1fr; } }
         .fm-sticky-cta { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; display: none;
           padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); background: rgba(11,11,12,0.92);
           backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-top: 1px solid ${D.line}; }
@@ -90,18 +104,18 @@ export default function FilmTab() {
       `}</style>
 
       <FilmHero />
+      <SectionNav />
       <Showcase />
-      <Pricing />
-      <DecisionGuide />
-      <AudienceMatch />
-      <WhyCore />
-      <FilmWorks />
+      <Bridge />
       <Featured />
-      <WhatWeCreate />
-      <Process />
-      <Signature />
-      <Targets />
+      <WhyCore />
       <Comparison />
+      <Process />
+      <Pricing />
+      <Terms />
+      <ChooseGuide />
+      <FilmWorks />
+      <Signature />
       <Faq />
       <Philosophy />
       <div className="fm-sticky-pad" />
@@ -216,9 +230,51 @@ function FilmHero() {
             ))}
           </div>
           <p style={{ fontSize: 12.5, color: D.mute, margin: '14px 0 0', lineHeight: 1.9 }}>{CONTACT.lineNote}</p>
+
+          {/* 法人向けの取引条件を1行で。詳細は「お取引の条件」の章へ送る */}
+          <div style={{ marginTop: 24, paddingTop: 18, borderTop: `1px solid ${D.line}` }}>
+            <div style={{ display: 'flex', gap: '8px 18px', flexWrap: 'wrap' }}>
+              {FILM.heroTrust.map(t => (
+                <span key={t} style={{ fontSize: 11.5, color: D.mute, display: 'inline-flex', alignItems: 'center', gap: 6, letterSpacing: '0.02em' }}>
+                  <IconCheck color={D.goldLine} />{t}
+                </span>
+              ))}
+            </div>
+            <button type="button"
+              onClick={() => { track('studio_film_hero_cta', { to: 'terms' }); scrollToId('film-terms'); }}
+              style={{ marginTop: 12, minHeight: 44, background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontFamily: SANS, fontSize: 12.5, color: D.gold, letterSpacing: '0.03em', textDecoration: 'underline', textUnderlineOffset: 3 }}>
+              お取引の条件をすべて見る
+            </button>
+          </div>
         </Reveal>
       </div>
     </section>
+  );
+}
+
+// ============================================================
+// 章の目次 — 20画面近い1枚ものを、必要な章から読めるようにする
+// ============================================================
+const NAV_ITEMS: Array<{ id: string; label: string }> = [
+  { id: 'film-showcase', label: '制作事例' },
+  { id: 'film-process', label: '制作の流れ' },
+  { id: 'film-pricing', label: '料金' },
+  { id: 'film-terms', label: 'お取引の条件' },
+  { id: 'film-faq', label: 'よくある質問' },
+];
+
+function SectionNav() {
+  return (
+    <nav aria-label="このページの目次" style={{ background: D.bg, paddingBottom: 30 }}>
+      <div className="fm-nav">
+        {NAV_ITEMS.map(n => (
+          <button key={n.id} type="button" className="fm-nav-item"
+            onClick={() => { track('studio_film_nav', { to: n.id }); scrollToId(n.id); }}>
+            {n.label}
+          </button>
+        ))}
+      </div>
+    </nav>
   );
 }
 
@@ -284,7 +340,7 @@ function ProjectCard({ p }: { p: StudioProject }) {
 
 function Showcase() {
   return (
-    <section style={{ background: D.bg, padding: '8px 0 56px' }}>
+    <section id="film-showcase" style={{ background: D.bg, padding: '8px 0 56px', scrollMarginTop: 88 }}>
       <div className="st-inner">
         <Reveal>
           <div className="st-label" style={{ color: D.gold, marginBottom: 10 }}>Showcase</div>
@@ -299,7 +355,37 @@ function Showcase() {
         </div>
       </Reveal>
       <div className="st-inner">
+        {/* 旧「制作するもの」セクションはこの5枚と内容が重複していたため統合。
+            映像が無いコマーシャルだけを1行で補う (同じ話を2章に分けない) */}
+        <p style={{ fontSize: 13, lineHeight: 1.95, color: D.body, margin: '0 0 12px' }}>
+          このほか、広告配信を前提とした<strong style={{ color: D.ink, fontWeight: 700 }}>コマーシャル（15〜30秒）</strong>も制作します。配信面ごとの尺・比率で書き出してお渡しします。
+        </p>
         <p style={{ fontSize: 12, lineHeight: 1.9, color: D.mute, margin: 0 }}>{FILM.showcaseNote}</p>
+      </div>
+    </section>
+  );
+}
+
+// ============================================================
+// 情緒のビート — 映像を見た直後、料金の話に入る前に一度だけ置く
+// ============================================================
+function Bridge() {
+  return (
+    <section style={{ background: D.bg, padding: '0 0 68px' }}>
+      <div className="st-inner">
+        <Reveal>
+          <div style={{ width: 34, height: 1, background: D.goldLine, marginBottom: 26 }} />
+          <div className="st-label" style={{ color: D.gold, marginBottom: 16 }}>{BRIDGE.en}</div>
+          <p className="st-serif" style={{ fontSize: 'clamp(20px, 5.4vw, 28px)', fontWeight: 700, lineHeight: 1.75, color: D.ink, margin: 0, whiteSpace: 'pre-line', letterSpacing: '0.01em' }}>
+            {BRIDGE.title}
+          </p>
+          {BRIDGE.body.map(t => (
+            <p key={t.slice(0, 12)} style={{ fontSize: 14.5, lineHeight: 2.15, color: D.body, margin: '22px 0 0', maxWidth: 580 }}>{t}</p>
+          ))}
+          <p className="st-serif" style={{ fontSize: 15.5, fontWeight: 700, lineHeight: 1.95, color: D.gold, margin: '26px 0 0', maxWidth: 580 }}>
+            {BRIDGE.closing}
+          </p>
+        </Reveal>
       </div>
     </section>
   );
@@ -310,7 +396,7 @@ function Showcase() {
 // ============================================================
 function WhyCore() {
   return (
-    <Band pad="56px 0">
+    <Band alt pad="56px 0">
       <Reveal>
         <div className="st-label" style={{ marginBottom: 12 }}>{WHY_CORE.en}</div>
         <h2 className="st-serif" style={{ fontSize: 'clamp(22px, 6vw, 30px)', fontWeight: 700, lineHeight: 1.55, color: C.ink, margin: 0, whiteSpace: 'pre-line' }}>
@@ -333,30 +419,170 @@ function WhyCore() {
 }
 
 // ============================================================
-// あなたにはこれ — 用途から選ぶ
+// お取引の条件 — 修正規定・権利・NDA・支払・納期。
+// 発注前に法人が確認する事項が1章も無かったため新設した。
 // ============================================================
-function AudienceMatch() {
+function TermRows({ rows }: { rows: readonly { label: string; body: string }[] }) {
   return (
-    <Band alt pad="56px 0">
-      <Reveal><H2 en="Find Your Fit" sub="用途を選ぶだけで、合う映像の種類がわかります。">あなたにはこれ</H2></Reveal>
+    <div className="fm-terms-grid">
+      {rows.map(r => (
+        <div key={r.label} style={{ border: `1px solid ${C.line}`, borderRadius: 12, background: '#FFFFFF', padding: '16px 17px' }}>
+          <div style={{ fontSize: 13.5, fontWeight: 700, color: C.ink, lineHeight: 1.6, marginBottom: 6 }}>{r.label}</div>
+          <p style={{ fontSize: 12.5, lineHeight: 1.9, color: C.body, margin: 0 }}>{r.body}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function Terms() {
+  return (
+    <Band alt pad="56px 0" id="film-terms">
+      {/* 1. 修正のお約束 — 一番聞かれるので先頭に置く */}
+      <Reveal>
+        <H2 en={REVISION.en} sub={REVISION.lead}>{REVISION.title}</H2>
+      </Reveal>
+
+      <Reveal>
+        <div className="st-card st-card-featured" style={{ background: '#FFFFFF' }}>
+          <div style={{ fontSize: 13.5, fontWeight: 700, color: C.ink, marginBottom: 7 }}>{REVISION.unit.title}</div>
+          <p style={{ fontSize: 13, lineHeight: 1.95, color: C.body, margin: 0 }}>{REVISION.unit.body}</p>
+        </div>
+      </Reveal>
+
+      {/* プラン別の回数 */}
+      <Reveal>
+        <div style={{ marginTop: 16, border: `1px solid ${C.line}`, borderRadius: 12, overflow: 'hidden', background: '#FFFFFF' }}>
+          {REVISION.rules.map((r, i) => (
+            <div key={r.plan} style={{ display: 'flex', gap: 12, alignItems: 'baseline', flexWrap: 'wrap', padding: '13px 16px', borderTop: i === 0 ? 'none' : `1px solid ${C.line}` }}>
+              <div style={{ fontSize: 12.5, fontWeight: 700, color: C.ink, letterSpacing: '0.06em', minWidth: 96 }}>{r.plan}</div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: C.goldText, minWidth: 54 }}>{r.count}</div>
+              <p style={{ fontSize: 12.5, lineHeight: 1.8, color: C.body, margin: 0, flex: '1 1 200px' }}>{r.note}</p>
+            </div>
+          ))}
+        </div>
+      </Reveal>
+
+      {/* 範囲 / 対象外 */}
+      <div className="fm-terms-grid" style={{ marginTop: 16 }}>
+        <Reveal>
+          <div style={{ height: '100%', boxSizing: 'border-box', border: `1px solid ${C.line}`, borderRadius: 12, background: '#FFFFFF', padding: '18px 17px' }}>
+            <div style={{ fontSize: 13.5, fontWeight: 700, color: C.ink, marginBottom: 11 }}>{REVISION.included.title}</div>
+            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: 6 }}>
+              {REVISION.included.items.map(x => (
+                <li key={x} style={{ display: 'flex', gap: 8, fontSize: 12.5, lineHeight: 1.75, color: C.body }}><IconCheck />{x}</li>
+              ))}
+            </ul>
+          </div>
+        </Reveal>
+        <Reveal delay={60}>
+          <div style={{ height: '100%', boxSizing: 'border-box', border: `1px solid ${C.line}`, borderRadius: 12, background: '#FFFFFF', padding: '18px 17px' }}>
+            <div style={{ fontSize: 13.5, fontWeight: 700, color: C.ink, marginBottom: 11 }}>{REVISION.excluded.title}</div>
+            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: 6 }}>
+              {REVISION.excluded.items.map(x => (
+                <li key={x} style={{ display: 'flex', gap: 8, fontSize: 12.5, lineHeight: 1.75, color: C.body }}>
+                  <span aria-hidden style={{ color: C.mute, flexShrink: 0, marginTop: 2 }}>—</span>{x}
+                </li>
+              ))}
+            </ul>
+            <p style={{ fontSize: 12, lineHeight: 1.85, color: C.mute, margin: '11px 0 0' }}>{REVISION.excluded.note}</p>
+          </div>
+        </Reveal>
+      </div>
+
+      {/* 速さ・期限・お願い */}
+      <div className="fm-terms-grid" style={{ marginTop: 12 }}>
+        {[REVISION.speed, REVISION.window, REVISION.ask].map((b, i) => (
+          <Reveal key={b.title} delay={i * 50}>
+            <div style={{ height: '100%', boxSizing: 'border-box', background: C.bg, borderLeft: `3px solid ${C.gold}`, borderRadius: 4, padding: '14px 15px' }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: C.ink, marginBottom: 5 }}>{b.title}</div>
+              <p style={{ fontSize: 12.5, lineHeight: 1.9, color: C.body, margin: 0 }}>{b.body}</p>
+            </div>
+          </Reveal>
+        ))}
+      </div>
+
+      {/* 2. お取引の条件 */}
+      <Reveal>
+        <div style={{ marginTop: 44 }}>
+          <H2 en={TERMS.en} sub={TERMS.lead}>{TERMS.title}</H2>
+        </div>
+      </Reveal>
+      <TermRows rows={TERMS.rows} />
+
+      {/* 3. AIについて */}
+      <Reveal>
+        <div style={{ marginTop: 44 }}>
+          <H2 en={AI_TERMS.en} sub={AI_TERMS.lead}>{AI_TERMS.title}</H2>
+        </div>
+      </Reveal>
+      <TermRows rows={AI_TERMS.rows} />
+    </Band>
+  );
+}
+
+// ============================================================
+// 選び方 — 旧「あなたにはこれ」+「迷った人向け分岐」+「こんな方の映像を」の統合。
+// 3章とも問いは1つ (自分に合うか / どれを選ぶか) だったので、1章にまとめて縦の長さを詰める。
+// ============================================================
+function ChooseGuide() {
+  return (
+    <Band pad="56px 0" id="film-choose">
+      <Reveal><H2 en="Find Your Fit" sub="用途から選べます。決めきれないまま、ご相談いただいても構いません。">どれを選べばいいか</H2></Reveal>
+
+      {/* 用途 → 映像の種類 */}
       <div className="fm-audience-grid">
         {AUDIENCE_MATCH.map((m, i) => (
           <Reveal key={m.id} delay={i * 60}>
             <button
               className="st-card"
-              style={{ height: '100%', boxSizing: 'border-box', width: '100%', textAlign: 'left', cursor: 'pointer', fontFamily: SANS, border: `1px solid ${C.line}` }}
+              style={{ height: '100%', boxSizing: 'border-box', width: '100%', textAlign: 'left', cursor: 'pointer', fontFamily: SANS, border: `1px solid ${C.line}`, padding: '18px 18px' }}
               onClick={() => { track('studio_film_audience_match', { id: m.id }); scrollToId('film-pricing'); }}
             >
               <div style={{ fontSize: 14.5, fontWeight: 700, color: C.ink, lineHeight: 1.6 }}>{m.question}</div>
-              <div className="st-label" style={{ fontSize: 11, marginTop: 10, marginBottom: 12 }}>→ {m.answer}</div>
-              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: 5, borderTop: `1px solid ${C.line}`, paddingTop: 12 }}>
-                {m.sub.map(s => (
-                  <li key={s} style={{ fontSize: 12.5, lineHeight: 1.7, color: C.body }}>{s}</li>
-                ))}
-              </ul>
+              <div className="st-label" style={{ fontSize: 11, marginTop: 8, marginBottom: 8 }}>→ {m.answer}</div>
+              <p style={{ fontSize: 12.5, lineHeight: 1.75, color: C.body, margin: 0, borderTop: `1px solid ${C.line}`, paddingTop: 9 }}>
+                {m.sub.join('・')}
+              </p>
             </button>
           </Reveal>
         ))}
+      </div>
+
+      {/* 状況 → プラン */}
+      <Reveal>
+        <div className="fm-decision-grid" style={{ marginTop: 26 }}>
+          {DECISION_GUIDE.map(d => (
+            <div key={d.q} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, padding: '13px 15px', border: `1px solid ${C.line}`, borderRadius: 10, background: '#FFFFFF' }}>
+              <span style={{ fontSize: 13.5, color: C.body }}>{d.q}</span>
+              <span style={{ fontSize: 13, fontWeight: 700, color: C.goldText, whiteSpace: 'nowrap' }}>→ {d.a}</span>
+            </div>
+          ))}
+        </div>
+      </Reveal>
+
+      {/* こんな方に (旧 Targets。10行の縦積みをやめて2〜3列に圧縮) */}
+      <Reveal>
+        <div style={{ marginTop: 30 }}>
+          <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.12em', color: C.mute, marginBottom: 12 }}>
+            こんな方の映像をつくっています
+          </div>
+          <div className="fm-chip-grid">
+            {TARGETS.map(t => (
+              <div key={t.en} style={{ border: `1px solid ${C.line}`, borderRadius: 10, background: '#FFFFFF', padding: '11px 12px' }}>
+                <div style={{ fontSize: 13, color: C.ink, fontWeight: 700, lineHeight: 1.5 }}>{t.ja}</div>
+                <p style={{ fontSize: 11.5, lineHeight: 1.7, color: C.mute, margin: '4px 0 0' }}>{t.body}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </Reveal>
+
+      <div style={{ marginTop: 22, textAlign: 'center' }}>
+        <a className="st-btn st-btn-ghost" href={CONTACT.lineUrl} target="_blank" rel="noopener noreferrer"
+          onClick={() => track('studio_film_pricing_cta', { plan: 'undecided', to: 'line' })}>
+          <IconChat /> 決めずにまず相談する
+        </a>
       </div>
     </Band>
   );
@@ -410,33 +636,11 @@ function Featured() {
 }
 
 // ============================================================
-// 制作するもの
-// ============================================================
-function WhatWeCreate() {
-  return (
-    <Band alt pad="56px 0">
-      <Reveal><H2 en="What We Create" sub="用途が違えば、設計もつくり方も変わります。いずれも企画から仕上げまで当社が担当します。">制作するもの</H2></Reveal>
-      <div>
-        {WHAT_WE_CREATE.map((w, i) => (
-          <Reveal key={w.id} delay={i * 40}>
-            <div style={{ padding: '20px 0', borderTop: `1px solid ${C.line}` }}>
-              <div className="st-label" style={{ fontSize: 10, marginBottom: 8 }}>{w.en}</div>
-              <div className="st-serif" style={{ fontSize: 19, fontWeight: 700, color: C.ink, lineHeight: 1.55 }}>{w.title}</div>
-              <p style={{ fontSize: 13.5, lineHeight: 1.95, color: C.body, margin: '7px 0 0', maxWidth: 560 }}>{w.body}</p>
-            </div>
-          </Reveal>
-        ))}
-      </div>
-    </Band>
-  );
-}
-
-// ============================================================
 // 制作工程
 // ============================================================
 function Process() {
   return (
-    <Band pad="56px 0">
+    <Band alt pad="56px 0" id="film-process">
       <Reveal><H2 en="Process" sub="ご相談から納品まで、6つの工程で進めます。各工程の進捗は随時ご報告します。">制作の流れ</H2></Reveal>
       <ol style={{ listStyle: 'none', padding: 0, margin: 0 }}>
         {FILM_PROCESS.map((s, i) => (
@@ -506,8 +710,8 @@ function FilmCheckoutButton({ plan, mode, label }: { plan: string; mode: 'paymen
 // ============================================================
 function Pricing() {
   return (
-    <div id="film-pricing">
-      <Band alt pad="56px 0">
+    <div>
+      <Band pad="56px 0" id="film-pricing">
         <Reveal><H2 en="Pricing" sub="1本ごとの制作と、毎月継続する制作の2通りからお選びいただけます。">料金</H2></Reveal>
         <div style={{ display: 'grid', gap: 14 }}>
           {FILM_PLANS.map((p, i) => (
@@ -521,6 +725,7 @@ function Pricing() {
                   </div>
                 </div>
                 <div style={{ fontSize: 12, color: C.mute, marginTop: 6, letterSpacing: '0.02em' }}>{p.terms}</div>
+                <div style={{ fontSize: 12, color: C.goldText, marginTop: 4, fontWeight: 600, letterSpacing: '0.02em' }}>{p.delivery}</div>
                 <div style={{ fontSize: 14, fontWeight: 600, color: C.ink, margin: '10px 0 12px', lineHeight: 1.8 }}>{p.lead}</div>
                 <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: 6, borderTop: `1px solid ${C.line}`, paddingTop: 14 }}>
                   {p.includes.map(x => (
@@ -605,39 +810,6 @@ function Pricing() {
 }
 
 // ============================================================
-// 迷った人向け導線 (料金表の直後)
-// ============================================================
-function DecisionGuide() {
-  return (
-    <Band pad="40px 0 56px">
-      <Reveal>
-        <div style={{ textAlign: 'center', marginBottom: 20 }}>
-          <div className="st-serif" style={{ fontSize: 17, fontWeight: 700, color: C.ink, lineHeight: 1.7 }}>
-            どれを選べばいいか分からなくても大丈夫です。
-          </div>
-        </div>
-      </Reveal>
-      <div className="fm-decision-grid">
-        {DECISION_GUIDE.map((d, i) => (
-          <Reveal key={d.q} delay={i * 40}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, padding: '14px 16px', border: `1px solid ${C.line}`, borderRadius: 10, background: '#FFFFFF' }}>
-              <span style={{ fontSize: 13.5, color: C.body }}>{d.q}</span>
-              <span style={{ fontSize: 13, fontWeight: 700, color: C.goldText, whiteSpace: 'nowrap' }}>→ {d.a}</span>
-            </div>
-          </Reveal>
-        ))}
-      </div>
-      <div style={{ marginTop: 18, textAlign: 'center' }}>
-        <a className="st-btn st-btn-ghost" href={CONTACT.lineUrl} target="_blank" rel="noopener noreferrer"
-          onClick={() => track('studio_film_pricing_cta', { plan: 'undecided', to: 'line' })}>
-          <IconChat /> 決めずにまず相談する
-        </a>
-      </div>
-    </Band>
-  );
-}
-
-// ============================================================
 // 制作実績
 // ============================================================
 function WorkCard({ w }: { w: (typeof FILM_WORKS)[number] }) {
@@ -648,7 +820,7 @@ function WorkCard({ w }: { w: (typeof FILM_WORKS)[number] }) {
   const toggle = () => { if (playing) pause(); else play(); };
 
   return (
-    <article>
+    <article className="fm-shot">
       {w.videoUrl ? (
         <button type="button" onClick={toggle} onMouseEnter={play} onMouseLeave={pause}
           aria-label={`${w.client} の制作事例を${playing ? '止める' : '再生する'}`}
@@ -670,16 +842,19 @@ function WorkCard({ w }: { w: (typeof FILM_WORKS)[number] }) {
   );
 }
 
+// 9:16 の縦型を1列で積むとスマホで3本 = 約2,300px を占めるため、ショーケースと同じ横スクロールに揃える。
 function FilmWorks() {
   return (
-    <Band alt pad="56px 0">
-      <Reveal><H2 en="Works" sub="実際に制作した映像です。掲載許諾が取れたクライアント事例から、随時追加していきます。">制作実績</H2></Reveal>
-      <div className="fm-works-grid">
-        {FILM_WORKS.map((w, i) => (
-          <Reveal key={w.id} delay={i * 60}><WorkCard w={w} /></Reveal>
-        ))}
+    <section style={{ background: C.alt, padding: '56px 0', scrollMarginTop: 88 }}>
+      <div className="st-inner">
+        <Reveal><H2 en="Works" sub="実際に制作した映像です。掲載許諾が取れたクライアント事例から、随時追加していきます。">制作実績</H2></Reveal>
       </div>
-    </Band>
+      <Reveal delay={60}>
+        <div className="fm-scroller">
+          {FILM_WORKS.map(w => <WorkCard key={w.id} w={w} />)}
+        </div>
+      </Reveal>
+    </section>
   );
 }
 
@@ -726,30 +901,6 @@ function Signature() {
           onClick={() => track('studio_film_pricing_cta', { plan: 'signature', to: 'line' })}>
           <IconChat /> この座組みをLINEで相談する
         </a>
-      </div>
-    </Band>
-  );
-}
-
-// ============================================================
-// 想定顧客
-// ============================================================
-function Targets() {
-  return (
-    <Band alt pad="56px 0">
-      <Reveal><H2 en="For Whom" sub="主役になれるのは、俳優だけではありません。">こんな方の映像をつくっています</H2></Reveal>
-      <div>
-        {TARGETS.map((t, i) => (
-          <Reveal key={t.en} delay={Math.min(i, 6) * 30}>
-            <div style={{ display: 'flex', gap: 14, alignItems: 'baseline', padding: '13px 0', borderTop: `1px solid ${C.line}` }}>
-              <div style={{ minWidth: 118, flexShrink: 0 }}>
-                <div style={{ fontSize: 11, letterSpacing: '0.14em', color: C.goldText, fontWeight: 600 }}>{t.en.toUpperCase()}</div>
-                <div style={{ fontSize: 13.5, color: C.ink, fontWeight: 600, marginTop: 2 }}>{t.ja}</div>
-              </div>
-              <p style={{ fontSize: 13.5, lineHeight: 1.85, color: C.body, margin: 0 }}>{t.body}</p>
-            </div>
-          </Reveal>
-        ))}
       </div>
     </Band>
   );
@@ -812,7 +963,7 @@ function Comparison() {
 function Faq() {
   const [open, setOpen] = useState<number | null>(null);
   return (
-    <Band alt pad="56px 0">
+    <Band alt pad="56px 0" id="film-faq">
       <Reveal><H2 en="FAQ" sub="ご相談前によくいただくご質問です。">よくある質問</H2></Reveal>
       <div>
         {FILM_FAQ.map((f, i) => (

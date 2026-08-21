@@ -6,10 +6,11 @@ import type { ReactNode } from 'react';
 import { C, D } from './theme';
 
 // ---- セクション帯 (白 / #F7F7F5 / 暗部) ----
-export const Band = ({ alt, dark, children, pad = '52px 0' }: {
-  alt?: boolean; dark?: boolean; children: ReactNode; pad?: string;
+export const Band = ({ alt, dark, children, pad = '52px 0', id }: {
+  alt?: boolean; dark?: boolean; children: ReactNode; pad?: string; id?: string;
 }) => (
-  <section style={{ background: dark ? D.bg : alt ? C.alt : C.bg, padding: pad }}>
+  // 固定ヘッダー(約80px)の下に見出しが潜らないよう、アンカー着地位置を下げる
+  <section id={id} style={{ background: dark ? D.bg : alt ? C.alt : C.bg, padding: pad, scrollMarginTop: 88 }}>
     <div className="st-inner">{children}</div>
   </section>
 );
