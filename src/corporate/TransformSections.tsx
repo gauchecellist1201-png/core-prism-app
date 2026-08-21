@@ -10,7 +10,7 @@
 // 1秒未満の速い派手な動きは使わない。
 // ============================================================
 import type { ReactNode } from 'react';
-import { Suspense, lazy, useState } from 'react';
+import { Suspense, lazy, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   FONT_DISPLAY, FONT_SERIF_JA, FONT_SERIF_EN, FONT_SANS,
@@ -354,6 +354,119 @@ export function DifferenceSection() {
   );
 }
 
+// ── 狭い画面用の放射状の図 ────────────────────────
+// 9枚を均等な角度で置くと、幅の広いラベル（マーケティング等）が
+// 隣と重なる。ラベル文字数から幅を見積もり、幅が広いノードほど
+// 広い角度を割り当てることで、狭い画面でも重ならない半径に収める。
+function CompanyOsRadialMobile() {
+  const nodes = useMemo(() => {
+    const CHAR_LABEL = 13;
+    const CHAR_SUB = 6.6;
+    const PAD = 26;
+    const GAP = 24;
+    const widths = COMPANY_OS_NODES.map(n =>
+      Math.max(n.label.length * CHAR_LABEL, n.sub.length * CHAR_SUB) + PAD,
+    );
+    const circumference = widths.reduce((sum, w) => sum + w + GAP, 0);
+    const r = Math.max(130, circumference / (2 * Math.PI));
+    const steps = widths.map(w => ((w + GAP) / circumference) * Math.PI * 2);
+    // prefixSums[i] = 合計(steps[0..i-1])。角度の累積を、代入なしの前置和で出す。
+    const prefixSums = steps.reduce(
+      (acc, step) => [...acc, (acc.length ? acc[acc.length - 1] : 0) + step],
+      [] as number[],
+    );
+    return COMPANY_OS_NODES.map((n, i) => {
+      const start = -Math.PI / 2 + (i === 0 ? 0 : prefixSums[i - 1]);
+      const a = start + steps[i] / 2;
+      return { ...n, w: widths[i], x: r * Math.cos(a), y: r * Math.sin(a) };
+    });
+  }, []);
+
+  const r = Math.hypot(nodes[0].x, nodes[0].y);
+  const pillH = 48;
+  const halfWMax = Math.max(...nodes.map(n => n.w)) / 2;
+  const vbW = Math.round(r * 2 + halfWMax * 2 + 16);
+  const vbH = Math.round(r * 2 + pillH * 2 + 16);
+  const cx = vbW / 2;
+  const cy = vbH / 2;
+
+  return (
+    <svg
+      viewBox={`0 0 ${vbW} ${vbH}`}
+      role="img"
+      aria-label="営業・顧客管理・問い合わせ・会議・タスク・契約・請求・マーケティング・経営分析が、中心の CORE（AI COMPANY OS）につながる図"
+      style={{ width: '100%', maxWidth: 420, margin: '0 auto', display: 'block' }}
+    >
+      <defs>
+        <radialGradient id="corpOsGlowM" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#E7C987" stopOpacity="0.28" />
+          <stop offset="100%" stopColor="#E7C987" stopOpacity="0" />
+        </radialGradient>
+        <linearGradient id="corpOsCoreM" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#F7EAD0" />
+          <stop offset="55%" stopColor="#E7C987" />
+          <stop offset="100%" stopColor="#C9A96E" />
+        </linearGradient>
+      </defs>
+
+      <circle cx={cx} cy={cy} r={r * 0.78} fill="url(#corpOsGlowM)" />
+
+      {/* 業務 → CORE の線 */}
+      {nodes.map((n, i) => (
+        <motion.line
+          key={`l-${n.label}`}
+          x1={cx + n.x} y1={cy + n.y} x2={cx} y2={cy}
+          stroke={GOLD} strokeWidth={1} strokeOpacity={0.42}
+          initial={{ pathLength: 0, opacity: 0 }}
+          whileInView={{ pathLength: 1, opacity: 1 }}
+          viewport={{ once: true, margin: '-40px' }}
+          transition={{ duration: 1.1, ease: 'easeInOut', delay: 0.2 + i * 0.06 }}
+        />
+      ))}
+
+      {/* 業務のノード */}
+      {nodes.map((n, i) => (
+        <motion.g
+          key={n.label}
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true, margin: '-40px' }}
+          transition={{ duration: 0.8, delay: i * 0.05 }}
+        >
+          <rect
+            x={cx + n.x - n.w / 2} y={cy + n.y - pillH / 2} width={n.w} height={pillH} rx={pillH / 2}
+            fill="rgba(255,255,255,0.045)" stroke="rgba(201,169,110,0.34)" strokeWidth={1}
+          />
+          <text x={cx + n.x} y={cy + n.y - 4} textAnchor="middle" fill="#F1E6CE" fontSize={12.5} fontFamily={FONT_SERIF_JA} fontWeight={600} letterSpacing="0.03em">
+            {n.label}
+          </text>
+          <text x={cx + n.x} y={cy + n.y + 14} textAnchor="middle" fill="rgba(240,233,216,0.55)" fontSize={8.6} fontFamily={FONT_SANS} letterSpacing="0.01em">
+            {n.sub}
+          </text>
+        </motion.g>
+      ))}
+
+      {/* 中心の CORE */}
+      <motion.g
+        initial={{ opacity: 0, scale: 0.92 }}
+        whileInView={{ opacity: 1, scale: 1 }}
+        viewport={{ once: true }}
+        transition={{ duration: 1, ease: [0.22, 1, 0.36, 1], delay: 0.15 }}
+        style={{ transformOrigin: `${cx}px ${cy}px` }}
+      >
+        <circle cx={cx} cy={cy} r={56} fill="#050505" stroke="url(#corpOsCoreM)" strokeWidth={1.4} />
+        <circle cx={cx} cy={cy} r={45} fill="none" stroke={GOLD} strokeOpacity={0.28} strokeWidth={1} />
+        <text x={cx} y={cy - 3} textAnchor="middle" fill="#F5EAD4" fontSize={16} fontFamily={FONT_DISPLAY} fontWeight={700} letterSpacing="0.22em" dx="0.11em">
+          CORE
+        </text>
+        <text x={cx} y={cy + 14} textAnchor="middle" fill="rgba(201,169,110,0.9)" fontSize={7.4} fontFamily={FONT_DISPLAY} letterSpacing="0.24em" dx="0.12em">
+          AI COMPANY OS
+        </text>
+      </motion.g>
+    </svg>
+  );
+}
+
 // ============================================================
 //  05 AI COMPANY OS
 // ============================================================
@@ -363,47 +476,9 @@ function CompanyOsDiagram() {
   const [no3d, setNo3d] = useState(false);
 
   if (isMobile) {
-    // 狭い画面では放射状の図は文字が読めなくなる。
-    // 「バラバラの業務が、下の CORE に集まっていく」縦の図に置き換える。
-    return (
-      <div className={no3d ? 'corp-os-stack' : 'corp-os-stack corp-os-stack-3d'} aria-hidden={false}>
-        <div className="corp-os-stack-line" aria-hidden />
-        {COMPANY_OS_NODES.map((n, i) => (
-          <motion.div
-            key={n.label}
-            initial={{ opacity: 0, x: i % 2 === 0 ? -18 : 18 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true, margin: '-40px' }}
-            transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1], delay: (i % 3) * 0.05 }}
-            className="corp-os-node"
-          >
-            <span className="corp-os-node-label">{n.label}</span>
-            <span className="corp-os-node-sub">{n.sub}</span>
-          </motion.div>
-        ))}
-        {/* 業務が集まる先。狭い画面でも、ここだけは立体で見せる。 */}
-        {no3d ? (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.94 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
-            className="corp-os-center"
-          >
-            <span style={{ fontFamily: FONT_DISPLAY, fontSize: '1.15rem', letterSpacing: '0.3em', color: '#14100a', fontWeight: 800, paddingLeft: '0.3em' }}>
-              CORE
-            </span>
-            <span style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.68rem', letterSpacing: '0.12em', color: 'rgba(20,16,10,0.72)', fontWeight: 700 }}>
-              AI COMPANY OS
-            </span>
-          </motion.div>
-        ) : (
-          <Suspense fallback={<div className="corp-os3d corp-os3d-core" aria-hidden />}>
-            <CompanyOsScene variant="core" onUnavailable={() => setNo3d(true)} />
-          </Suspense>
-        )}
-      </div>
-    );
+    // PCと同じ「業務が中心のCOREへ集まる」放射状の図を、
+    // 各ラベルの文字幅ぶんだけ角度を割り当てて重ならない大きさで縮めて出す。
+    return <CompanyOsRadialMobile />;
   }
 
   if (!no3d) {
