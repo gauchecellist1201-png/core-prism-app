@@ -63,6 +63,18 @@ npx vercel --prod --yes   # 本番デプロイ
 - 通貨: JPY
 - 14 個の Price ID (`price_xxx`) をコピー
 
+#### CORE Studio 映像制作 (/studio/film) — 任意・上記とは別枠
+
+| 商品名 | plan | 種別 | 金額 |
+| --- | --- | --- | --- |
+| Film TRIAL | film_trial | 単発 (one-time) | ¥49,800 |
+| Film STANDARD | film_standard | 単発 (one-time) | ¥128,000 |
+| Film 月4本 | film_m4 | 定期・月次 | ¥228,000 |
+| Film 月8本 | film_m8 | 定期・月次 | ¥398,000 |
+| Film 月12本 | film_m12 | 定期・月次 | ¥548,000 |
+
+TRIAL/STANDARDは「継続利用なし」、月額3種は「継続利用あり・月次」で作成し、`STRIPE_PRICE_FILM_*`（`.env.example`参照）に投入する。PREMIUM(¥298,000〜)は金額が案件ごとに変わるためPriceを作らずLINE相談のみ。
+
 ### 2. Webhook 登録
 
 [Stripe Dashboard → 開発者 → Webhook](https://dashboard.stripe.com/webhooks) で:

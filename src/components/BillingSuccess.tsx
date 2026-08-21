@@ -50,6 +50,14 @@ export default function BillingSuccess() {
       return;
     }
 
+    // ── film: サブスクリプションではなく制作費の決済なので、プラン照会をせずそのまま完了扱いにする ──
+    if (brand === 'film') {
+      setPlanLabel('');
+      setStatus('success');
+      setTimeout(() => { window.location.href = '/studio/film'; }, 3000);
+      return;
+    }
+
     (async () => {
       const result = await syncFromStripe(sessionId);
       if (cancelled) return;
@@ -72,9 +80,11 @@ export default function BillingSuccess() {
   }, []);
 
   const brand = new URLSearchParams(window.location.search).get('brand') || 'prism';
-  const accent = brand === 'iris' ? '#E1306C' : '#0033A0';
+  const accent = brand === 'iris' ? '#E1306C' : brand === 'film' ? '#A8823C' : '#0033A0';
   const grad = brand === 'iris'
     ? 'linear-gradient(135deg, #833AB4, #E1306C 50%, #F77737)'
+    : brand === 'film'
+    ? 'linear-gradient(135deg, #111827, #3A3A42)'
     : 'linear-gradient(135deg, #0033A0, #1A4FC4)';
 
   return (
@@ -134,14 +144,16 @@ export default function BillingSuccess() {
               お支払いが完了しました
             </h2>
             <p style={{ color: '#5A5562', fontSize: '0.95rem', lineHeight: 1.8 }}>
-              <strong>{planLabel}</strong> プランが有効になりました。
+              {brand === 'film'
+                ? <>ご注文ありがとうございます。担当より<strong>1〜2営業日以内</strong>にヒアリングのご連絡をいたします。</>
+                : <><strong>{planLabel}</strong> プランが有効になりました。</>}
             </p>
 
-            {/* 紹介リンク (オーナー指示 2026-06-03: 完了 → 即拡散の動線) */}
-            <ReferralBlock brand={brand as 'iris' | 'prism'} accent={accent} grad={grad} />
+            {/* 紹介リンク (オーナー指示 2026-06-03: 完了 → 即拡散の動線)。film は制作受注のためリンク共有は出さない */}
+            {brand !== 'film' && <ReferralBlock brand={brand as 'iris' | 'prism'} accent={accent} grad={grad} />}
 
             <p style={{ color: '#8A8593', fontSize: '0.85rem', marginTop: '1.5rem' }}>
-              ※ あと数秒でアプリへ移動します
+              {brand === 'film' ? '※ あと数秒で制作ページへ戻ります' : '※ あと数秒でアプリへ移動します'}
             </p>
           </>
         )}
@@ -163,13 +175,13 @@ export default function BillingSuccess() {
               {errMsg}
             </p>
             <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-              <a href={brand === 'iris' ? '/iris?app=1' : '/?app=1'} style={{
+              <a href={brand === 'iris' ? '/iris?app=1' : brand === 'film' ? '/studio/film' : '/?app=1'} style={{
                 display: 'inline-block',
                 background: grad, color: '#fff',
                 padding: '0.75rem 1.5rem', borderRadius: 999,
                 fontSize: '0.9rem', fontWeight: 700, textDecoration: 'none',
               }}>
-                アプリへ進む
+                {brand === 'film' ? '制作ページへ戻る' : 'アプリへ進む'}
               </a>
               <a href="mailto:core.inc.guild@gmail.com" style={{
                 display: 'inline-block',

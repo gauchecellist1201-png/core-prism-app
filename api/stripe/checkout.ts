@@ -44,6 +44,14 @@ function getPriceId(plan: string, brand: string, cycle: string): string | undefi
     prism_standard_yearly:   process.env.STRIPE_PRICE_PRISM_STANDARD_YEARLY,
     prism_pro_yearly:        process.env.STRIPE_PRICE_PRISM_EXCLUSIVE_YEARLY,
     prism_studio_yearly:     process.env.STRIPE_PRICE_PRISM_STUDIO_YEARLY,
+    // ─── CORE Studio 映像制作 (/studio/film) ───
+    // trial/standard は単発決済 (mode=payment)。cycle は常定で 'monthly' キーになる (単発だが既存のキー規約に合わせている)。
+    // m4/m8/m12 は月額継続 (mode=subscription)。
+    film_trial_monthly:      process.env.STRIPE_PRICE_FILM_TRIAL,
+    film_standard_monthly:   process.env.STRIPE_PRICE_FILM_STANDARD,
+    film_m4_monthly:         process.env.STRIPE_PRICE_FILM_M4,
+    film_m8_monthly:         process.env.STRIPE_PRICE_FILM_M8,
+    film_m12_monthly:        process.env.STRIPE_PRICE_FILM_M12,
   };
   return map[key];
 }
@@ -75,6 +83,8 @@ export default async function handler(req: Request) {
     brand?: string;
     email?: string;
     cycle?: string;
+    /** 'payment' = 単発決済 (film の trial/standard 等)。省略時は従来通り 'subscription' */
+    mode?: string;
     /** BBBB (2026-06-04): Stripe Coupon / Promotion Code */
     promotionCodeId?: string;
     couponId?: string;
@@ -99,10 +109,13 @@ export default async function handler(req: Request) {
 
   const origin = req.headers.get('origin') || 'https://core-prism-app.vercel.app';
   const successUrl = `${origin}/billing/success?session_id={CHECKOUT_SESSION_ID}&brand=${brand}`;
-  const cancelUrl = brand === 'iris' ? `${origin}/iris` : origin;
+  const cancelUrl = brand === 'iris' ? `${origin}/iris` : brand === 'film' ? `${origin}/studio/film` : origin;
+
+  // film の trial/standard は単発の制作費決済 (mode=payment)。それ以外は従来通り月額サブスク。
+  const mode = body.mode === 'payment' ? 'payment' : 'subscription';
 
   const params = new URLSearchParams();
-  params.append('mode', 'subscription');
+  params.append('mode', mode);
   params.append('line_items[0][price]', priceId);
   params.append('line_items[0][quantity]', '1');
   params.append('success_url', successUrl);
@@ -110,11 +123,14 @@ export default async function handler(req: Request) {
   params.append('metadata[plan]', plan);
   params.append('metadata[brand]', brand);
   params.append('metadata[cycle]', cycle);
-  // 🎁 全プランに 7 日間無料トライアル (オーナー指示 2026-05-15)
-  // クレカ登録は必須 (オンボーディング簡素化のため)。8 日目から自動課金。
-  params.append('subscription_data[trial_period_days]', '7');
-  params.append('subscription_data[trial_settings][end_behavior][missing_payment_method]', 'cancel');
-  params.append('payment_method_collection', 'always');
+  if (mode === 'subscription' && brand !== 'film') {
+    // 🎁 全プランに 7 日間無料トライアル (オーナー指示 2026-05-15、Iris/Prism のSaaS向け)
+    // クレカ登録は必須 (オンボーディング簡素化のため)。8 日目から自動課金。
+    // film の月額制作プランは制作の対価そのものなので無料トライアルは付けない。
+    params.append('subscription_data[trial_period_days]', '7');
+    params.append('subscription_data[trial_settings][end_behavior][missing_payment_method]', 'cancel');
+    params.append('payment_method_collection', 'always');
+  }
   if (email) params.append('customer_email', email);
 
   // BBBB (2026-06-04): Coupon / Promotion Code を Stripe Session に渡す

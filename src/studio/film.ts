@@ -257,34 +257,41 @@ export type FilmPlan = {
   includes: string[];
   cta: string;
   featured?: boolean;
+  /** Stripe決済に対応する場合 true (価格に「〜」が付く可変プランは決済ボタンを出さない) */
+  checkout?: boolean;
 };
 
+// 2026-08-21 改定: 競合(AI動画/ショートドラマ制作会社・SNS動画制作会社)を調査し、
+// 「安いAI動画屋」に見えない水準へ引き上げ。市場相場: SNS短尺(企画込み)¥3〜25万/本、
+// ショートドラマ広告パッケージ¥60〜150万、CM級ブランドムービー¥50〜150万〜。
 export const FILM_PLANS: FilmPlan[] = [
   {
     id: 'trial',
     name: 'TRIAL',
-    price: '¥29,800',
+    price: '¥49,800',
     unit: '1本',
     terms: '初めての方の1本かぎり / 修正2回',
     lead: 'まず1本、実物を見てから決めていただくための価格です。',
     includes: ['15〜30秒のショート映像', '企画', 'AI映像制作', '基本編集', 'SNS縦型 (9:16) 対応'],
     cta: 'まず1本試す',
+    checkout: true,
   },
   {
     id: 'standard',
     name: 'STANDARD',
-    price: '¥98,000',
+    price: '¥128,000',
     unit: '1本',
     terms: '修正無制限 / 広告への二次利用込み',
     lead: '台本から仕上げまで通した、当社の標準構成です。',
     includes: ['企画', '台本', 'AI映像生成', '複数シーン構成', '編集', 'BGM', '字幕', 'SNS最適化', '修正無制限', '広告二次利用 (期間・回数の制限なし)'],
-    cta: 'この構成で相談する',
+    cta: 'この構成で申し込む',
     featured: true,
+    checkout: true,
   },
   {
     id: 'premium',
     name: 'PREMIUM',
-    price: '¥198,000〜',
+    price: '¥298,000〜',
     unit: '1本',
     terms: '修正無制限 / 広告への二次利用込み',
     lead: '広告として世に出す前提の、シネマティックな1本を。',
@@ -297,6 +304,7 @@ export const FILM_PLANS: FilmPlan[] = [
 // 料金 (月額 — 継続制作)
 // ------------------------------------------------------------
 export type MonthlyPlan = { id: string; volume: string; price: string; unitPrice: string; body: string; featured?: boolean };
+// MONTHLY_PLANS はすべて Stripe 定期課金(id をそのまま plan として渡す)に対応
 
 export const MONTHLY_LEAD = {
   en: 'Monthly Creative',
@@ -305,9 +313,9 @@ export const MONTHLY_LEAD = {
 } as const;
 
 export const MONTHLY_PLANS: MonthlyPlan[] = [
-  { id: 'm4', volume: '4 VIDEOS', price: '¥198,000', unitPrice: '1本 ¥49,500', body: '週1本。発信を止めずに続ける最小構成です。' },
-  { id: 'm8', volume: '8 VIDEOS', price: '¥328,000', unitPrice: '1本 ¥41,000', body: '週2本。企画の当たり外れを見ながら方向を寄せられます。', featured: true },
-  { id: 'm12', volume: '12 VIDEOS', price: '¥448,000', unitPrice: '1本 ¥37,334', body: '週3本。複数チャネル・複数テーマを並行して回せます。' },
+  { id: 'm4', volume: '4 VIDEOS', price: '¥228,000', unitPrice: '1本 ¥57,000', body: '週1本。発信を止めずに続ける最小構成です。' },
+  { id: 'm8', volume: '8 VIDEOS', price: '¥398,000', unitPrice: '1本 ¥49,750', body: '週2本。企画の当たり外れを見ながら方向を寄せられます。', featured: true },
+  { id: 'm12', volume: '12 VIDEOS', price: '¥548,000', unitPrice: '1本 ¥45,667', body: '週3本。複数チャネル・複数テーマを並行して回せます。' },
 ];
 
 // 継続契約で当社が引き受けている条件。
@@ -347,7 +355,7 @@ export const SIGNATURE = {
   body: '広告枠を買い続けるのではなく、貴社自身が見られ続ける場所になるための契約です。主人公の設計から全12話の企画、毎月の制作までを一体で担当します。',
   initial: {
     label: 'INITIAL DESIGN',
-    price: '¥300,000〜',
+    price: '¥380,000〜',
     includes: [
       'ブランドヒアリング',
       '主人公キャラクター設計',
@@ -361,7 +369,7 @@ export const SIGNATURE = {
   },
   monthly: {
     label: 'MONTHLY PRODUCTION',
-    price: '¥498,000〜',
+    price: '¥598,000〜',
     volume: '8本 / 月',
     body: '設計した世界観のまま、毎月8本を制作・納品します。反応の良かった回は次の企画に反映します。',
   },

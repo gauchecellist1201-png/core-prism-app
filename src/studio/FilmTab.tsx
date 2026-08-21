@@ -464,6 +464,44 @@ function Process() {
 }
 
 // ============================================================
+// Stripe決済ボタン (未設定/失敗時はLINE相談へ自動フォールバック)
+// ============================================================
+function FilmCheckoutButton({ plan, mode, label }: { plan: string; mode: 'payment' | 'subscription'; label: string }) {
+  const [busy, setBusy] = useState(false);
+
+  const go = async () => {
+    if (busy) return;
+    setBusy(true);
+    track('studio_film_checkout_start', { plan, mode });
+    try {
+      const resp = await fetch('/api/stripe/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plan, brand: 'film', mode }),
+      });
+      if (resp.status === 503) {
+        track('studio_film_checkout_fallback', { plan });
+        window.open(CONTACT.lineUrl, '_blank', 'noopener,noreferrer');
+        return;
+      }
+      const data: { url?: string } = await resp.json().catch(() => ({}));
+      if (data.url) window.location.href = data.url;
+      else window.open(CONTACT.lineUrl, '_blank', 'noopener,noreferrer');
+    } catch {
+      window.open(CONTACT.lineUrl, '_blank', 'noopener,noreferrer');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <button type="button" className="st-btn st-btn-primary" style={{ width: '100%', boxSizing: 'border-box' }} onClick={go} disabled={busy}>
+      {busy ? '決済ページを開いています…' : label}
+    </button>
+  );
+}
+
+// ============================================================
 // 料金
 // ============================================================
 function Pricing() {
@@ -490,11 +528,22 @@ function Pricing() {
                   ))}
                 </ul>
                 <div style={{ marginTop: 16 }}>
-                  <a className="st-btn st-btn-primary" style={{ width: '100%', boxSizing: 'border-box' }}
-                    href={CONTACT.lineUrl} target="_blank" rel="noopener noreferrer"
-                    onClick={() => track('studio_film_pricing_cta', { plan: p.id, to: 'line' })}>
-                    <IconChat /> {p.cta}
-                  </a>
+                  {p.checkout ? (
+                    <>
+                      <FilmCheckoutButton plan={p.id} mode="payment" label={p.cta} />
+                      <a href={CONTACT.lineUrl} target="_blank" rel="noopener noreferrer"
+                        style={{ display: 'block', textAlign: 'center', fontSize: 12.5, color: C.mute, marginTop: 10 }}
+                        onClick={() => track('studio_film_pricing_cta', { plan: p.id, to: 'line' })}>
+                        先にLINEで相談する
+                      </a>
+                    </>
+                  ) : (
+                    <a className="st-btn st-btn-primary" style={{ width: '100%', boxSizing: 'border-box' }}
+                      href={CONTACT.lineUrl} target="_blank" rel="noopener noreferrer"
+                      onClick={() => track('studio_film_pricing_cta', { plan: p.id, to: 'line' })}>
+                      <IconChat /> {p.cta}
+                    </a>
+                  )}
                 </div>
               </div>
             </Reveal>
@@ -521,7 +570,10 @@ function Pricing() {
                   {m.price}<span style={{ fontSize: 12.5, color: C.mute, fontWeight: 400, marginLeft: 6 }}>/ 月</span>
                 </div>
                 <div style={{ fontSize: 12, color: C.mute, marginTop: 4 }}>{m.unitPrice}</div>
-                <p style={{ fontSize: 13, lineHeight: 1.9, color: C.body, margin: '10px 0 0' }}>{m.body}</p>
+                <p style={{ fontSize: 13, lineHeight: 1.9, color: C.body, margin: '10px 0 0 0' }}>{m.body}</p>
+                <div style={{ marginTop: 14 }}>
+                  <FilmCheckoutButton plan={m.id} mode="subscription" label="このプランで申し込む" />
+                </div>
               </div>
             </Reveal>
           ))}
@@ -541,9 +593,9 @@ function Pricing() {
         </Reveal>
 
         <div style={{ marginTop: 20, textAlign: 'center' }}>
-          <a className="st-btn st-btn-primary" href={CONTACT.lineUrl} target="_blank" rel="noopener noreferrer"
+          <a className="st-btn st-btn-ghost" href={CONTACT.lineUrl} target="_blank" rel="noopener noreferrer"
             onClick={() => track('studio_film_pricing_cta', { plan: 'monthly', to: 'line' })}>
-            <IconChat /> 継続プランをLINEで相談する
+            <IconChat /> 決める前にLINEで相談する
           </a>
           <Note>{PRICE_NOTE}</Note>
         </div>
