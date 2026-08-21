@@ -3198,14 +3198,16 @@ function BeautyChatView({ bg, settings }: { bg: IrisBackgroundDef; settings: App
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
 
-  const send = useCallback(async () => {
-    if (!input.trim() || busy) return;
-    const userMsg: BeautyMessage = { role: 'user', content: input, timestamp: new Date().toISOString() };
+  // preset = 質問例のボタンから来た文面。入力欄が空でも、その1タップで会話を始められる。
+  const send = useCallback(async (preset?: string) => {
+    const text = (preset ?? input).trim();
+    if (!text || busy) return;
+    const userMsg: BeautyMessage = { role: 'user', content: text, timestamp: new Date().toISOString() };
     setHistory(prev => [...prev, userMsg]);
     setInput('');
     setBusy(true);
     try {
-      const reply = await chatBeautyAdvisor({ settings, topic, history, userMessage: input });
+      const reply = await chatBeautyAdvisor({ settings, topic, history, userMessage: text });
       setHistory(prev => [...prev, { role: 'assistant', content: reply, timestamp: new Date().toISOString() }]);
     } catch (e: any) {
       setHistory(prev => [...prev, { role: 'assistant', content: `すみません、いま接続が不安定みたいです: ${e.message}`, timestamp: new Date().toISOString() }]);
@@ -3213,35 +3215,81 @@ function BeautyChatView({ bg, settings }: { bg: IrisBackgroundDef; settings: App
   }, [input, busy, history, topic, settings]);
 
   return (
-    <div style={{ display: 'grid', gap: '1rem' }}>
+    // 下の余白は、いちばん下まで送っても「AI に聞く」が浮いているAIオーブの下敷きにならないための逃げ幅。
+    // これが無いと最大スクロール位置で送信ボタンの中心がオーブに覆われる（実測）。
+    <div style={{ display: 'grid', gap: '1rem', paddingBottom: 132 }}>
+      <IrisIntro
+        id="beauty"
+        bg={bg}
+        icon={HeartPulse}
+        what="肌・メイク・髪・体調を、何度でも聞ける相談室です。"
+        tryThis="下の「質問の例」を押すだけ。打ち込まなくても始まります。"
+        example="「毛穴の黒ずみ、何から始めればいい？」→ 順番と成分の候補を 2〜3 案で返します"
+      />
       <div>
         <p style={{ fontSize: '0.75rem', letterSpacing: '0.3em', color: bg.accentText, fontWeight: 600 }}>BEAUTY</p>
-        <h2 style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: '2rem', color: bg.ink, margin: '0.25rem 0 0' }}>
+        <h2 style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: 'clamp(1.5rem, 5.5vw, 2rem)', color: bg.ink, margin: '0.25rem 0 0' }}>
           なんでも、話して。
         </h2>
       </div>
 
-      <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+      {/* 話題は 1 行に収めて横に流す。8つが3段に折れると、その下の「押すだけの質問例」が
+          iPhone の1画面目から丸ごと落ちる（実測）。折り返しを止めても押せる高さ 44px は保つ。 */}
+      <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'nowrap', overflowX: 'auto', paddingBottom: 2, scrollbarWidth: 'none' }}>
         {Object.entries(BEAUTY_TOPIC_META).map(([k, v]) => (
           <button key={k} onClick={() => setTopic(k as BeautyTopic)} style={{
             background: topic === k ? bg.accentSolid : 'rgba(255,255,255,0.5)',
             color: topic === k ? '#fff' : bg.ink,
             border: `1px solid ${bg.cardBorder}`,
-            borderRadius: 999, padding: '0.45rem 0.95rem',
+            borderRadius: 999, padding: '0.45rem 0.95rem', minHeight: 44,
             fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer',
-            fontFamily: IRIS_FONTS.body,
+            fontFamily: IRIS_FONTS.body, whiteSpace: 'nowrap', flexShrink: 0,
           }}>
-            {v.emoji} {v.label}
+            {v.label}
           </button>
         ))}
       </div>
 
       <Card bg={bg}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', minHeight: 200, maxHeight: 460, overflowY: 'auto', marginBottom: '0.75rem' }}>
+          {/* 空っぽの相談室。「今どうなっているか」「何を聞けるか」「押すとどうなるか」の3つを置き、
+              最後は必ず押せるものにする。打ち込まないと1歩も進めない画面にしない。 */}
           {history.length === 0 && (
-            <p style={{ color: bg.inkSoft, textAlign: 'center', padding: '2rem 0' }}>
-              {BEAUTY_TOPIC_META[topic].emoji} {BEAUTY_TOPIC_META[topic].hint}
-            </p>
+            <div style={{ padding: '0.5rem 0.2rem', display: 'grid', gap: '0.55rem', justifyItems: 'center' }}>
+              <p style={{ margin: 0, color: bg.ink, fontWeight: 700, fontSize: '0.9rem', textAlign: 'center', lineHeight: 1.5 }}>
+                まだ会話はありません。いまは「{BEAUTY_TOPIC_META[topic].label}」の話をする設定です。
+              </p>
+              <p style={{ margin: 0, color: bg.inkSoft, fontSize: '0.78rem', lineHeight: 1.5, textAlign: 'center' }}>
+                下の質問を押すと、そのまま送られて答えが返ってきます。
+              </p>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', justifyContent: 'center' }}>
+                {BEAUTY_TOPIC_META[topic].starters.map(q => (
+                  <button
+                    key={q}
+                    onClick={() => send(q)}
+                    disabled={busy}
+                    style={{
+                      background: 'rgba(255,255,255,0.75)',
+                      color: bg.ink,
+                      border: `1px solid ${bg.accent}55`,
+                      borderRadius: 14,
+                      padding: '0.55rem 0.9rem',
+                      minHeight: 44,
+                      fontSize: '0.82rem', fontWeight: 600, lineHeight: 1.45,
+                      cursor: busy ? 'not-allowed' : 'pointer',
+                      opacity: busy ? 0.6 : 1,
+                      fontFamily: IRIS_FONTS.body,
+                      textAlign: 'left',
+                    }}
+                  >
+                    {q}
+                  </button>
+                ))}
+              </div>
+              <p style={{ margin: 0, color: bg.inkSoft, fontSize: '0.72rem', opacity: 0.85, textAlign: 'center' }}>
+                もちろん、下の欄に自分の言葉で書いても大丈夫です。
+              </p>
+            </div>
           )}
           {history.map((m, i) => (
             <div key={i} style={{
@@ -3260,7 +3308,8 @@ function BeautyChatView({ bg, settings }: { bg: IrisBackgroundDef; settings: App
           ))}
           {busy && (
             <div style={{ alignSelf: 'flex-start', padding: '0.7rem 1rem', color: bg.inkSoft }}>
-              <LoaderDots color={bg.inkSoft} label="考えてる" />
+              {/* 待ち時間に「何を考えているか」を名前で出す。灰色の「…」だけにしない */}
+              <LoaderDots color={bg.inkSoft} label={`${BEAUTY_TOPIC_META[topic].label}のことを考えています`} />
             </div>
           )}
         </div>
@@ -3273,7 +3322,15 @@ function BeautyChatView({ bg, settings }: { bg: IrisBackgroundDef; settings: App
             onChange={e => setInput(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
           />
-          <button onClick={send} disabled={busy || !input.trim()} style={btnPrimary(bg)}>送信</button>
+          {/* onClick={send} だと MouseEvent が preset として渡ってしまうので、必ず引数なしで呼ぶ。
+              nowrap/flexShrink が無いと、375px では字が「AI / に / 聞く」と縦に潰れる（実測） */}
+          <button
+            onClick={() => send()}
+            disabled={busy || !input.trim()}
+            style={{ ...btnPrimary(bg), whiteSpace: 'nowrap', flexShrink: 0, alignSelf: 'stretch' }}
+          >
+            AI に聞く
+          </button>
         </div>
       </Card>
     </div>
