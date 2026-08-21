@@ -10,6 +10,7 @@
 // 1秒未満の速い派手な動きは使わない。
 // ============================================================
 import type { ReactNode } from 'react';
+import { Suspense, lazy, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   FONT_DISPLAY, FONT_SERIF_JA, FONT_SERIF_EN, FONT_SANS,
@@ -22,9 +23,14 @@ import {
   ASSESSMENT_TARGETS, ASSESSMENT_STEPS, USE_CASES, AI_NATIVE_STEPS,
   TECH_GROUPS, BIZDEV_ITEMS, PARTNER_TARGETS, PARTNER_FORMS,
   INVESTMENT_TIERS, CORE_NUMBERS,
-  ENGAGEMENT_STEPS, ENGAGEMENT_TERMS, SECURITY_ITEMS, CORP_FAQ,
+  ENGAGEMENT_STEPS, ENGAGEMENT_TERMS, SECURITY_ITEMS, CORP_FAQ, INDUSTRY_NEXT,
 } from './transformData';
+import { VERTICALS } from '../vertical/verticalData';
 import { useIsMobile } from './useIsMobile';
+
+// 実3Dの図。three.js は重いので、この章に来て初めて読み込む。
+// 読み込み中・WebGL が無い環境では、下の SVG 版がそのまま出る。
+const CompanyOsScene = lazy(() => import('./CompanyOsScene'));
 
 type AnchorHandler = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => void;
 
@@ -353,12 +359,14 @@ export function DifferenceSection() {
 // ============================================================
 function CompanyOsDiagram() {
   const isMobile = useIsMobile('(max-width: 860px)');
+  // WebGL が使えない端末では 3D を諦めて、下の SVG / 金の円に戻す。
+  const [no3d, setNo3d] = useState(false);
 
   if (isMobile) {
     // 狭い画面では放射状の図は文字が読めなくなる。
     // 「バラバラの業務が、下の CORE に集まっていく」縦の図に置き換える。
     return (
-      <div className="corp-os-stack" aria-hidden={false}>
+      <div className={no3d ? 'corp-os-stack' : 'corp-os-stack corp-os-stack-3d'} aria-hidden={false}>
         <div className="corp-os-stack-line" aria-hidden />
         {COMPANY_OS_NODES.map((n, i) => (
           <motion.div
@@ -373,25 +381,44 @@ function CompanyOsDiagram() {
             <span className="corp-os-node-sub">{n.sub}</span>
           </motion.div>
         ))}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.94 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
-          className="corp-os-center"
-        >
-          <span style={{ fontFamily: FONT_DISPLAY, fontSize: '1.15rem', letterSpacing: '0.3em', color: '#14100a', fontWeight: 800, paddingLeft: '0.3em' }}>
-            CORE
-          </span>
-          <span style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.68rem', letterSpacing: '0.12em', color: 'rgba(20,16,10,0.72)', fontWeight: 700 }}>
-            AI COMPANY OS
-          </span>
-        </motion.div>
+        {/* 業務が集まる先。狭い画面でも、ここだけは立体で見せる。 */}
+        {no3d ? (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.94 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
+            className="corp-os-center"
+          >
+            <span style={{ fontFamily: FONT_DISPLAY, fontSize: '1.15rem', letterSpacing: '0.3em', color: '#14100a', fontWeight: 800, paddingLeft: '0.3em' }}>
+              CORE
+            </span>
+            <span style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.68rem', letterSpacing: '0.12em', color: 'rgba(20,16,10,0.72)', fontWeight: 700 }}>
+              AI COMPANY OS
+            </span>
+          </motion.div>
+        ) : (
+          <Suspense fallback={<div className="corp-os3d corp-os3d-core" aria-hidden />}>
+            <CompanyOsScene variant="core" onUnavailable={() => setNo3d(true)} />
+          </Suspense>
+        )}
       </div>
     );
   }
 
-  // ── デスクトップ: CORE を中心に業務が集まる網 ──
+  if (!no3d) {
+    return (
+      <Suspense fallback={<CompanyOsSvg />}>
+        <CompanyOsScene variant="full" onUnavailable={() => setNo3d(true)} />
+      </Suspense>
+    );
+  }
+
+  return <CompanyOsSvg />;
+}
+
+// ── WebGL が無い環境のための平面版（従来の図） ──
+function CompanyOsSvg() {
   const cx = 460, cy = 300, rx = 355, ry = 218;
   const nodes = COMPANY_OS_NODES.map((n, i) => {
     const a = (-90 + (360 / COMPANY_OS_NODES.length) * i) * (Math.PI / 180);
@@ -712,7 +739,8 @@ export function BusinessDevSection() {
 //  10 Industry AI OS
 // ============================================================
 export function IndustryOsSection({ onAnchor }: { onAnchor?: AnchorHandler }) {
-  const industries = SERVICE_LAYERS[3].items;
+  // 「すでに5つの業界で作っている」と書きながら、まだ無い7業界を並べていた。
+  // 動いているものは VERTICALS から数え、これから広げる領域とは分けて出す。
   return (
     <Section
       id="industry-os"
@@ -720,20 +748,40 @@ export function IndustryOsSection({ onAnchor }: { onAnchor?: AnchorHandler }) {
       labelJa="業界OS"
       labelEn="INDUSTRY&nbsp;AI&nbsp;OS"
       title={<>一社の課題解決を、<br />業界全体の仕組みに変える。</>}
-      lead={<>受託で得た知見のうち、その業界の誰もが抱えている部分を製品にします。<br />すでに5つの業界で、業務そのものを引き受けるAIを作っています。</>}
+      lead={<>受託で得た知見のうち、その業界の誰もが抱えている部分を製品にします。<br />いま {VERTICALS.length} つの業界で、業務そのものを引き受けるAIが動いています。</>}
     >
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.55rem', justifyContent: 'center', marginBottom: '2.6rem' }}>
-        {industries.map(t => (
+      <p style={{ fontFamily: FONT_DISPLAY, fontSize: '0.66rem', letterSpacing: '0.3em', color: GOLD, textAlign: 'center', marginBottom: '1rem' }}>
+        IN&nbsp;OPERATION
+      </p>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.55rem', justifyContent: 'center', marginBottom: '2.4rem' }}>
+        {VERTICALS.map(v => (
+          <span key={v.name} style={{
+            display: 'inline-flex', alignItems: 'baseline', gap: '0.6em',
+            fontFamily: FONT_SERIF_JA, fontSize: '0.9rem', color: '#F1E6CE',
+            border: '1px solid rgba(201,169,110,0.4)', background: 'rgba(201,169,110,0.06)',
+            borderRadius: 999, padding: '10px 20px', letterSpacing: '0.08em',
+          }}>
+            {v.industryShort}
+            <span style={{ fontFamily: FONT_DISPLAY, fontSize: '0.62rem', letterSpacing: '0.16em', color: GOLD }}>{v.name}</span>
+          </span>
+        ))}
+      </div>
+
+      <p style={{ fontFamily: FONT_DISPLAY, fontSize: '0.66rem', letterSpacing: '0.3em', color: 'rgba(240,233,216,0.5)', textAlign: 'center', marginBottom: '1rem' }}>
+        NEXT
+      </p>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', justifyContent: 'center', marginBottom: '2.6rem' }}>
+        {INDUSTRY_NEXT.map(t => (
           <span key={t} style={{
-            fontFamily: FONT_SERIF_JA, fontSize: '0.9rem', color: 'rgba(240,233,216,0.86)',
-            border: '1px solid rgba(201,169,110,0.3)', borderRadius: 999, padding: '10px 20px', letterSpacing: '0.08em',
+            fontFamily: FONT_SERIF_JA, fontSize: '0.86rem', color: TEXT_MUTED,
+            border: '1px dashed rgba(201,169,110,0.28)', borderRadius: 999, padding: '9px 18px', letterSpacing: '0.08em',
           }}>
             {t}
           </span>
         ))}
         <span style={{
-          fontFamily: FONT_DISPLAY, fontSize: '0.62rem', letterSpacing: '0.24em', color: '#0d0b06',
-          background: 'linear-gradient(135deg,#E7C987,#C9A96E)', borderRadius: 999, padding: '10px 16px', fontWeight: 700,
+          fontFamily: FONT_DISPLAY, fontSize: '0.6rem', letterSpacing: '0.24em', color: 'rgba(240,233,216,0.55)',
+          border: '1px dashed rgba(201,169,110,0.28)', borderRadius: 999, padding: '9px 14px', fontWeight: 700,
           display: 'inline-flex', alignItems: 'center',
         }}>
           COMING SOON
@@ -971,9 +1019,9 @@ export function InvestmentSection({ onAnchor }: { onAnchor?: AnchorHandler }) {
 }
 
 // ============================================================
-//  進め方（ENGAGEMENT）
-//  法人のお客様が最初に確かめるのは「何ができるか」ではなく
-//  「どう進むのか・誰が出るのか・止められるのか・作ったものは誰のものか」。
+//  進め方・体制（ENGAGEMENT）
+//  2026-08-21 追記。「何ができるか」だけでは稟議に持ち込めない。
+//  どう進み、誰が出て、いつ止められて、作ったものが誰のものかを先に書く。
 // ============================================================
 export function EngagementSection({ onAnchor }: { onAnchor?: AnchorHandler }) {
   return (

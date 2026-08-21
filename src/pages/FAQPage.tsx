@@ -420,8 +420,11 @@ export default function FAQPage() {
           >
             <summary
               style={{
+                position: 'relative',
                 cursor: 'pointer',
-                padding: '1rem 1.2rem',
+                // 右だけ広げて印の居場所を作る（1.2rem のままだと、いちばん
+                // 長い質問と印のすきまが本番実測で 3px しかなく詰まって見える）
+                padding: '1rem 1.9rem 1rem 1.2rem',
                 fontWeight: 700,
                 fontSize: '1rem',
                 color: '#E6E9F2',
@@ -439,6 +442,11 @@ export default function FAQPage() {
                 Q{String(i + 1).padStart(2, '0')}
               </span>
               <span style={{ flex: 1, minWidth: 0 }}>{f.q}</span>
+              {/* 印は右余白(1.9rem=30.4px)の中に絶対配置する＝流れに置くより
+                  質問文の幅を食わない。1行の質問の余りは最小3pxしかないので、
+                  それでも長い3問は2行に折れる（56→80px）。詰まって見えるより
+                  そちらを取った。*/}
+              <svg className="disclosure-chev" style={{ right: 7, top: 21, color: 'rgba(230,233,242,0.75)' }} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6" /></svg>
             </summary>
             <div style={{ padding: '0 1.2rem 1rem 1.2rem' }}>{f.a}</div>
           </details>

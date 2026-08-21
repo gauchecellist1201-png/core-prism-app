@@ -3622,6 +3622,30 @@ body[data-prism-chat-dock] [data-tour-id="kpi-sparkline"] {
   .lp-section-pad.finder-section { padding-bottom: calc(4rem + 84px) !important; }
 }
 
+/* ── <details> に「押せば開く」と分かる印を足す（2026-08-19 実測） ──
+   /pricing の7件も /faq の18件も list-style:none でマーカーを消したまま
+   何も足しておらず、押せる高さは44px以上になったのに「押せると分からない」
+   ままだった（section 38 の※残・次夜の第一候補）。
+   ⚠️印を「文の流れの中」に置くと質問文の幅を食う。本番375pxで実測すると
+   1行の質問の余りは /faq が最小 3px・/pricing が最小 18px しかなく、
+   16px の印を流れに置くだけで4問が2行に折れてカードが 56→80px に伸びる
+   （section 36・37 で目次を縮めたのと逆行する）。
+   そこで印は summary の「既にある右余白の中」に絶対配置する＝質問文の幅を
+   1px も奪わない。閉じているとき ▸ / 開くと ▾ に回す。 */
+.disclosure-chev {
+  position: absolute;
+  transform: rotate(0deg);
+  transform-origin: 50% 50%;
+  transition: transform 160ms ease;
+  pointer-events: none; /* 印は飾り。押す面は summary 全体のまま */
+}
+details[open] > summary .disclosure-chev {
+  transform: rotate(90deg);
+}
+@media (prefers-reduced-motion: reduce) {
+  .disclosure-chev { transition: none; }
+}
+
 /* ============================================================
    /corp — AI Transformation Company の章まわり（2026-08-21）
    既存の金×黒はそのまま。ここは並べ方だけを決める。
@@ -3775,15 +3799,67 @@ body[data-prism-chat-dock] [data-tour-id="kpi-sparkline"] {
   box-shadow: 0 20px 60px -20px rgba(201, 169, 110, 0.75);
 }
 
-/* 相談フォームの入力欄。焦点が見えないと、どこを触っているか分からなくなる。 */
-#contact input:focus,
-#contact textarea:focus {
-  border-color: rgba(231, 201, 135, 0.9);
-  box-shadow: 0 0 0 3px rgba(201, 169, 110, 0.2);
+/* ── AI COMPANY OS の実3D図（CompanyOsScene.tsx） ─────────────
+   canvas は絶対配置で敷き、その上に HTML のラベルを毎フレーム置く。
+   文字を WebGL に焼かないので、日本語がぼやけない・読み上げにも乗る。 */
+.corp-os3d {
+  position: relative;
+  width: 100%;
 }
-#contact input::placeholder,
-#contact textarea::placeholder {
-  color: rgba(240, 233, 216, 0.36);
+/* 図の中身（横に広い楕円の軌道）とほぼ同じ比率にしておく。
+   箱だけ高くすると、上下に何も無い帯ができて「間が抜けた」図に見える。 */
+.corp-os3d-full {
+  aspect-ratio: 1.82;
+  max-height: 600px;
+  min-height: 360px;
+}
+.corp-os3d-core {
+  height: 200px;
+  margin-top: 0.6rem;
+}
+/* 3D の核を置いたときは、縦線を核の手前で止める（線が球を貫かないように）。 */
+.corp-os-stack-3d .corp-os-stack-line {
+  bottom: 162px;
+}
+.corp-os3d-pill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  opacity: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  white-space: nowrap;
+  padding: 0.55rem 1.15rem;
+  border-radius: 999px;
+  border: 1px solid rgba(201, 169, 110, 0.34);
+  background: rgba(8, 7, 5, 0.74);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  box-shadow: 0 18px 44px -26px rgba(201, 169, 110, 0.6);
+  will-change: transform, opacity;
+}
+.corp-os3d-center {
+  position: absolute;
+  left: 0;
+  top: 0;
+  opacity: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  white-space: nowrap;
+  will-change: transform;
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.8);
+}
+/* 軌道の線が文字の上を通ると「AI COMPANY OS」が金の線に溶ける。
+   文字の後ろだけを、輪郭の出ない形で暗く沈める。 */
+.corp-os3d-center::before {
+  content: '';
+  position: absolute;
+  inset: -22px -40px;
+  z-index: -1;
+  background: radial-gradient(58% 62% at 50% 50%, rgba(4, 3, 2, 0.88), rgba(4, 3, 2, 0));
 }
 
 /* ── よくあるご質問（FaqSection） ───────────────────────── */
@@ -3815,6 +3891,17 @@ body[data-prism-chat-dock] [data-tour-id="kpi-sparkline"] {
 }
 .corp-faq[open] .corp-faq-mark {
   transform: rotate(45deg);
+}
+
+/* 相談フォームの入力欄。焦点が見えないと、どこを触っているか分からなくなる。 */
+#contact input:focus,
+#contact textarea:focus {
+  border-color: rgba(231, 201, 135, 0.9);
+  box-shadow: 0 0 0 3px rgba(201, 169, 110, 0.2);
+}
+#contact input::placeholder,
+#contact textarea::placeholder {
+  color: rgba(240, 233, 216, 0.36);
 }
 
 @media (max-width: 1024px) {

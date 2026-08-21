@@ -126,7 +126,8 @@ export default function RoadmapPage() {
       fontFamily: '-apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", sans-serif',
     }}>
       <div style={{ maxWidth: 1180, margin: '0 auto', padding: '32px 18px 80px' }}>
-        <a href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: 'rgba(255,255,255,0.6)', fontSize: '0.85rem', textDecoration: 'none', marginBottom: 24 }}>
+        {/* このページ唯一の戻り導線。20pxでは指で狙えないので面の高さを44pxにする（2026-08-19） */}
+        <a href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, minHeight: 44, color: 'rgba(255,255,255,0.6)', fontSize: '0.85rem', textDecoration: 'none', marginBottom: 12 }}>
           <ArrowLeft size={14} /> ホームへ戻る
         </a>
 

@@ -68,14 +68,16 @@ export default function ContactPage() {
       padding: '2rem 1rem 4rem',
     }}>
       <div style={{ maxWidth: 640, margin: '0 auto' }}>
+        {/* このページ唯一の戻り導線。20pxでは指で狙えないので面の高さを44pxにする（2026-08-19） */}
         <a
           href="/"
           style={{
             display: 'inline-flex', alignItems: 'center', gap: 6,
+            minHeight: 44,
             color: 'rgba(255,255,255,0.6)',
             fontSize: '0.85rem',
             textDecoration: 'none',
-            marginBottom: 24,
+            marginBottom: 12,
           }}
         >
           <ArrowLeft size={14} /> ホームへ戻る
@@ -285,7 +287,15 @@ export default function ContactPage() {
         </AnimatePresence>
 
         <div style={{ marginTop: 32, fontSize: '0.78rem', color: 'rgba(255,255,255,0.55)', textAlign: 'center' }}>
-          直接メール: <a href="mailto:core.inc.guild@gmail.com" style={{ color: '#60a5fa', fontWeight: 600, textDecoration: 'underline' }}>core.inc.guild@gmail.com</a>
+          {/* フォームを使わない人にとってはここが唯一の連絡手段。15pxでは押せないので
+              inline-flex で「行の高さ」のほうを44pxへ持ち上げる（文の流れは変えない・2026-08-19） */}
+          直接メール: <a
+            href="mailto:core.inc.guild@gmail.com"
+            style={{
+              color: '#60a5fa', fontWeight: 600, textDecoration: 'underline',
+              display: 'inline-flex', alignItems: 'center', minHeight: 44,
+            }}
+          >core.inc.guild@gmail.com</a>
         </div>
       </div>
     </div>

@@ -241,6 +241,7 @@ export const CORE_NUMBERS: { label: string; labelJa: string; value: string | nul
   { label: 'CONTINUOUS RATE', labelJa: '継続契約率', value: null },
 ];
 
+// ── 進め方・体制（ENGAGEMENT）─────────────────────
 /**
  * 2026-08-21 追記: 法人のお客様が最初に確かめるのは「何ができるか」ではなく
  * 「どう進むのか・誰が出るのか・止められるのか・作ったものは誰のものか」。
@@ -350,6 +351,10 @@ export const CORP_FAQ: { q: string; a: string }[] = [
     a: 'できます。打ち合わせはオンラインが中心です。現場を見なければ判断できない場面では、お伺いします。',
   },
 ];
+
+// ── これから広げたい領域（業界OS）──────────────────
+/** いま動いている業界は VERTICALS が唯一の出どころ。ここには「まだ無いもの」だけを書く。 */
+export const INDUSTRY_NEXT: string[] = ['医療', '美容', '不動産', '教育', '人材', '士業'];
 
 // ── 問い合わせフォームの選択肢 ─────────────────────
 export const CONTACT_INTERESTS: string[] = [

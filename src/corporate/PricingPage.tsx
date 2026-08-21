@@ -816,8 +816,11 @@ export default function PricingPage() {
               // 余白を <summary> へ移して、カードの上半分がまるごと押せる面になるようにする。
               // 高さは指で狙える 44px を下限に（2026-08-18）
               <details key={i} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, cursor: 'pointer' }}>
-                <summary style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.95rem', fontWeight: 700, listStyle: 'none', display: 'flex', alignItems: 'flex-start', gap: '0.5rem', minHeight: 44, padding: '1.1rem 1.5rem' }}>
+                {/* 印は右余白(1.5rem=24px)の中に絶対配置する。流れに置くと質問文の幅を
+                    奪って1行の質問が2行に折れる（本番実測で余りは最小18px）*/}
+                <summary style={{ position: 'relative', fontFamily: FONT_SERIF_JA, fontSize: '0.95rem', fontWeight: 700, listStyle: 'none', display: 'flex', alignItems: 'flex-start', gap: '0.5rem', minHeight: 44, padding: '1.1rem 1.5rem' }}>
                   <span style={{ color: '#a78bfa', flexShrink: 0 }}>Q.</span><span>{f.q}</span>
+                  <svg className="disclosure-chev" style={{ right: 5, top: 22, color: 'rgba(255,255,255,0.75)' }} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6" /></svg>
                 </summary>
                 <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.88rem', color: 'rgba(255,255,255,0.7)', lineHeight: 2, margin: 0, padding: '0 1.5rem 1.25rem 2.4rem' }}>{f.a}</p>
               </details>
