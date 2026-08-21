@@ -89,7 +89,7 @@ export const SERVICES: Service[] = [
   {
     key: 'prism', name: 'Prism',
     who: '数字・営業・契約・議事録を、ぜんぶ自分ひとりで抱えている経営者',
-    can: '13名のAI役員が、経営の調べもの・書きもの・段取りを引き受ける',
+    can: '7人の専属AIが、経営の調べもの・書きもの・段取りを引き受ける',
     price: '¥2,980', priceNote: '〜 / 月（税込）',
     firstStep: '事業の情報を貼ると、AI役員が最初の一手を返します',
     accent: '#C9A96E', url: '/pricing', Logo: PrismLogo,

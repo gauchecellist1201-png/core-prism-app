@@ -17,6 +17,11 @@ import { Mail as MailIcon } from 'lucide-react';
 import { PrismLogo, IrisLogo, ResonanceLogo, LumeLogo, GuildLogo, CoreLogo, CrystalLogo, PulseLogo, UltimaLogo, AnimaLogo, VeritasLogo, SomaLogo, TabittoLogo, NexusLogo } from '../components/Logo';
 import { CONTINUUM_PLANS } from './continuumPlans';
 import ServiceFinder from './ServiceFinder';
+import {
+  SUITE_CORE, SUITE_MEMBERS, SUITE_ALL, SUITE_ROLES, SUITE_COUNT, SUITE_COUNT_KANJI,
+  SUITE_BEST_TOTAL, suiteService, formatYen,
+  type SuiteRole, type SuiteMember,
+} from './suiteData';
 import { VERTICALS } from '../vertical/verticalData';
 import { VerticalIndustryIcon } from '../vertical/VerticalIndustryIcon';
 import {
@@ -30,6 +35,7 @@ import {
   AssessmentSection, UseCasesSection, ServiceLayersSection, BusinessDevSection,
   IndustryOsSection, PartnerSection, AiNativeSection, TechnologySection,
   CoreNumbersSection, InvestmentSection,
+  EngagementSection, SecuritySection, FaqSection,
 } from './TransformSections';
 import { ContactSection } from './CorpContactForm';
 
@@ -54,7 +60,7 @@ const PLATFORM_PLANS: Array<{
   // オーナー指示 2026-07-30: 主力は Prism → Resonance → Crystal。この順で先頭に置く。
   // ラベルは「STEP 1..5」の導線順だったが、主力を先に出す並びと矛盾するため
   // 「主力 / そのほか」の役割表記に変えた（読み手が順番を導線と誤解しないように）。
-  { name: 'Prism', role: 'AI Business OS', copy: '経営の司令塔。13名のAIエージェントが事業を動かす。', price: '¥2,980〜', priceNote: '/ 月（税込）', accent: '#C9A96E', url: '/pricing', Logo: PrismLogo, step: '主力 — 経営のすべてを', featured: true },
+  { name: 'Prism', role: 'AI Business OS', copy: '経営の司令塔。7人の専属AIが事業を動かす。', price: '¥2,980〜', priceNote: '/ 月（税込）', accent: '#C9A96E', url: '/pricing', Logo: PrismLogo, step: '主力 — 経営のすべてを', featured: true },
   { name: 'Resonance', role: 'LINE AI', copy: '一人ひとりに書き分けるLINE個別配信と自動応対。', price: '¥6,980〜', priceNote: '/ 月（税込）', accent: '#06C755', url: 'https://resonancebot-ivory.vercel.app/lp', Logo: ResonanceLogo, step: '主力 — LINEの集客を', featured: true },
   { name: 'Crystal', role: 'AI Concierge', copy: 'サイトに1行で住みつく、白と金のAIコンシェルジュ。', price: '¥29,800〜', priceNote: '/ 月（税込）・¥49,800プランあり', accent: '#C9A96E', url: 'https://crystal-nine-self.vercel.app/', Logo: CrystalLogo, step: '主力 — サイトの接客を', featured: true },
   { name: 'Iris', role: 'Instagram AI', copy: 'Instagram運用のすべてをAIと。分析から案件まで。', price: '¥2,980〜', priceNote: '/ 月（税込）', accent: '#E1306C', url: '/iris?lp=1', Logo: IrisLogo, step: 'Instagram の運用に' },
@@ -124,11 +130,16 @@ const SECTION_TAB: Record<string, CoreTabKey> = {
   // 変革 — この会社が何をするのか
   top: 'home', philosophy: 'home', whatwedo: 'home', difference: 'home', assessment: 'home',
   // AI COMPANY OS — 中核商品
-  companyos: 'os', usecases: 'os', connect: 'os', continuum: 'os',
+  companyos: 'os', usecases: 'os', continuum: 'os',
+  // connect（座組み）は 2026-08-21 に〈製品〉タブへ移した。
+  // 「8つがどう1つになるか」は、8つの製品カードと同じ画面で読めないと意味がないため。
+  // 既存の #connect リンク（フッタ・共有URL）はこの表で製品タブへ送られる。
   // サービス — 事業階層・つくり方・技術・事業開発・提携・規模
   services: 'services', 'ai-native': 'services', technology: 'services',
   'business-dev': 'services', partner: 'services', investment: 'services',
+  engagement: 'services', security: 'services',
   // プロダクト — 自社で作って動かしているもの（作れることの証拠）
+  connect: 'products',
   finder: 'products', products: 'products', platform: 'products', screens: 'products',
   who: 'products', 'industry-os': 'products', vertical: 'products',
   'vertical-ultima': 'products', 'vertical-anima': 'products',
@@ -136,7 +147,7 @@ const SECTION_TAB: Record<string, CoreTabKey> = {
   // 会社
   'philosophy-core': 'company', numbers: 'company',
   mission: 'company', executive: 'company', journey: 'company', about: 'company',
-  contact: 'contact',
+  contact: 'contact', faq: 'contact',
 };
 
 /**
@@ -469,8 +480,12 @@ export default function CoreSite() {
       {tab === 'services' && (
       <>
         <ServiceLayersSection />
+        {/* 「何ができるか」の直後に「どう進むか・やめられるか」を置く（稟議に持ち込める形にする） */}
+        <EngagementSection onAnchor={handleAnchor} />
         <AiNativeSection />
         <TechnologySection />
+        {/* 技術の話の直後に「その情報はどこへ行くのか」を置く */}
+        <SecuritySection />
         <BusinessDevSection />
         <PartnerSection onAnchor={handleAnchor} />
         <InvestmentSection onAnchor={handleAnchor} />
@@ -485,17 +500,15 @@ export default function CoreSite() {
       )}
 
       {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
-      {/*  「あなたにはどれ？」3問診断 ＋ 8つの比較  */}
-      {/*  自社プロダクトを選ぶための道具。製品タブに置く。 */}
+      {/*  CONNECT — 座組み（八つで、ひとつの AI 会社）  */}
+      {/*                                              */}
+      {/*  2026-08-21 オーナー指示で全面改訂:            */}
+      {/*   ・AI OS タブ → 製品タブへ移した（8つの製品カードの直前）*/}
+      {/*   ・7つ立ての古い座組みを、実在する8つ＋Universe に作り直した */}
+      {/*   ・「便利な道具が7つ」ではなく「AIの会社がまるごと1つ」に言い換えた */}
+      {/*   ・本数と単品合計は suiteData.ts から計算（本文にベタ書きしない）*/}
       {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
       {tab === 'products' && (
-      <ServiceFinder />
-      )}
-
-      {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
-      {/*  CONNECT (一気通貫 / つながり)  */}
-      {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
-      {tab === 'os' && (
       <section
         id="connect"
         className="lp-section-pad"
@@ -509,8 +522,8 @@ export default function CoreSite() {
       >
         <div style={{ maxWidth: 1080, margin: '0 auto', position: 'relative', zIndex: 2 }}>
           <p style={sectionLabel}>
-            <span style={sectionLabelMain}>つ&nbsp;な&nbsp;が&nbsp;り</span>
-            <span style={sectionLabelSub}>ONE&nbsp;FLOW</span>
+            <span style={sectionLabelMain}>ひ&nbsp;と&nbsp;そ&nbsp;ろ&nbsp;い</span>
+            <span style={sectionLabelSub}>ONE&nbsp;COMPANY</span>
           </p>
 
           <motion.h2
@@ -527,7 +540,7 @@ export default function CoreSite() {
               marginBottom: '1.5rem',
             }}
           >
-            機能の、足し算ではない。
+            道具を、{SUITE_COUNT_KANJI}つ買うのではない。
             <br />
             <span
               style={{
@@ -537,7 +550,7 @@ export default function CoreSite() {
                 fontWeight: 900,
               }}
             >
-              掛け合わせて、ひとつの知性へ。
+              AIの会社が、まるごとひとつ。
             </span>
           </motion.h2>
 
@@ -547,86 +560,43 @@ export default function CoreSite() {
               fontSize: 'clamp(0.98rem, 1.45vw, 1.12rem)',
               color: 'rgba(240,233,216,0.78)',
               lineHeight: 2.2,
-              maxWidth: 720,
-              margin: '0 auto 3.5rem',
+              maxWidth: 760,
+              margin: '0 auto 2.5rem',
               fontWeight: 400,
             }}
           >
-            Instagram の <strong style={{ color: '#E1306C', fontWeight: 600 }}>Iris</strong> が反応をつかみ、リンクの <strong style={{ color: '#FFA42A', fontWeight: 600 }}>Lume</strong> が興味を映し、LINE の <strong style={{ color: '#06C755', fontWeight: 600 }}>Resonance</strong> が一人ひとりに届ける。
+            CORE の {SUITE_COUNT} つは、それぞれ単体でも売っています。
             <br />
-            サイトの入口では、AI コンシェルジュ <strong style={{ color: '#C9A96E', fontWeight: 600 }}>Crystal</strong> が 24 時間お客様をお迎えする。
+            けれど本当の姿は、机の上に並ぶ {SUITE_COUNT} 個の道具ではありません。
             <br />
-            集まった声は、司令塔 <strong style={{ color: '#a78bfa', fontWeight: 600 }}>Prism</strong> へ。13 名の AI 役員が、次の一手まで描く。
+            集客、接客、顧客対応、経営判断、実行、そして経営者自身の体調管理まで。
             <br />
-            そして <strong style={{ color: '#2dd4bf', fontWeight: 600 }}>Guild</strong> が、お客様を“ファン”から、ともに動く“仲間”へ変える。
+            <strong style={{ color: '#F1E9D8', fontWeight: 700 }}>会社の部署が、そのまま{SUITE_COUNT_KANJI}つ揃っている</strong>ということです。
             <br />
-            からだの調子は <strong style={{ color: '#FF5C8A', fontWeight: 600 }}>Pulse</strong> が見守り、経営者自身も整える。<br />
-            七つは、別々の道具ではない。掛け合わさって、ひとつの知性になる。
-            <br />
-            <strong style={{ color: '#F1E9D8', fontWeight: 700 }}>あなたは、最後に確認するだけ。</strong>
+            あなたに残るのは、社長の仕事だけ。
           </p>
 
-          {/* つながりの図 (司令塔 Prism + 3 つの SNS チャネル) */}
+          {/* 五つの持ち場（図と表の共通の凡例） */}
+          <SuiteRoleChain />
+
+          {/* 座組みの図（Guild の場・中心 Prism・6つの部署・土台に Universe） */}
           <ConnectedSuite />
 
-          {/* 一気通貫のシナリオ (ループ) */}
-          <div style={{ marginTop: '4rem' }}>
-            <p style={{
-              fontFamily: FONT_SERIF_EN,
-              fontSize: '0.78rem',
-              letterSpacing: '0.22em',
-              color: 'rgba(240,233,216,0.55)',
-              textTransform: 'uppercase',
-              marginBottom: '0.6rem',
-            }}>
-              A Day, Connected
-            </p>
-            <h3 style={{
-              fontFamily: FONT_SERIF_JA,
-              fontSize: 'clamp(1.3rem, 2.4vw, 1.85rem)',
-              fontWeight: 700,
-              color: '#F1E9D8',
-              letterSpacing: '0.04em',
-              marginBottom: '2.5rem',
-            }}>
-              つながると、何が変わるか。
-            </h3>
+          {/* 座組みの一覧 — 「どの部署が、どのサービスか」 */}
+          <SuiteRoster />
 
-            <div
-              className="lp-flow-grid"
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(5, 1fr)',
-                gap: '0.85rem',
-                maxWidth: 1180,
-                margin: '0 auto',
-                textAlign: 'left',
-              }}
-            >
-              <FlowStep n="01" color="#FFA42A" tool="Lume" Logo={LumeLogo} body="ファンが、あなたのどのリンクを踏んだのかが分かる。" />
-              <FlowStep n="02" color="#E1306C" tool="Iris" Logo={IrisLogo} body="その人の Instagram での反応を、AIが解析する。" />
-              <FlowStep n="03" color="#06C755" tool="Resonance" Logo={ResonanceLogo} body="いま響く一文を、LINE でその人だけに届ける。" />
-              <FlowStep n="04" color="#C9A96E" tool="Crystal" Logo={CrystalLogo} body="サイトに来た方は Crystal がお迎えし、商談の日程まで受け取る。" />
-              <FlowStep n="05" color="#a78bfa" tool="Prism" Logo={PrismLogo} body="すべてを記録し、13 名の AI 役員が次の一手を出す。" />
-              <FlowStep n="06" color="#2dd4bf" tool="Guild" Logo={GuildLogo} body="決まった一手を、貢献で動くチーム〈ギルド〉が実行する。" />
-              <FlowStep n="07" color="#FF5C8A" tool="Pulse" Logo={PulseLogo} body="走り続けるあなたのからだは、Pulse が毎朝やさしく見守る。" last />
-            </div>
-
-            <p style={{
-              fontFamily: FONT_SERIF_JA,
-              fontSize: 'clamp(0.95rem, 1.4vw, 1.08rem)',
-              color: 'rgba(240,233,216,0.82)',
-              lineHeight: 2,
-              marginTop: '2.75rem',
-              fontWeight: 400,
-            }}>
-              七つのサービスが連携し、ひとつの流れになる。
-              <br />
-              <strong style={{ color: '#F1E9D8', fontWeight: 700 }}>あなたは、最後に確認するだけ。</strong>
-            </p>
-          </div>
+          {/* ひとつのパッケージ — 座組みの結論。価格は continuumPlans.ts が唯一の出どころ。 */}
+          <SuitePackage onAnchor={handleAnchor} />
         </div>
       </section>
+      )}
+
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
+      {/*  「あなたにはどれ？」3問診断 ＋ 8つの比較  */}
+      {/*  座組みで全体を見せた直後に「では自分はどこから？」を置く。 */}
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
+      {tab === 'products' && (
+      <ServiceFinder />
       )}
 
       {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
@@ -657,7 +627,7 @@ export default function CoreSite() {
                 letterSpacing: '0.04em',
               }}
             >
-              八つの専門。ひとつの、頭脳。
+              {SUITE_COUNT_KANJI}つの専門。ひとつの、頭脳。
             </h2>
             <p
               style={{
@@ -967,7 +937,7 @@ export default function CoreSite() {
                 maxWidth: 560,
               }}
             >
-              7つの自社プロダクトを開発・運営する体制で、
+              {SUITE_COUNT}つの自社プロダクトを開発・運営する体制で、
               貴社のサイト制作からシステム開発まで一貫して承ります。
             </span>
             <span
@@ -1083,7 +1053,7 @@ export default function CoreSite() {
             <p style={{ fontFamily: FONT_SERIF_JA, color: 'rgba(240,233,216,0.7)', fontSize: 'clamp(0.95rem, 1.4vw, 1.05rem)', maxWidth: 680, margin: '0 auto', lineHeight: 2 }}>
               どのプロダクトも、月々数千円から。事業が育ったら、そのまま上位プランへ。
               <br />
-              八つすべてが、ひとつの CORE でつながっています。
+              {SUITE_COUNT_KANJI}つすべてが、ひとつの CORE でつながっています。
             </p>
           </div>
           <div className="lp-platform-grid">
@@ -1308,7 +1278,7 @@ export default function CoreSite() {
             </h2>
             <p style={{ fontFamily: FONT_SERIF_JA, color: 'rgba(255,255,255,0.72)', fontSize: 'clamp(0.95rem, 1.45vw, 1.05rem)', lineHeight: 2.15, maxWidth: 660, margin: '0 auto' }}>
               LINEの返信、問い合わせ対応、Instagram、予約の管理、資料と売上の数字。
-              その全部を、7つのAIエージェントが引き受けます。
+              その全部を、{SUITE_COUNT}つのAIエージェントが引き受けます。
               <br />
               あなたに残る仕事は、<strong style={{ color: '#E7C987', fontWeight: 600 }}>「決めること」だけ</strong>。
               空いた時間で、大切な人と過ごす。趣味に没頭する。
@@ -1393,7 +1363,7 @@ export default function CoreSite() {
           {/* 2026-07-31 巡回: 0.42 は黒地で 3.94:1 と基準(4.5:1)未達。
               「いつでも解約できます」は買う前にいちばん読みたい一文なので 0.62 (6.5:1) に上げる。 */}
           <p style={{ textAlign: 'center', marginTop: '1.8rem', fontFamily: FONT_SANS, fontSize: '0.74rem', color: 'rgba(255,255,255,0.62)', lineHeight: 2 }}>
-            単品でそろえると 月 約¥109,000 相当（Guild・Prism・Iris・Resonance・Crystal・Lume 上位プラン合計）。
+            単品でそろえると 月 {formatYen(SUITE_BEST_TOTAL)}（{SUITE_COUNT}サービスを、いちばん選ばれているプランでそろえた場合。Pulse は先行モニター中で無料のため ¥0 として計算）。
             <br />
             いつでも解約できます。決済ページ公開までは、ボタンからそのままご相談ください（1営業日以内にお返事します）。
           </p>
@@ -2010,6 +1980,10 @@ export default function CoreSite() {
       {/*  すべての章の CTA がここに集まる（2026-08-21 §16）。   */}
       {/*  メールだけの窓口から、要件を書いて送れるフォームへ。   */}
       {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
+      {tab === 'contact' && (
+      <FaqSection />
+      )}
+
       {tab === 'contact' && (
       <ContactSection>
         {/* フォームが合わない用件（取材・採用）のための、従来どおりのメール窓口 */}
@@ -2797,57 +2771,137 @@ function InfoRow({
 }
 
 // ============================================================
-//  ConnectedSuite — 司令塔 Prism + 3 つの SNS チャネルのつながり図
+//  座組みの部品（2026-08-21 全面改訂）
+//
+//  古い版は「司令塔 Prism ＋ 5つの衛星」で、Nexus と Universe が図に居なかった。
+//  実在するのは 8 つ（suiteData.SUITE_ALL）。数も並びもそこから引く。
+//
+//  図の考え方:
+//    ・Guild は「ノード」ではなく、全員を包む〈場〉＝六角メンブレン。
+//      貢献で動く組織そのものなので、点で描くと意味が変わる。
+//    ・中心は Prism（経営）。
+//    ・まわりの 6 つが部署。時計回りに 出会う → 届ける → 整える の順。
+//    ・Universe は商品ではなく地図なので、場の外の「土台」に敷く。
 // ============================================================
-function ConnectedSuite() {
-  // 衛星ノード（正方形コンテナ内の % 座標。左右対称＝Prism を完全中央に）
-  // GUILD の「場」(六角フィールド) に収まるよう、やや内側に配置。
-  // Pulse を加えた 5 衛星のペンタゴン配置 (中心 50,50・半径 34・上から時計回り 72°間隔)
-  const sats = [
-    { key: 'iris', Logo: IrisLogo, name: 'Iris', role: 'Instagram', color: '#E1306C', x: 50, y: 16 },
-    { key: 'lume', Logo: LumeLogo, name: 'Lume', role: 'リンク', color: '#FFA42A', x: 82, y: 39.5 },
-    { key: 'crystal', Logo: CrystalLogo, name: 'Crystal', role: 'コンシェルジュ', color: '#C9A96E', x: 70, y: 78 },
-    { key: 'pulse', Logo: PulseLogo, name: 'Pulse', role: 'からだ', color: '#FF5C8A', x: 30, y: 78 },
-    { key: 'resonance', Logo: ResonanceLogo, name: 'Resonance', role: 'LINE', color: '#06C755', x: 18, y: 39.5 },
-  ];
-  // GUILD の場（4プロダクトを包む）のティール
-  const GUILD = '#2dd4bf';
 
-  // 共通: 衛星カード（角丸スクエア・発光）
-  const SatCard = ({ s, size = 46 }: { s: typeof sats[number]; size?: number }) => (
+/** 図の衛星＝Guild 以外の 6 つ。Guild は場そのものなので点にしない。 */
+const SUITE_SATELLITES = SUITE_MEMBERS.filter(m => m.key !== 'guild');
+
+/**
+ * 中心 50,50 の円周に等間隔で置く。半径は実測で決めた値。
+ *
+ * 罠（2026-08-21 実測）: 図の箱は min(90vw, 560px) なので、ハブが出る下限
+ * 641px では箱が 577px しかない。カードは幅 116px(=20.1%)・高さ 112px(=19.4%)。
+ * 半径 31 だと右上カードの角が六角メンブレンの斜辺（y=23.9 で x=83.6）を
+ * 3.6% 越えて場の外へ出ていた。「Guild の場が全員を包む」という図の意味が壊れる。
+ * 上下（r ≤ 31.9）より斜めのほうが厳しく、r ≤ 28.5。28 を採る。
+ * 名札が2行に折れると高さが 133px に増えて再びはみ出すので、図では short を使う。
+ */
+const SAT_RADIUS = 27;
+function satPos(i: number, total: number) {
+  const a = (Math.PI * 2 * i) / total;
+  return { x: 50 + SAT_RADIUS * Math.sin(a), y: 50 - SAT_RADIUS * Math.cos(a) };
+}
+
+const GUILD_TEAL = '#2dd4bf';
+
+/** 衛星カード（角丸スクエア・発光）。ConnectedSuite の外に出してある
+ *  ＝ 描画のたびに新しい型の要素になって中身が作り直されるのを防ぐ。 */
+function SatCard({ m, size = 44 }: { m: SuiteMember; size?: number }) {
+  const s = suiteService(m.key);
+  return (
     <div style={{
-      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 7,
-      padding: '0.95rem 0.7rem 0.8rem', width: 116,
-      background: `radial-gradient(circle at 50% 30%, ${s.color}24, #0c0a07)`,
-      border: `1px solid ${s.color}66`, borderRadius: 18,
-      boxShadow: `0 0 26px ${s.color}3a, inset 0 0 18px ${s.color}14`,
+      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+      padding: '0.85rem 0.6rem 0.75rem', width: 116,
+      background: `radial-gradient(circle at 50% 30%, ${s.accent}24, #0c0a07)`,
+      border: `1px solid ${s.accent}66`, borderRadius: 18,
+      boxShadow: `0 0 26px ${s.accent}3a, inset 0 0 18px ${s.accent}14`,
       backdropFilter: 'blur(6px)',
     }}>
       <s.Logo size={size} withWordmark={false} />
-      <span style={{ fontFamily: FONT_SERIF_EN, fontSize: '0.84rem', color: '#F1E9D8', fontWeight: 600, fontStyle: 'italic' }}>{s.name}</span>
-      <span style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.64rem', color: s.color, fontWeight: 700, letterSpacing: '0.08em' }}>{s.role}</span>
+      <span style={{ fontFamily: FONT_SERIF_EN, fontSize: '0.82rem', color: '#F1E9D8', fontWeight: 600, fontStyle: 'italic' }}>{s.name}</span>
+      {/* 部署名 = 製品名を知らない人が最初に読む一行。ここを薄くすると図の意味が消える。
+          折り返し禁止: 2行になるとカードが伸びて六角の場からはみ出す（上の SAT_RADIUS の注記）。
+          くわしい部署名（「集客 ─ Instagram」）は、図の下の一覧で読める。 */}
+      <span style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.66rem', color: s.accent, fontWeight: 700, letterSpacing: '0.1em', whiteSpace: 'nowrap' }}>
+        {m.short}
+      </span>
     </div>
   );
+}
 
-  const PrismCard = ({ size = 60 }: { size?: number }) => (
+function PrismCard({ size = 58 }: { size?: number }) {
+  const s = suiteService(SUITE_CORE.key);
+  return (
     <div style={{
-      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 7,
-      padding: '1.25rem 1.35rem 1.05rem', width: 144,
+      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+      padding: '1.15rem 1.25rem 1rem', width: 144,
       background: 'radial-gradient(circle at 50% 32%, rgba(167,139,250,0.3), #0c0a07)',
       border: '1px solid rgba(167,139,250,0.6)', borderRadius: 22,
       boxShadow: '0 0 52px rgba(167,139,250,0.42), inset 0 0 26px rgba(167,139,250,0.14)',
     }}>
       <PrismLogo size={size} withWordmark={false} />
-      <span style={{ fontFamily: FONT_DISPLAY, fontSize: '0.6rem', letterSpacing: '0.3em', color: 'rgba(240,233,216,0.6)', fontWeight: 700 }}>PRISM</span>
-      <span style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.76rem', color: '#F1E9D8', fontWeight: 700, letterSpacing: '0.08em' }}>司令塔</span>
+      <span style={{ fontFamily: FONT_DISPLAY, fontSize: '0.58rem', letterSpacing: '0.3em', color: 'rgba(240,233,216,0.6)', fontWeight: 700 }}>{s.name.toUpperCase()}</span>
+      <span style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.72rem', color: '#F1E9D8', fontWeight: 700, letterSpacing: '0.06em', textAlign: 'center', lineHeight: 1.5 }}>
+        経営
+        <br />
+        7人の参謀
+      </span>
     </div>
   );
+}
+
+/** 五つの持ち場を、流れとして1本に。図と一覧の共通の凡例になる。 */
+function SuiteRoleChain() {
+  return (
+    <div
+      className="lp-suite-chain"
+      style={{
+        display: 'flex', flexWrap: 'wrap', alignItems: 'stretch', justifyContent: 'center',
+        gap: '0.5rem', maxWidth: 1020, margin: '0 auto 1rem',
+      }}
+    >
+      {SUITE_ROLES.map((r, i) => (
+        <div key={r.key} style={{ display: 'flex', alignItems: 'stretch', gap: '0.5rem' }}>
+          <div style={{
+            display: 'flex', flexDirection: 'column', gap: 4, textAlign: 'center',
+            padding: '0.7rem 0.9rem', borderRadius: 14, width: 168, maxWidth: '100%',
+            background: 'rgba(201,169,110,0.07)', border: '1px solid rgba(201,169,110,0.28)',
+          }}>
+            <span style={{ fontFamily: FONT_DISPLAY, fontSize: '0.54rem', letterSpacing: '0.24em', color: 'rgba(231,201,135,0.8)', fontWeight: 700 }}>
+              {r.en}
+            </span>
+            <span style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.98rem', fontWeight: 700, color: '#F1E9D8', letterSpacing: '0.08em' }}>
+              {r.ja}
+            </span>
+            <span style={{ fontFamily: FONT_SANS, fontSize: '0.68rem', color: 'rgba(240,233,216,0.62)', lineHeight: 1.7 }}>
+              {r.desc}
+            </span>
+          </div>
+          {i < SUITE_ROLES.length - 1 && (
+            <span aria-hidden style={{ alignSelf: 'center', color: 'rgba(201,169,110,0.55)', fontSize: '0.9rem' }}>→</span>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ============================================================
+//  ConnectedSuite — 座組みの図
+//  Guild の〈場〉が全員を包み、中心の Prism に 6 部署がつながる。
+//  土台に Universe（無料の地図）。
+// ============================================================
+function ConnectedSuite() {
+  const sats = SUITE_SATELLITES.map((m, i) => ({ m, ...satPos(i, SUITE_SATELLITES.length) }));
 
   return (
     <div className="lp-connect-wrap">
-      {/* ── HUB (デスクトップ / タブレット)：GUILD の「場」が 4 プロダクトを包む ── */}
-      <div className="lp-connect-hub" style={{ position: 'relative', width: 'min(90vw, 560px)', aspectRatio: '1 / 1', margin: '2.6rem auto 0' }}>
-        {/* GUILD の場：4 つを内包する六角フィールド（DAO＝組織そのもの・ノードではなく“場”） */}
+      {/* ── HUB (デスクトップ / タブレット) ── */}
+      {/* 図の箱。560px だと 6 枚のカードと中心の Prism が触れる（実測 ox=2px）。
+          600px にすると、場の内側にも中心との間にも余白が残る（実測 gap 8px / 12px）。 */}
+      <div className="lp-connect-hub" style={{ position: 'relative', width: 'min(92vw, 600px)', aspectRatio: '1 / 1', margin: '2.6rem auto 0' }}>
+        {/* Guild の場：全員を内包する六角メンブレン（DAO＝組織そのもの・ノードではなく“場”） */}
         <motion.svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden
           animate={{ opacity: [0.7, 1, 0.7] }} transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
           style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', overflow: 'visible', zIndex: 0 }}>
@@ -2863,33 +2917,31 @@ function ConnectedSuite() {
               <stop offset="100%" stopColor="rgba(45,212,191,0)" />
             </radialGradient>
           </defs>
-          {/* 外周の六角メンブレン（場の境界） */}
           <path d="M25 8.4 L75 8.4 L98 50 L75 91.6 L25 91.6 L2 50 Z"
             fill="url(#guildFill)" stroke="url(#guildField)" strokeWidth="0.7" strokeOpacity="0.85" strokeLinejoin="round" />
-          {/* 内側の流れる薄いライン（生きた場） */}
           <path d="M28 13 L72 13 L92 50 L72 87 L28 87 L8 50 Z"
             fill="none" stroke="url(#guildField)" strokeWidth="0.3" strokeOpacity="0.4" strokeLinejoin="round" strokeDasharray="2 2.4">
             <animate attributeName="stroke-dashoffset" from="9" to="0" dur="3.4s" repeatCount="indefinite" />
           </path>
         </motion.svg>
 
-        {/* Prism → 各プロダクトの接続線 */}
+        {/* 各部署 → 中心 Prism の接続線 */}
         <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden
           style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', overflow: 'visible', zIndex: 1 }}>
           {sats.map(s => (
-            <line key={s.key} x1="50" y1="50" x2={s.x} y2={s.y} stroke={s.color}
+            <line key={s.m.key} x1="50" y1="50" x2={s.x} y2={s.y} stroke={suiteService(s.m.key).accent}
               strokeWidth="0.5" strokeOpacity="0.6" strokeDasharray="1.6 1.8" strokeLinecap="round">
               <animate attributeName="stroke-dashoffset" from="7" to="0" dur="1.4s" repeatCount="indefinite" />
             </line>
           ))}
         </svg>
 
-        {/* GUILD ネームプレート（場のタイトル・上端中央） */}
+        {/* Guild ネームプレート（場のタイトル・上端中央） */}
         <div style={{
           position: 'absolute', top: 0, left: '50%', transform: 'translate(-50%, -50%)', zIndex: 4,
           display: 'inline-flex', alignItems: 'center', gap: 8, padding: '0.42rem 0.95rem', borderRadius: 999,
-          background: 'rgba(6,18,16,0.88)', border: `1px solid ${GUILD}88`,
-          boxShadow: `0 0 24px ${GUILD}55`, backdropFilter: 'blur(6px)', whiteSpace: 'nowrap',
+          background: 'rgba(6,18,16,0.88)', border: `1px solid ${GUILD_TEAL}88`,
+          boxShadow: `0 0 24px ${GUILD_TEAL}55`, backdropFilter: 'blur(6px)', whiteSpace: 'nowrap',
         }}>
           <GuildLogo size={20} withWordmark={false} />
           <span style={{ fontFamily: FONT_DISPLAY, fontSize: '0.62rem', letterSpacing: '0.34em', color: '#7ef0dd', fontWeight: 700, paddingLeft: '0.34em' }}>GUILD</span>
@@ -2897,94 +2949,237 @@ function ConnectedSuite() {
         {/* 場の意味（下端中央） */}
         <div style={{
           position: 'absolute', bottom: '-1.7rem', left: '50%', transform: 'translateX(-50%)', zIndex: 4,
-          fontFamily: FONT_SERIF_JA, fontSize: '0.74rem', color: 'rgba(126,240,221,0.82)', letterSpacing: '0.08em', whiteSpace: 'nowrap',
+          fontFamily: FONT_SERIF_JA, fontSize: '0.74rem', color: 'rgba(126,240,221,0.82)', letterSpacing: '0.06em', whiteSpace: 'nowrap',
         }}>
-          貢献で動く、ひとつの場〈DAO〉
+          実行 ─ 貢献で動く、ひとつの場〈Guild〉
         </div>
+
         <motion.div
-          animate={{ scale: [1, 1.045, 1] }} transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
+          /* 呼吸は 1.045 → 1.03。ふくらんだ瞬間だけ隣のカードに触れていた（実測）。 */
+          animate={{ scale: [1, 1.03, 1] }} transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
           style={{ position: 'absolute', left: '50%', top: '50%', x: '-50%', y: '-50%', zIndex: 3 }}>
           <PrismCard />
         </motion.div>
         {sats.map(s => (
-          <div key={s.key} style={{ position: 'absolute', left: `${s.x}%`, top: `${s.y}%`, transform: 'translate(-50%, -50%)', zIndex: 2 }}>
-            <SatCard s={s} />
+          <div key={s.m.key} style={{ position: 'absolute', left: `${s.x}%`, top: `${s.y}%`, transform: 'translate(-50%, -50%)', zIndex: 2 }}>
+            <SatCard m={s.m} />
           </div>
         ))}
       </div>
 
-      {/* ── STACK (モバイル)：GUILD の「場」の中に Prism → 3チャネルを内包 ── */}
+      {/* ── STACK (モバイル) ── */}
       <div className="lp-connect-stack" aria-hidden>
         <div style={{
           position: 'relative', width: '100%',
           display: 'flex', flexDirection: 'column', alignItems: 'center',
           padding: '2rem 0.9rem 1.4rem', borderRadius: 24,
-          border: `1px solid ${GUILD}55`,
-          background: `radial-gradient(circle at 50% 0%, ${GUILD}16, transparent 70%)`,
-          boxShadow: `inset 0 0 34px ${GUILD}1a, 0 0 24px ${GUILD}1f`,
+          border: `1px solid ${GUILD_TEAL}55`,
+          background: `radial-gradient(circle at 50% 0%, ${GUILD_TEAL}16, transparent 70%)`,
+          boxShadow: `inset 0 0 34px ${GUILD_TEAL}1a, 0 0 24px ${GUILD_TEAL}1f`,
         }}>
-          {/* GUILD ヘッダ（場の名前） */}
           <div style={{
             position: 'absolute', top: 0, left: '50%', transform: 'translate(-50%, -50%)',
             display: 'inline-flex', alignItems: 'center', gap: 6, padding: '0.32rem 0.82rem', borderRadius: 999,
-            background: '#06120f', border: `1px solid ${GUILD}88`, boxShadow: `0 0 18px ${GUILD}44`, whiteSpace: 'nowrap',
+            background: '#06120f', border: `1px solid ${GUILD_TEAL}88`, boxShadow: `0 0 18px ${GUILD_TEAL}44`, whiteSpace: 'nowrap',
           }}>
             <GuildLogo size={16} withWordmark={false} />
             <span style={{ fontFamily: FONT_DISPLAY, fontSize: '0.56rem', letterSpacing: '0.3em', color: '#7ef0dd', fontWeight: 700, paddingLeft: '0.3em' }}>GUILD</span>
           </div>
 
-          <PrismCard size={52} />
+          <PrismCard size={50} />
           <span className="lp-connect-branch" />
           <div className="lp-connect-sats">
-            {sats.map(s => (
-              <div key={s.key} style={{ display: 'flex', alignItems: 'center', gap: '0.9rem',
-                padding: '0.7rem 0.9rem', width: '100%',
-                background: `radial-gradient(circle at 0% 50%, ${s.color}20, #0c0a07)`,
-                border: `1px solid ${s.color}55`, borderRadius: 16 }}>
-                <s.Logo size={38} withWordmark={false} />
-                <span style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                  <span style={{ fontFamily: FONT_SERIF_EN, fontSize: '1rem', color: '#F1E9D8', fontWeight: 600, fontStyle: 'italic' }}>{s.name}</span>
-                  <span style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.72rem', color: s.color, fontWeight: 700, letterSpacing: '0.06em' }}>{s.role}</span>
-                </span>
-              </div>
-            ))}
+            {SUITE_SATELLITES.map(m => {
+              const s = suiteService(m.key);
+              return (
+                <div key={m.key} style={{ display: 'flex', alignItems: 'center', gap: '0.9rem',
+                  padding: '0.7rem 0.9rem', width: '100%',
+                  background: `radial-gradient(circle at 0% 50%, ${s.accent}20, #0c0a07)`,
+                  border: `1px solid ${s.accent}55`, borderRadius: 16 }}>
+                  <s.Logo size={36} withWordmark={false} />
+                  <span style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    <span style={{ fontFamily: FONT_SERIF_EN, fontSize: '1rem', color: '#F1E9D8', fontWeight: 600, fontStyle: 'italic' }}>{s.name}</span>
+                    <span style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.7rem', color: s.accent, fontWeight: 700, letterSpacing: '0.04em' }}>{m.dept}</span>
+                  </span>
+                </div>
+              );
+            })}
           </div>
-          <div style={{ marginTop: '1rem', fontFamily: FONT_SERIF_JA, fontSize: '0.72rem', color: 'rgba(126,240,221,0.82)', letterSpacing: '0.06em' }}>
-            貢献で動く、ひとつの場〈DAO〉
+          <div style={{ marginTop: '1rem', fontFamily: FONT_SERIF_JA, fontSize: '0.72rem', color: 'rgba(126,240,221,0.82)', letterSpacing: '0.04em', textAlign: 'center', lineHeight: 1.8 }}>
+            実行 ─ 貢献で動く、ひとつの場〈Guild〉
           </div>
         </div>
       </div>
+
+      {/* 土台 — Universe は売り物ではなく地図。場の外に敷く。 */}
+      <a
+        href="https://core-universe.vercel.app/"
+        target="_blank"
+        rel="noreferrer"
+        className="lp-tap-link"
+        style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.85rem', flexWrap: 'wrap',
+          maxWidth: 620, margin: '3.4rem auto 0', minHeight: 56, padding: '0.9rem 1.4rem',
+          borderRadius: 18, textDecoration: 'none', color: '#F1E9D8',
+          background: 'radial-gradient(120% 160% at 50% 0%, rgba(59,52,94,0.5), rgba(10,13,20,0.9))',
+          border: '1px solid rgba(201,162,75,0.42)',
+        }}
+      >
+        <img src="/universe-mark.png" alt="" aria-hidden style={{ width: 34, height: 34, flexShrink: 0, opacity: 0.92 }} />
+        <span style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.86rem', lineHeight: 1.9, textAlign: 'left' }}>
+          <strong style={{ color: '#E8CF9A', fontWeight: 700 }}>土台は、無料の地図。</strong>
+          {' '}CORE Universe で「どの仕事から任せるか」を先に決められます。
+        </span>
+        <span style={{ fontFamily: FONT_SANS, fontSize: '0.78rem', fontWeight: 700, color: '#E8CF9A', whiteSpace: 'nowrap' }}>宇宙図をひらく ↗</span>
+      </a>
     </div>
   );
 }
 
-// ───────────── 一気通貫フローの 1 ステップ ─────────────
-function FlowStep({ n, color, tool, body, Logo, last }: { n: string; color: string; tool: string; body: string; Logo: React.ComponentType<{ size?: number; withWordmark?: boolean }>; last?: boolean }) {
+// ============================================================
+//  SuiteRoster — 座組みの一覧（どの部署が、どのサービスか）
+//  図で形を見せ、ここで言葉にする。製品の詳細は真下の PRODUCTS 章。
+// ============================================================
+function SuiteRoster() {
+  const roleJa = (k: SuiteRole) => SUITE_ROLES.find(r => r.key === k)!.ja;
+  return (
+    <div
+      className="lp-suite-roster"
+      style={{
+        display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(258px, 1fr))', gap: '0.75rem',
+        maxWidth: 1080, margin: '3.5rem auto 0', textAlign: 'left',
+      }}
+    >
+      {SUITE_ALL.map(m => {
+        const s = suiteService(m.key);
+        const isCore = m.key === SUITE_CORE.key;
+        return (
+          <div
+            key={m.key}
+            style={{
+              display: 'flex', flexDirection: 'column', gap: '0.55rem',
+              padding: '1.15rem 1.2rem', borderRadius: 16,
+              background: `linear-gradient(165deg, ${s.accent}${isCore ? '1F' : '12'}, rgba(255,255,255,0.02) 76%)`,
+              border: `1px solid ${s.accent}${isCore ? '66' : '33'}`,
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+              <span style={{ display: 'inline-flex', flexShrink: 0 }}><s.Logo size={26} withWordmark={false} /></span>
+              <span style={{ fontFamily: FONT_SERIF_EN, fontSize: '1.02rem', fontStyle: 'italic', fontWeight: 600, color: '#F1E9D8' }}>{s.name}</span>
+              <span style={{
+                marginLeft: 'auto', flexShrink: 0,
+                fontFamily: FONT_SANS, fontSize: '0.64rem', fontWeight: 800, letterSpacing: '0.08em',
+                color: s.accent, background: `${s.accent}1F`, border: `1px solid ${s.accent}4D`,
+                borderRadius: 999, padding: '3px 9px', whiteSpace: 'nowrap',
+              }}>
+                {roleJa(m.role)}
+              </span>
+            </div>
+            {/* 0.58 未満は黒地で AA 落第。小さい字ほど濃くする（恒久ルール）。 */}
+            <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.8rem', fontWeight: 700, color: s.accent, letterSpacing: '0.04em', margin: 0 }}>
+              {m.dept}
+            </p>
+            <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.84rem', color: 'rgba(240,233,216,0.76)', lineHeight: 1.95, margin: 0 }}>
+              {m.line}
+            </p>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ============================================================
+//  SuitePackage — 座組みの結論。「これ全部で、ひとつ」
+//  価格は continuumPlans.ts、単品合計は suiteData.ts が唯一の出どころ。
+//  ここで数字を打ち直さない（[[core-prism-honest-numbers]]）。
+// ============================================================
+function SuitePackage({ onAnchor }: { onAnchor: (e: ReactMouseEvent<HTMLAnchorElement>, href: string) => void }) {
   return (
     <div
       style={{
-        position: 'relative',
-        padding: '1.4rem 1.2rem',
-        background: `linear-gradient(165deg, ${color}14, transparent 75%)`,
-        border: `1px solid ${color}33`,
-        borderRadius: 16,
-        overflow: 'hidden',
+        maxWidth: 960, margin: '4.5rem auto 0', padding: 'clamp(1.9rem, 4vw, 3rem) clamp(1.3rem, 4vw, 2.6rem)',
+        borderRadius: 26, textAlign: 'center',
+        background: 'linear-gradient(165deg, rgba(201,169,110,0.15), rgba(201,169,110,0.03) 72%)',
+        border: '1px solid rgba(201,169,110,0.55)',
+        boxShadow: '0 34px 90px -46px rgba(201,169,110,0.6)',
       }}
     >
-      <span aria-hidden style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: color }} />
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: '0.7rem' }}>
-        <span style={{ display: 'inline-flex', flexShrink: 0 }}><Logo size={22} withWordmark={false} /></span>
-        <span style={{ fontFamily: FONT_SERIF_EN, fontSize: '0.74rem', letterSpacing: '0.2em', color, fontWeight: 700 }}>{n}</span>
-        <span style={{ fontFamily: FONT_SERIF_EN, fontSize: '0.98rem', fontStyle: 'italic', fontWeight: 600, color: '#F1E9D8' }}>{tool}</span>
-        {!last && <span aria-hidden style={{ marginLeft: 'auto', color: `${color}cc`, fontSize: '1rem' }}>→</span>}
+      <p style={{ fontFamily: FONT_DISPLAY, fontSize: '0.7rem', letterSpacing: '0.34em', color: '#C9A96E', textTransform: 'uppercase', marginBottom: '1rem' }}>
+        CORE Continuum
+      </p>
+      <h3 style={{
+        fontFamily: FONT_SERIF_JA, fontSize: 'clamp(1.4rem, 3.2vw, 2.15rem)', fontWeight: 700,
+        lineHeight: 1.6, letterSpacing: '0.04em', color: '#F1E9D8', marginBottom: '1.1rem',
+      }}>
+        この{SUITE_COUNT_KANJI}つを、ひとつの契約で。
+      </h3>
+      <p style={{
+        fontFamily: FONT_SERIF_JA, fontSize: 'clamp(0.92rem, 1.4vw, 1.02rem)',
+        color: 'rgba(240,233,216,0.78)', lineHeight: 2.1, maxWidth: 640, margin: '0 auto 2rem',
+      }}>
+        単品でそろえると、いちばん選ばれているプランの合計で
+        {' '}<strong style={{ color: '#E7C987', fontWeight: 700 }}>月 {formatYen(SUITE_BEST_TOTAL)}</strong>。
+        <br />
+        Continuum なら、ひとつのアカウントで、ひとつの請求で使えます。
+      </p>
+
+      {/* 3プランの入口。実額は continuumPlans.ts から。 */}
+      <div style={{
+        display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '0.7rem', marginBottom: '2rem',
+      }}>
+        {CONTINUUM_PLANS.map(pl => (
+          <div key={pl.name} style={{
+            display: 'flex', flexDirection: 'column', gap: 4, minWidth: 168,
+            padding: '0.95rem 1.2rem', borderRadius: 14,
+            background: pl.featured ? 'rgba(201,169,110,0.16)' : 'rgba(255,255,255,0.04)',
+            border: pl.featured ? '1px solid rgba(201,169,110,0.6)' : '1px solid rgba(255,255,255,0.12)',
+          }}>
+            <span style={{ fontFamily: FONT_SERIF_EN, fontSize: '0.92rem', letterSpacing: '0.08em', color: '#F1E6CE' }}>{pl.name}</span>
+            <span style={{ fontFamily: FONT_SANS, fontVariantNumeric: 'tabular-nums', fontSize: '1.24rem', fontWeight: 800, color: pl.featured ? '#E7C987' : '#F4F7FC' }}>
+              {pl.price}
+              <span style={{ fontSize: '0.66rem', fontWeight: 600, color: 'rgba(255,255,255,0.55)', marginLeft: 5 }}>/ 月（税込）</span>
+            </span>
+            <span style={{ fontFamily: FONT_SANS, fontSize: '0.68rem', color: 'rgba(255,255,255,0.6)', lineHeight: 1.7 }}>{pl.tag}</span>
+          </div>
+        ))}
       </div>
-      <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.86rem', color: 'rgba(240,233,216,0.78)', lineHeight: 1.85, margin: 0 }}>
-        {body}
+
+      <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '0.7rem' }}>
+        <a
+          href="/continuum"
+          style={{
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center', minHeight: 50,
+            padding: '0 28px', borderRadius: 999, textDecoration: 'none',
+            fontFamily: FONT_SANS, fontSize: '0.88rem', fontWeight: 800, letterSpacing: '0.04em',
+            background: 'linear-gradient(90deg,#E7C987,#C9A96E)', color: '#141414',
+          }}
+        >
+          Continuum の世界を見る →
+        </a>
+        <a
+          href="#continuum"
+          onClick={e => onAnchor(e, '#continuum')}
+          className="lp-tap-link"
+          style={{
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center', minHeight: 50,
+            padding: '0 26px', borderRadius: 999, textDecoration: 'none',
+            fontFamily: FONT_SANS, fontSize: '0.86rem', fontWeight: 800, letterSpacing: '0.04em',
+            color: '#F1E6CE', border: '1px solid rgba(201,169,110,0.55)', background: 'rgba(201,169,110,0.08)',
+          }}
+        >
+          プランと料金を見る
+        </a>
+      </div>
+
+      <p style={{ fontFamily: FONT_SANS, fontSize: '0.72rem', color: 'rgba(255,255,255,0.62)', lineHeight: 2, marginTop: '1.5rem' }}>
+        Pulse は先行モニター中のため無料（正式版 ¥2,980/月 の予定）で、上の合計には入れていません。
+        <br />
+        いつでも解約できます。
       </p>
     </div>
   );
 }
-
 // ───────────── ユースケース・カード ─────────────
 function UseCaseCard({ persona, headline, body, tools, lead }: {
   persona: string; headline: string; body: string;
