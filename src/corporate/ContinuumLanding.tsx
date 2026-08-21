@@ -4,12 +4,14 @@
 // 旗艦ブランドの世界観ページ。金×黒・派手に、しかし上品に。
 // コピーは抽象を避け「何が消えて、何が残るか」を具体で言い切る：
 //   H1『あなたが働かなくても、事業が回り続ける。』
-//   消える仕事(6つの雑務→引き受けるAI) / AIが働く一日 / 7つの力 / プラン。
+//   消える仕事(6つの雑務→引き受けるAI) / AIが働く一日 / 担当一覧 / プラン。
+// 人数・単品合計は suiteData.ts から引く（本文にベタ書きしない）。
 // プランは continuumPlans.ts を /corp と共有（価格の二重管理を防ぐ）。
 // ============================================================
 import { useEffect } from 'react';
-import { PrismLogo, IrisLogo, ResonanceLogo, LumeLogo, GuildLogo, CoreLogo, CrystalLogo, PulseLogo } from '../components/Logo';
+import { PrismLogo, IrisLogo, ResonanceLogo, LumeLogo, GuildLogo, CoreLogo, CrystalLogo, PulseLogo, NexusLogo } from '../components/Logo';
 import { CONTINUUM_PLANS, CONTINUUM_CONTACT_EMAIL } from './continuumPlans';
+import { SUITE_COUNT, SUITE_BEST_TOTAL, formatYen } from './suiteData';
 
 const FONT_DISPLAY = '"Cinzel", "Noto Serif JP", serif';
 const FONT_SERIF_JA = '"Noto Serif JP", "游明朝", "Yu Mincho", serif';
@@ -20,18 +22,21 @@ const GOLD = '#C9A96E';
 const GOLD_HI = '#E7C987';
 const GOLD_PALE = '#F7EAD0';
 
-// 環に乗る7サービス（角度は上から時計回り・360/7 = 約51.4度刻み）。
-// 本文で「7つのAIエージェント」と書いているのに環は6つしか無く、
-// 数字が合っていなかったため Pulse を追加した（2026-07-26・数字の嘘禁止）。
-const ORBIT: Array<{ key: string; deg: number; Logo: typeof PrismLogo }> = [
-  { key: 'prism', deg: 0, Logo: PrismLogo },
-  { key: 'resonance', deg: 51.4, Logo: ResonanceLogo },
-  { key: 'crystal', deg: 102.9, Logo: CrystalLogo },
-  { key: 'iris', deg: 154.3, Logo: IrisLogo },
-  { key: 'pulse', deg: 205.7, Logo: PulseLogo },
-  { key: 'guild', deg: 257.1, Logo: GuildLogo },
-  { key: 'lume', deg: 308.6, Logo: LumeLogo },
+// 環に乗るサービス（角度は上から時計回りに等間隔）。
+// 2026-07-26: 本文「7つ」に対して環が6つしか無かったので Pulse を足した。
+// 2026-08-21: 実在するのは8つ（suiteData.SUITE_ALL）。Nexus が抜けていたので足し、
+//   角度も「並び順から計算」に変えた＝1つ増えても数字を打ち直さなくてよい（数字の嘘禁止）。
+const ORBIT_LOGOS: Array<{ key: string; Logo: typeof PrismLogo }> = [
+  { key: 'prism', Logo: PrismLogo },
+  { key: 'resonance', Logo: ResonanceLogo },
+  { key: 'crystal', Logo: CrystalLogo },
+  { key: 'iris', Logo: IrisLogo },
+  { key: 'nexus', Logo: NexusLogo },
+  { key: 'pulse', Logo: PulseLogo },
+  { key: 'guild', Logo: GuildLogo },
+  { key: 'lume', Logo: LumeLogo },
 ];
+const ORBIT = ORBIT_LOGOS.map((o, i) => ({ ...o, deg: (360 / ORBIT_LOGOS.length) * i }));
 
 // あなたの毎日から消える仕事（具体の雑務 → 引き受けるAI）。
 const VANISH: Array<{ chore: string; detail: string; Logo: typeof PrismLogo; ai: string }> = [
@@ -52,10 +57,12 @@ const DAY: Array<{ time: string; ai: string; you: string }> = [
   { time: '23:00', ai: '今日AIが代行した仕事を、時間レポートに記録', you: 'あしたの楽しみを、ひとつ決める' },
 ];
 
+// 担当一覧。SUITE_COUNT と同じ人数であること（片方だけ増えると本文の数と合わなくなる）。
 const SIX: Array<{ Logo: typeof PrismLogo; name: string; role: string; hand: string }> = [
+  { Logo: NexusLogo, name: 'Nexus', role: 'あなたの夢と、今日の一手', hand: '価値観と夢から逆算して予定を組む秘書。話しかけると画面に描きながら並走する。' },
   { Logo: ResonanceLogo, name: 'Resonance', role: 'LINEの返信・日程調整', hand: '届いた1通ずつにAIが返信し、予約まで運ぶ。あなたは承認するだけ。' },
   { Logo: CrystalLogo, name: 'Crystal', role: 'サイトの接客・予約受付', hand: '24時間その場で即答するAIコンシェルジュ。問い合わせに追われない。' },
-  { Logo: PrismLogo, name: 'Prism', role: '事務・資料・経営の数字', hand: '13名の役員AIが、社長のやりたくない仕事を片づける。' },
+  { Logo: PrismLogo, name: 'Prism', role: '事務・資料・経営の数字', hand: '7人の専属AIが、社長のやりたくない仕事を片づける。' },
   { Logo: IrisLogo, name: 'Iris', role: 'Instagramの毎日', hand: '投稿の企画・台本・案件DMまで、専属マネージャーAIが用意。' },
   { Logo: GuildLogo, name: 'Guild', role: 'チームの意思決定', hand: '提案と投票で、会議をしなくても組織が動く。' },
   { Logo: LumeLogo, name: 'Lume', role: 'あなたの入口', hand: 'すべてのリンクと導線をひとつに。いちばん軽い名刺。' },
@@ -96,7 +103,7 @@ export default function ContinuumLanding() {
         </p>
 
         {/* 黄金の環 — 6ロゴが CORE を巡る */}
-        <div className="ct-orbit-wrap" aria-label="7つのAIエージェントがCOREを巡る">
+        <div className="ct-orbit-wrap" aria-label={`${SUITE_COUNT}つのAIエージェントがCOREを巡る`}>
           <div className="ct-beam" aria-hidden />
           <div className="ct-ring" aria-hidden />
           <div className="ct-ring ct-ring2" aria-hidden />
@@ -122,7 +129,7 @@ export default function ContinuumLanding() {
         <p style={{ fontFamily: FONT_SERIF_JA, fontSize: 'clamp(0.94rem, 2vw, 1.1rem)', lineHeight: 2.2, color: 'rgba(247,234,208,0.8)', maxWidth: 640, position: 'relative' }}>
           LINEの返信、問い合わせ対応、Instagram、予約の管理、資料と売上の数字。
           <br />
-          その全部を、7つのAIエージェントが引き受けます。
+          その全部を、{SUITE_COUNT}つのAIエージェントが引き受けます。
           <br />
           あなたに残る仕事は、<strong style={{ color: GOLD_HI }}>「決めること」だけ</strong>。
         </p>
@@ -199,10 +206,10 @@ export default function ContinuumLanding() {
       {/* ───────── THE SEVEN ───────── */}
       <section id="six" style={{ maxWidth: 1080, margin: '0 auto', padding: 'clamp(4.5rem, 9vw, 7.5rem) 1.5rem', scrollMarginTop: 20 }}>
         <div style={{ textAlign: 'center', marginBottom: '2.8rem' }}>
-          <p className="ct-label">The Seven</p>
-          <h2 className="ct-h2">担当は、この7人。</h2>
+          <p className="ct-label">The Team</p>
+          <h2 className="ct-h2">担当は、この{SUITE_COUNT}人。</h2>
           <p style={{ fontFamily: FONT_SERIF_JA, fontSize: 'clamp(0.9rem, 1.5vw, 1rem)', lineHeight: 2.2, color: 'rgba(247,234,208,0.7)', maxWidth: 620, margin: '0 auto' }}>
-            それぞれ単体でも売られているAIサービスです。Continuum では7つがつながり、
+            それぞれ単体でも売られているAIサービスです。Continuum では{SUITE_COUNT}つがつながり、
             お客様の情報も、あなたの話し方も、自動で引き継がれます。
           </p>
         </div>
@@ -233,7 +240,7 @@ export default function ContinuumLanding() {
           <h2 className="ct-h2">人を雇うより、ずっと軽く。</h2>
           <p style={{ fontFamily: FONT_SERIF_JA, fontSize: 'clamp(0.9rem, 1.5vw, 1rem)', lineHeight: 2.2, color: 'rgba(247,234,208,0.72)', maxWidth: 620, margin: '0 auto' }}>
             正社員をひとり雇えば、月30万円から。Continuum なら、その一部の金額で
-            6人分のAIチームが、今日から休まず働きます。
+            {SUITE_COUNT}人分のAIチームが、今日から休まず働きます。
           </p>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.1rem', alignItems: 'stretch' }}>
@@ -292,7 +299,7 @@ export default function ContinuumLanding() {
         </div>
         {/* 2026-07-31 巡回: /corp 側と同じ注記。0.42(3.94:1)→0.62 で両ページの見え方をそろえる。 */}
         <p style={{ textAlign: 'center', marginTop: '1.8rem', fontFamily: FONT_SANS, fontSize: '0.74rem', color: 'rgba(255,255,255,0.62)', lineHeight: 2 }}>
-          単品でそろえると 月 約¥109,000。いつでも解約できます。
+          単品でそろえると 月 {formatYen(SUITE_BEST_TOTAL)}（いちばん選ばれているプランの合計）。いつでも解約できます。
           <br />
           決済ページ公開までは、ボタンからそのままご相談ください（1営業日以内にお返事します）。
         </p>
