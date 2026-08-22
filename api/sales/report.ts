@@ -11,7 +11,10 @@
 import { corsHeaders, errMessage, json, requireMaster } from '../_lib/sales/http';
 import { KvNotConfigured } from '../_lib/sales/kv';
 import { listFeed, listRows, todayISO } from '../_lib/sales/store';
-import { WON_STAGES, stageMeta, targetByTier } from '../../src/sales/shared/catalog';
+import { stageMeta, targetByTier } from '../../src/sales/shared/catalog';
+
+/** ここまで到達していれば受注 (TRIAL 以上) */
+const WON_STEP = stageMeta('TRIAL').step;
 import type { CompanyRow, IndustryStat, ReportResponse, TargetTier } from '../../src/sales/shared/types';
 
 export const config = { runtime: 'edge' };
@@ -26,7 +29,9 @@ function statOf(label: string, rows: CompanyRow[]): IndustryStat {
   const contacted = rows.filter(r => r.touches > 0 || step(r) >= 2).length;
   const replied = rows.filter(r => step(r) >= 3).length;
   const meetings = rows.filter(r => step(r) >= 4).length;
-  const wonRows = rows.filter(r => WON_STAGES.includes(r.stage));
+  // 受注も返信・商談と同じで、あとから失注にしても「取れた事実」は消えない。
+  // 現在の段だけで数えると、初回受注→のちに解約した会社が受注率から消える。
+  const wonRows = rows.filter(r => step(r) >= WON_STEP);
   // 単発と月額は単位が違うので別の欄に積んである (現在の段では判定しない。
   // 初回受注→月額に上がった会社の単発実績が消えるため)。
   const oneOffYen = rows.reduce((a, r) => a + (r.oneOffYen || 0), 0);

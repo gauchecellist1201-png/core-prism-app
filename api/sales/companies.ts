@@ -194,25 +194,31 @@ export default async function handler(req: Request): Promise<Response> {
         }
       }
       // URL を書き換えたら重複防止の札も張り替える。
-      // 張り替えないと、同じ会社をもう一度 URL から登録できてしまう。
-      if (next.domain !== c.domain) {
-        if (next.domain) {
-          const claim = await claimDomain(next.domain, next.id);
-          if (!claim.created && claim.id !== next.id) {
-            return json({
-              error: 'DUPLICATE',
-              message: 'そのドメインは別の営業先がすでに使っています。',
-              existingId: claim.id,
-            }, 409, ch);
-          }
+      // 順番が大事: 新しい札を取る → 保存 → 新しい札を恒久化 → 最後に古い札を外す。
+      // 先に古い札を外すと、保存が失敗したときに「会社は旧ドメインを指しているのに
+      // 札だけ無い」状態になり、同じ会社をもう一度登録できてしまう。
+      const domainChanged = next.domain !== c.domain;
+      if (domainChanged && next.domain) {
+        const claim = await claimDomain(next.domain, next.id);
+        if (!claim.created && claim.id !== next.id) {
+          return json({
+            error: 'DUPLICATE',
+            message: claim.pending
+              ? 'そのドメインはいま別の登録処理が使っています。少し待ってからお試しください。'
+              : 'そのドメインは別の営業先がすでに使っています。',
+            existingId: claim.id,
+          }, 409, ch);
         }
-        if (c.domain) await releaseDomain(c.domain, c.id);
       }
 
       const saved = await putCompany(next);
-      // 取った札は TTL 30 秒付きなので、本体を書いたら必ず恒久化する。
-      // 忘れると 30 秒後に札が消え、同じドメインをもう一度登録できてしまう。
-      if (next.domain && next.domain !== c.domain) await confirmDomain(next.domain, saved.id);
+
+      if (domainChanged) {
+        // 取った札は TTL 30 秒付きなので、本体を書いたら必ず恒久化する。
+        if (next.domain) await confirmDomain(next.domain, saved.id);
+        // ここまで来て初めて古い札を外す。
+        if (c.domain) await releaseDomain(c.domain, c.id);
+      }
       return json({ company: saved }, 200, ch);
     }
 

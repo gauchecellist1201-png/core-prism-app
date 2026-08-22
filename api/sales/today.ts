@@ -12,7 +12,7 @@ import { corsHeaders, errMessage, json, requireMaster } from '../_lib/sales/http
 import { KvNotConfigured } from '../_lib/sales/kv';
 import { listRows, readDay, todayISO } from '../_lib/sales/store';
 import { priorityValue, scoreBand } from '../../src/sales/shared/score';
-import { FUNNEL_STAGES, WON_STAGES, stageMeta, targetByTier } from '../../src/sales/shared/catalog';
+import { FUNNEL_STAGES, stageMeta, targetByTier } from '../../src/sales/shared/catalog';
 import type { CompanyRow, FunnelRow, Mission, TodayLead, TodayResponse } from '../../src/sales/shared/types';
 
 export const config = { runtime: 'edge' };
@@ -121,7 +121,8 @@ export default async function handler(req: Request): Promise<Response> {
     const contacted = rows.filter(r => step(r) >= 2 || r.touches > 0).length;
     const replied = rows.filter(r => step(r) >= 3).length;
     const meetings = rows.filter(r => step(r) >= 4).length;
-    const wonRows = rows.filter(r => WON_STAGES.includes(r.stage));
+    // 受注率も到達段で数える (あとから失注にしても、取れた事実は消えない)
+    const wonRows = rows.filter(r => step(r) >= stageMeta('TRIAL').step);
     // 単発と月額は単位が違うので別の欄に積んである (report.ts と同じ数え方)
     const oneOffYen = rows.reduce((a, r) => a + (r.oneOffYen || 0), 0);
     const oneOffCount = rows.reduce((a, r) => a + (r.oneOffCount || 0), 0);
