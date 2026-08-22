@@ -14,6 +14,24 @@ export function addDays(baseISODate: string, days: number): string {
   return new Date(d.getTime() + days * DAY).toISOString().slice(0, 10);
 }
 
+/**
+ * 単発の受注額は足していく。1つの欄に上書きすると、初回受注した会社が
+ * 月額に上がった瞬間に単発の実績が消える (同じ欄を月額で塗りつぶすため)。
+ */
+function addOneOff(c: Company, yen?: number): void {
+  if (typeof yen !== 'number' || yen <= 0) return;
+  c.dealYen = yen;
+  c.oneOffYen = (c.oneOffYen ?? 0) + yen;
+  c.oneOffCount = (c.oneOffCount ?? 0) + 1;
+}
+
+/** 月額は「今いくらか」なので上書きでよい (足すと解約・増額のたびに膨らむ) */
+function setMrr(c: Company, yen?: number): void {
+  if (typeof yen !== 'number' || yen <= 0) return;
+  c.dealYen = yen;
+  c.mrrYen = yen;
+}
+
 /** 段が戻らないようにする (返信をもらった会社を「接触ずみ」に落とさない) */
 function advance(current: Stage, candidate: Stage): Stage {
   if (current === 'LOST') return candidate;         // 失注からは復活してよい
@@ -74,22 +92,22 @@ export function applyActivity(input: FlowInput): FlowResult {
       break;
     case 'trial':
       c.stage = advance(c.stage, 'TRIAL');
-      if (typeof dealYen === 'number' && dealYen > 0) c.dealYen = dealYen;
+      addOneOff(c, dealYen);
       setNext(14, '納品後に月額プランを提案する');
       break;
     case 'won':
       c.stage = advance(c.stage, 'WON');
-      if (typeof dealYen === 'number' && dealYen > 0) c.dealYen = dealYen;
+      addOneOff(c, dealYen);
       setNext(14, '月額プランを提案する');
       break;
     case 'monthly':
       c.stage = advance(c.stage, 'MONTHLY');
-      if (typeof dealYen === 'number' && dealYen > 0) c.dealYen = dealYen;
+      setMrr(c, dealYen);
       setNext(30, '本数の引き上げ・別部署へ横展開する');
       break;
     case 'oem':
       c.stage = advance(c.stage, 'OEM');
-      if (typeof dealYen === 'number' && dealYen > 0) c.dealYen = dealYen;
+      setMrr(c, dealYen);
       setNext(30, '案件数を増やす。共同提案に同席する');
       break;
     case 'lost':

@@ -284,7 +284,18 @@ export default function CompanyDetail(props: {
             <Chip key={b.kind} color={b.color} active onClick={() => setLogOpen(b.kind)}>{b.label}</Chip>
           ))}
         </div>
-        {c.dealYen > 0 && <div style={{ marginTop: 10 }}><Muted>登録金額: {yen(c.dealYen)}</Muted></div>}
+        {/* 単発の累計と月額は単位が違うので、必ず別の行に出す */}
+        {c.oneOffYen > 0 && (
+          <div style={{ marginTop: 10 }}>
+            <Muted>単発の受注 {yen(c.oneOffYen)}（{c.oneOffCount}本）</Muted>
+          </div>
+        )}
+        {c.mrrYen > 0 && (
+          <div style={{ marginTop: 4 }}><Muted>月額 {yen(c.mrrYen)}／月</Muted></div>
+        )}
+        {c.oneOffYen === 0 && c.mrrYen === 0 && c.dealYen > 0 && (
+          <div style={{ marginTop: 10 }}><Muted>見込金額 {yen(c.dealYen)}</Muted></div>
+        )}
         {c.lostReason && <div style={{ marginTop: 6 }}><Muted>失注理由: {c.lostReason}</Muted></div>}
       </Section>
 

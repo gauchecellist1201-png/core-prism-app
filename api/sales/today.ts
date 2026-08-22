@@ -12,7 +12,7 @@ import { corsHeaders, errMessage, json, requireMaster } from '../_lib/sales/http
 import { KvNotConfigured } from '../_lib/sales/kv';
 import { listRows, readDay, todayISO } from '../_lib/sales/store';
 import { priorityValue, scoreBand } from '../../src/sales/shared/score';
-import { FUNNEL_STAGES, ONE_OFF_STAGES, RECURRING_STAGES, WON_STAGES, stageMeta, targetByTier } from '../../src/sales/shared/catalog';
+import { FUNNEL_STAGES, WON_STAGES, stageMeta, targetByTier } from '../../src/sales/shared/catalog';
 import type { CompanyRow, FunnelRow, Mission, TodayLead, TodayResponse } from '../../src/sales/shared/types';
 
 export const config = { runtime: 'edge' };
@@ -91,7 +91,10 @@ export default async function handler(req: Request): Promise<Response> {
     // ---- ミッション (実データから逆算。空想の目標を出さない) ----
     const due = active.filter(r => r.nextActionAt && r.nextActionAt <= today);
     const unanalyzed = active.filter(r => r.stage === 'NEW');
-    const untouched = active.filter(r => r.touches === 0 && r.stage !== 'NEW');
+    // 不在で 2 日後に再架電予定の会社は「今すぐ電話」に数えない。
+    // 不在は接触回数に数えない仕様なので、日付を見ないと毎日かけ直せと言い続ける。
+    const untouched = active.filter(r =>
+      r.touches === 0 && r.stage !== 'NEW' && (!r.nextActionAt || r.nextActionAt <= today));
     const mission: Mission = {
       followup: due.filter(r => r.touches > 0).length,
       analyze: unanalyzed.length,
@@ -114,10 +117,10 @@ export default async function handler(req: Request): Promise<Response> {
     const replied = rows.filter(r => step(r) >= 3).length;
     const meetings = rows.filter(r => step(r) >= 4).length;
     const wonRows = rows.filter(r => WON_STAGES.includes(r.stage));
-    // dealYen は単発なら1本の金額、継続なら月額。足すと単位の無い数字になるので分ける。
-    const oneOff = rows.filter(r => ONE_OFF_STAGES.includes(r.stage));
-    const oneOffYen = oneOff.reduce((a, r) => a + (r.dealYen || 0), 0);
-    const mrrYen = rows.filter(r => RECURRING_STAGES.includes(r.stage)).reduce((a, r) => a + (r.dealYen || 0), 0);
+    // 単発と月額は単位が違うので別の欄に積んである (report.ts と同じ数え方)
+    const oneOffYen = rows.reduce((a, r) => a + (r.oneOffYen || 0), 0);
+    const oneOffCount = rows.reduce((a, r) => a + (r.oneOffCount || 0), 0);
+    const mrrYen = rows.reduce((a, r) => a + (r.mrrYen || 0), 0);
     const pipelineYen = rows
       .filter(r => r.stage === 'MEETING' || r.stage === 'PROPOSAL')
       .reduce((a, r) => a + (r.dealYen || 0), 0);
@@ -140,7 +143,8 @@ export default async function handler(req: Request): Promise<Response> {
         pipelineYen,
         oneOffYen,
         mrrYen,
-        avgOneOffYen: oneOff.length ? Math.round(oneOffYen / oneOff.length) : 0,
+        // 分母は「金額を入れた件数」。未入力を0円として数えると平均が半分になる
+        avgOneOffYen: oneOffCount ? Math.round(oneOffYen / oneOffCount) : 0,
       },
       funnel,
       overdue: active.filter(r => r.nextActionAt && r.nextActionAt < today).length,

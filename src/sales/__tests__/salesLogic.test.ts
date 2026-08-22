@@ -126,14 +126,59 @@ describe('ファネル', () => {
   });
 });
 
+describe('金額の単位', () => {
+  const base = () => blankCompany({ id: 'z', name: '金額テスト' });
+
+  it('初回受注のあと月額に上がっても、単発の実績が消えない', () => {
+    let c = base();
+    c = applyActivity({ company: c, kind: 'trial', today: '2026-08-22', nowISO: '2026-08-22T00:00:00.000Z', dealYen: 49800 }).company;
+    expect(c.oneOffYen).toBe(49800);
+    expect(c.oneOffCount).toBe(1);
+    c = applyActivity({ company: c, kind: 'monthly', today: '2026-09-05', nowISO: '2026-09-05T00:00:00.000Z', dealYen: 248000 }).company;
+    expect(c.mrrYen).toBe(248000);
+    expect(c.oneOffYen, '月額に上がった瞬間に単発が消えている').toBe(49800);
+  });
+
+  it('単発は足し、月額は上書きする', () => {
+    let c = base();
+    c = applyActivity({ company: c, kind: 'won', today: '2026-08-22', nowISO: '2026-08-22T00:00:00.000Z', dealYen: 100000 }).company;
+    c = applyActivity({ company: c, kind: 'won', today: '2026-08-23', nowISO: '2026-08-23T00:00:00.000Z', dealYen: 50000 }).company;
+    expect(c.oneOffYen).toBe(150000);
+    expect(c.oneOffCount).toBe(2);
+    c = applyActivity({ company: c, kind: 'monthly', today: '2026-08-24', nowISO: '2026-08-24T00:00:00.000Z', dealYen: 148000 }).company;
+    c = applyActivity({ company: c, kind: 'monthly', today: '2026-09-24', nowISO: '2026-09-24T00:00:00.000Z', dealYen: 248000 }).company;
+    expect(c.mrrYen, '月額を足してしまっている').toBe(248000);
+  });
+
+  it('金額を入れずに受注しても件数が増えない (平均が半分にならない)', () => {
+    let c = base();
+    c = applyActivity({ company: c, kind: 'won', today: '2026-08-22', nowISO: '2026-08-22T00:00:00.000Z', dealYen: 100000 }).company;
+    c = applyActivity({ company: c, kind: 'won', today: '2026-08-23', nowISO: '2026-08-23T00:00:00.000Z' }).company;
+    expect(c.oneOffCount).toBe(1);
+    expect(Math.round(c.oneOffYen / c.oneOffCount)).toBe(100000);
+  });
+});
+
 describe('SSRF ガード', () => {
   it('社内・ループバック・メタデータ宛のアドレスを弾く', () => {
     for (const ip of ['127.0.0.1', '10.0.0.5', '172.16.0.1', '192.168.1.1', '169.254.169.254', '100.64.0.1', '0.0.0.0', '::1', 'fd00::1', 'fe80::1', '::ffff:127.0.0.1']) {
       expect(isForbiddenAddress(ip), `${ip} を通してしまった`).toBe(true);
     }
   });
+  it('16進で書いたIPv4マップも弾く (::ffff:7f00:1 は 127.0.0.1)', () => {
+    for (const ip of ['::ffff:7f00:1', '::ffff:a00:1', '::ffff:c0a8:1', '::ffff:a9fe:a9fe', '::7f00:1', '0:0:0:0:0:ffff:7f00:0001', '[::ffff:7f00:1]', 'fe80::1%eth0']) {
+      expect(isForbiddenAddress(ip), `${ip} を通してしまった`).toBe(true);
+    }
+  });
+
+  it('読めない文字列は通さない', () => {
+    for (const ip of ['', 'not-an-ip', '999.1.1.1', '1.2.3', 'zz::1']) {
+      expect(isForbiddenAddress(ip), `${ip} を通してしまった`).toBe(true);
+    }
+  });
+
   it('公開アドレスは通す', () => {
-    for (const ip of ['1.1.1.1', '8.8.8.8', '203.0.113.10', '2606:4700:4700::1111']) {
+    for (const ip of ['1.1.1.1', '8.8.8.8', '203.0.113.10', '2606:4700:4700::1111', '::ffff:1.1.1.1', '::ffff:808:808']) {
       expect(isForbiddenAddress(ip), `${ip} を弾いてしまった`).toBe(false);
     }
   });

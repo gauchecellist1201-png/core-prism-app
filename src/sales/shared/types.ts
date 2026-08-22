@@ -175,8 +175,18 @@ export interface Company {
   nextActionAt: string | null;
   nextActionLabel: string;
 
-  /** 受注金額 (円・月額なら月額) */
+  /** 直近に入れた金額。見込み (商談中・提案ずみ) の集計に使う */
   dealYen: number;
+  /**
+   * 単発で受注した金額の累計。
+   * 1つの dealYen に上書きしていると、初回受注した会社が月額に上がった瞬間に
+   * 単発の実績が消える (同じ欄を月額で塗りつぶすため)。だから別に積む。
+   */
+  oneOffYen: number;
+  /** 金額を入れて受注した単発の件数。平均単価の分母 (0円のまま数えない) */
+  oneOffCount: number;
+  /** 現在の月額 (MONTHLY / OEM で更新)。単発とは単位が違うので絶対に足さない */
+  mrrYen: number;
   lostReason: string;
 
   createdAt: string;
@@ -198,6 +208,10 @@ export interface CompanyRow {
   nextActionAt: string | null;
   nextActionLabel: string;
   dealYen: number;
+  /** 単発受注の累計 / 件数 / 現在の月額 (Company と同じ) */
+  oneOffYen: number;
+  oneOffCount: number;
+  mrrYen: number;
   updatedAt: string;
   hasPlans: boolean;
   hasEmail: boolean;

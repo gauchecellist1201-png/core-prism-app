@@ -56,29 +56,98 @@ export function assertSafeUrl(raw: string): URL {
 }
 
 // ---- 解決先アドレスの検査 ------------------------------------------------
-/** private / loopback / link-local / CGNAT など、外に出てはいけない宛先か */
+/** "1.2.3.4" を 32bit にする。形が違えば null。 */
+function ipv4ToInt(a: string): number | null {
+  const p = a.split('.');
+  if (p.length !== 4) return null;
+  let v = 0;
+  for (const seg of p) {
+    if (!/^\d{1,3}$/.test(seg)) return null;
+    const n = Number(seg);
+    if (n > 255) return null;
+    v = v * 256 + n;
+  }
+  return v;
+}
+
+/**
+ * IPv6 を 8 グループに展開する ("::" を 0 で埋める)。
+ * 末尾が v4 表記 (::ffff:127.0.0.1) の場合は 2 グループに畳んでから返す。
+ */
+function expandIpv6(a: string): number[] | null {
+  let t = a.trim().replace(/^\[|\]$/g, '');
+  const zone = t.indexOf('%');
+  if (zone >= 0) t = t.slice(0, zone);
+  if (!t.includes(':')) return null;
+
+  // 末尾の v4 表記を 2 グループへ
+  const v4 = t.match(/(\d{1,3}(?:\.\d{1,3}){3})$/);
+  if (v4) {
+    const n = ipv4ToInt(v4[1]);
+    if (n === null) return null;
+    t = t.slice(0, t.length - v4[1].length)
+      + ((n >>> 16) & 0xffff).toString(16) + ':' + (n & 0xffff).toString(16);
+  }
+
+  const halves = t.split('::');
+  if (halves.length > 2) return null;
+  const parse = (part: string): number[] | null => {
+    if (!part) return [];
+    const out: number[] = [];
+    for (const g of part.split(':')) {
+      if (!/^[0-9a-f]{1,4}$/i.test(g)) return null;
+      out.push(parseInt(g, 16));
+    }
+    return out;
+  };
+  const head = parse(halves[0]);
+  const tail = halves.length === 2 ? parse(halves[1]) : [];
+  if (head === null || tail === null) return null;
+  if (halves.length === 2) {
+    const fill = 8 - head.length - tail.length;
+    if (fill < 0) return null;
+    return [...head, ...new Array<number>(fill).fill(0), ...tail];
+  }
+  return head.length === 8 ? head : null;
+}
+
+/**
+ * private / loopback / link-local / CGNAT など、外に出てはいけない宛先か。
+ *
+ * IPv6 は必ず展開してから見る。::ffff:127.0.0.1 と ::ffff:7f00:1 は同じアドレスで、
+ * 文字列の見た目だけで判定すると後者を素通しして loopback へ繋げてしまう。
+ */
 export function isForbiddenAddress(ip: string): boolean {
-  const a = ip.trim().toLowerCase();
+  const a = (ip || '').trim().toLowerCase();
   if (!a) return true;
+
   if (a.includes(':')) {
-    // IPv6: ::1 / fc00::/7 (ユニークローカル) / fe80::/10 (リンクローカル) / ::ffff:v4
-    if (a === '::' || a === '::1') return true;
-    if (/^f[cd][0-9a-f]{2}:/.test(a)) return true;
-    if (/^fe[89ab][0-9a-f]:/.test(a)) return true;
-    const mapped = a.match(/^::ffff:(\d{1,3}(?:\.\d{1,3}){3})$/);
-    if (mapped) return isForbiddenAddress(mapped[1]);
+    const g = expandIpv6(a);
+    if (!g) return true;                                   // 読めないものは通さない
+    const allZero = g.every(x => x === 0);
+    if (allZero) return true;                              // ::
+    if (g.slice(0, 7).every(x => x === 0) && g[7] === 1) return true;  // ::1
+    // IPv4-mapped (::ffff:x.x.x.x) / IPv4-compatible (::x.x.x.x)
+    const mapped = g.slice(0, 5).every(x => x === 0) && (g[5] === 0xffff || g[5] === 0);
+    if (mapped) {
+      const v4 = `${(g[6] >> 8) & 0xff}.${g[6] & 0xff}.${(g[7] >> 8) & 0xff}.${g[7] & 0xff}`;
+      return isForbiddenAddress(v4);
+    }
+    if ((g[0] & 0xfe00) === 0xfc00) return true;           // fc00::/7 ユニークローカル
+    if ((g[0] & 0xffc0) === 0xfe80) return true;           // fe80::/10 リンクローカル
     return false;
   }
-  const p = a.split('.').map(Number);
-  if (p.length !== 4 || p.some(n => !Number.isInteger(n) || n < 0 || n > 255)) return true;
-  const [x, y] = p;
-  if (x === 0 || x === 10 || x === 127) return true;                 // this / private / loopback
-  if (x === 169 && y === 254) return true;                            // link-local (メタデータ)
-  if (x === 172 && y >= 16 && y <= 31) return true;                   // private
-  if (x === 192 && y === 168) return true;                            // private
-  if (x === 192 && y === 0) return true;                              // IETF 予約
-  if (x === 100 && y >= 64 && y <= 127) return true;                  // CGNAT
-  if (x >= 224) return true;                                          // multicast / 予約
+
+  const n = ipv4ToInt(a);
+  if (n === null) return true;
+  const x = (n >>> 24) & 0xff, y = (n >>> 16) & 0xff;
+  if (x === 0 || x === 10 || x === 127) return true;       // this / private / loopback
+  if (x === 169 && y === 254) return true;                 // link-local (メタデータ)
+  if (x === 172 && y >= 16 && y <= 31) return true;        // private
+  if (x === 192 && y === 168) return true;                 // private
+  if (x === 192 && y === 0) return true;                   // IETF 予約
+  if (x === 100 && y >= 64 && y <= 127) return true;       // CGNAT
+  if (x >= 224) return true;                               // multicast / 予約
   return false;
 }
 

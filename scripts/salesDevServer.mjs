@@ -14,7 +14,9 @@ import { createServer as createVite } from 'vite';
 const ROOT = new URL('..', import.meta.url).pathname;
 const FAKE_KV_PORT = 5598;
 const PORT = 5199;
-const MASTER = 'GAUCHE2026';
+// 本番が MASTER_KEY を設定したら、そちらを使わないと /api/ai が 401 になる。
+// 既定値はあくまで未設定時のフォールバック。
+const MASTER = process.env.MASTER_KEY || 'GAUCHE2026';
 const AI_UPSTREAM = 'https://core-prism-app.vercel.app/api/ai';
 
 // ---------- 偽 Upstash ----------

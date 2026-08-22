@@ -9,7 +9,7 @@
 import { corsHeaders, errMessage, json, requireMaster } from '../_lib/sales/http';
 import { KvNotConfigured } from '../_lib/sales/kv';
 import { listFeed, listRows, todayISO } from '../_lib/sales/store';
-import { ONE_OFF_STAGES, RECURRING_STAGES, WON_STAGES, stageMeta, targetByTier } from '../../src/sales/shared/catalog';
+import { WON_STAGES, stageMeta, targetByTier } from '../../src/sales/shared/catalog';
 import type { CompanyRow, IndustryStat, ReportResponse, TargetTier } from '../../src/sales/shared/types';
 
 export const config = { runtime: 'edge' };
@@ -25,10 +25,11 @@ function statOf(label: string, rows: CompanyRow[]): IndustryStat {
   const replied = rows.filter(r => step(r) >= 3).length;
   const meetings = rows.filter(r => step(r) >= 4).length;
   const wonRows = rows.filter(r => WON_STAGES.includes(r.stage));
-  // dealYen は単発なら「1本の金額」、継続なら「月額」。足すと単位の無い数字になる。
-  const oneOff = rows.filter(r => ONE_OFF_STAGES.includes(r.stage));
-  const oneOffYen = oneOff.reduce((a, r) => a + (r.dealYen || 0), 0);
-  const mrrYen = rows.filter(r => RECURRING_STAGES.includes(r.stage)).reduce((a, r) => a + (r.dealYen || 0), 0);
+  // 単発と月額は単位が違うので別の欄に積んである (現在の段では判定しない。
+  // 初回受注→月額に上がった会社の単発実績が消えるため)。
+  const oneOffYen = rows.reduce((a, r) => a + (r.oneOffYen || 0), 0);
+  const oneOffCount = rows.reduce((a, r) => a + (r.oneOffCount || 0), 0);
+  const mrrYen = rows.reduce((a, r) => a + (r.mrrYen || 0), 0);
   const pct = (n: number) => (contacted ? Math.round((n / contacted) * 1000) / 10 : 0);
   return {
     industry: label,
@@ -40,7 +41,8 @@ function statOf(label: string, rows: CompanyRow[]): IndustryStat {
     replyRatePct: pct(replied),
     meetingRatePct: pct(meetings),
     winRatePct: pct(wonRows.length),
-    avgOneOffYen: oneOff.length ? Math.round(oneOffYen / oneOff.length) : 0,
+    // 分母は「金額を入れた件数」。未入力を0円として数えると平均が半分になる
+    avgOneOffYen: oneOffCount ? Math.round(oneOffYen / oneOffCount) : 0,
     mrrYen,
     tooSmall: contacted < MIN_BASE,
   };
@@ -88,8 +90,8 @@ export default async function handler(req: Request): Promise<Response> {
       monthly: countKind('monthly'),
       oem: countKind('oem'),
       lost: countKind('lost'),
-      oneOffYen: rows.filter(r => ONE_OFF_STAGES.includes(r.stage)).reduce((a, r) => a + (r.dealYen || 0), 0),
-      mrrYen: rows.filter(r => RECURRING_STAGES.includes(r.stage)).reduce((a, r) => a + (r.dealYen || 0), 0),
+      oneOffYen: rows.reduce((a, r) => a + (r.oneOffYen || 0), 0),
+      mrrYen: rows.reduce((a, r) => a + (r.mrrYen || 0), 0),
     };
 
     // ---- 業種別 / 区分別 ----
