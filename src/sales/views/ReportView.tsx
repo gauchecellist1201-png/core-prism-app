@@ -60,7 +60,9 @@ export default function ReportView({ rev }: { rev: number }) {
           <Stat label="失注" value={t.lost} color={T.mute} />
         </div>
         <div style={{ marginTop: 10 }}>
-          <Muted>累計の確定金額: {t.wonYen ? yen(t.wonYen) : '未入力'}</Muted>
+          {/* 単発は「1本いくら」、月額は「月いくら」。足すと単位の無い数字になるので分けて出す */}
+          <Muted>単発の受注額 (累計): {t.oneOffYen ? yen(t.oneOffYen) : '未入力'}</Muted>
+          <Muted>月額 (MRR): {t.mrrYen ? `${yen(t.mrrYen)}／月` : '未入力'}</Muted>
         </div>
       </Card>
 
@@ -114,10 +116,10 @@ function StatTable({ title, rows }: { title: string; rows: IndustryStat[] }) {
       <div style={{ margin: '0 2px 8px' }}><Label>{title}</Label></div>
       <Card pad={0}>
         <div style={{ overflowX: 'auto' }}>
-          <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 460 }}>
+          <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 540 }}>
             <thead>
               <tr>
-                {['区分', '社数', '接触', '返信率', '商談率', '受注率', '平均単価'].map(h => (
+                {['区分', '社数', '接触', '返信率', '商談率', '受注率', '単発平均', 'MRR'].map(h => (
                   <th key={h} style={{
                     textAlign: h === '区分' ? 'left' : 'right', fontSize: 10.5, color: T.faint,
                     fontWeight: 800, padding: '10px 10px', borderBottom: `1px solid ${T.line}`, whiteSpace: 'nowrap',
@@ -139,7 +141,8 @@ function StatTable({ title, rows }: { title: string; rows: IndustryStat[] }) {
                     <Td v={`${r.replyRatePct}%`} color={dim} />
                     <Td v={`${r.meetingRatePct}%`} color={dim} />
                     <Td v={`${r.winRatePct}%`} color={dim} />
-                    <Td v={r.avgDealYen ? yen(r.avgDealYen) : '—'} color={T.mute} />
+                    <Td v={r.avgOneOffYen ? yen(r.avgOneOffYen) : '—'} color={T.mute} />
+                    <Td v={r.mrrYen ? `${yen(r.mrrYen)}／月` : '—'} color={T.mute} />
                   </tr>
                 );
               })}

@@ -251,6 +251,11 @@ export const FUNNEL_STAGES: Stage[] = [
 /** 受注として数える段 */
 export const WON_STAGES: Stage[] = ['TRIAL', 'WON', 'MONTHLY', 'OEM'];
 
+/** dealYen が「1本いくら」の段 (単発) */
+export const ONE_OFF_STAGES: Stage[] = ['TRIAL', 'WON'];
+/** dealYen が「月いくら」の段 (継続)。単発と足すと単位の無い数字になる */
+export const RECURRING_STAGES: Stage[] = ['MONTHLY', 'OEM'];
+
 // ---- 追客 (フォローアップ) ------------------------------------------------
 export interface FollowUpStep {
   /** 前回接触からの日数 */

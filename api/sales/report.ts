@@ -9,7 +9,7 @@
 import { corsHeaders, errMessage, json, requireMaster } from '../_lib/sales/http';
 import { KvNotConfigured } from '../_lib/sales/kv';
 import { listFeed, listRows, todayISO } from '../_lib/sales/store';
-import { WON_STAGES, stageMeta, targetByTier } from '../../src/sales/shared/catalog';
+import { ONE_OFF_STAGES, RECURRING_STAGES, WON_STAGES, stageMeta, targetByTier } from '../../src/sales/shared/catalog';
 import type { CompanyRow, IndustryStat, ReportResponse, TargetTier } from '../../src/sales/shared/types';
 
 export const config = { runtime: 'edge' };
@@ -25,7 +25,10 @@ function statOf(label: string, rows: CompanyRow[]): IndustryStat {
   const replied = rows.filter(r => step(r) >= 3).length;
   const meetings = rows.filter(r => step(r) >= 4).length;
   const wonRows = rows.filter(r => WON_STAGES.includes(r.stage));
-  const wonYen = wonRows.reduce((a, r) => a + (r.dealYen || 0), 0);
+  // dealYen は単発なら「1本の金額」、継続なら「月額」。足すと単位の無い数字になる。
+  const oneOff = rows.filter(r => ONE_OFF_STAGES.includes(r.stage));
+  const oneOffYen = oneOff.reduce((a, r) => a + (r.dealYen || 0), 0);
+  const mrrYen = rows.filter(r => RECURRING_STAGES.includes(r.stage)).reduce((a, r) => a + (r.dealYen || 0), 0);
   const pct = (n: number) => (contacted ? Math.round((n / contacted) * 1000) / 10 : 0);
   return {
     industry: label,
@@ -37,7 +40,8 @@ function statOf(label: string, rows: CompanyRow[]): IndustryStat {
     replyRatePct: pct(replied),
     meetingRatePct: pct(meetings),
     winRatePct: pct(wonRows.length),
-    avgDealYen: wonRows.length ? Math.round(wonYen / wonRows.length) : 0,
+    avgOneOffYen: oneOff.length ? Math.round(oneOffYen / oneOff.length) : 0,
+    mrrYen,
     tooSmall: contacted < MIN_BASE,
   };
 }
@@ -74,7 +78,6 @@ export default async function handler(req: Request): Promise<Response> {
 
     const countKind = (k: string) => inWindow.filter(a => a.kind === k).length;
 
-    const wonRowsAll = rows.filter(r => WON_STAGES.includes(r.stage));
     const totals = {
       added: rows.filter(r => r.updatedAt >= weekFrom && r.touches === 0 && r.score === 0).length,
       contacted: countKind('call') + countKind('email'),
@@ -85,7 +88,8 @@ export default async function handler(req: Request): Promise<Response> {
       monthly: countKind('monthly'),
       oem: countKind('oem'),
       lost: countKind('lost'),
-      wonYen: wonRowsAll.reduce((a, r) => a + (r.dealYen || 0), 0),
+      oneOffYen: rows.filter(r => ONE_OFF_STAGES.includes(r.stage)).reduce((a, r) => a + (r.dealYen || 0), 0),
+      mrrYen: rows.filter(r => RECURRING_STAGES.includes(r.stage)).reduce((a, r) => a + (r.dealYen || 0), 0),
     };
 
     // ---- 業種別 / 区分別 ----

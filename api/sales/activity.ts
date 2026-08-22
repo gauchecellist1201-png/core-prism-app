@@ -7,7 +7,7 @@
 // ============================================================
 import { corsHeaders, errMessage, json, requireMaster } from '../_lib/sales/http';
 import { KvNotConfigured } from '../_lib/sales/kv';
-import { addActivity, bumpDay, getCompany, newId, nowISO, putCompany, todayISO } from '../_lib/sales/store';
+import { commitActivity, getCompany, newId, nowISO, todayISO } from '../_lib/sales/store';
 import { applyActivity } from '../_lib/sales/flow';
 import type { Activity, ActivityKind } from '../../src/sales/shared/types';
 
@@ -45,12 +45,11 @@ export default async function handler(req: Request): Promise<Response> {
     const today = todayISO();
     const { company: updated } = applyActivity({ company, kind, today, nowISO: at, dealYen, lostReason });
 
-    // 保存 → 履歴 → カウンタ の順。保存が失敗したら履歴もカウンタも進めない。
-    const saved = await putCompany(updated);
-
-    const activity: Activity = { id: newId(), companyId: saved.id, kind, note, at };
-    await addActivity(activity);
-    await bumpDay(kind, today);
+    // 企業・履歴・カウンタは 1 往復でまとめて書く。
+    // 分けて投げると、企業だけ進んで履歴が落ちた時に「やり直すと二重、やり直さないと欠ける」
+    // のどちらかになり、どちらも数字が合わなくなる。
+    const activity: Activity = { id: newId(), companyId: updated.id, kind, note, at };
+    const saved = await commitActivity(updated, activity, today);
 
     return json({ company: saved, activity }, 200, ch);
   } catch (e) {

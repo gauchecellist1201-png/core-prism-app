@@ -105,7 +105,9 @@ export default function TodayView(props: { rev: number; onOpen: (id: string) => 
         <Stat label="月額契約" value={kpi.monthly} color={T.green} />
         <Stat label="OEM" value={kpi.oem} color={T.gold} />
         <Stat label="見込 (商談中)" value={kpi.pipelineYen ? yen(kpi.pipelineYen) : '—'} sub={kpi.pipelineYen ? '' : '金額未入力'} />
-        <Stat label="確定" value={kpi.wonYen ? yen(kpi.wonYen) : '—'} sub={kpi.avgDealYen ? `平均 ${yen(kpi.avgDealYen)}` : '金額未入力'} color={T.green} />
+        {/* 単発と月額は単位が違うので絶対に足さない */}
+        <Stat label="単発 受注額" value={kpi.oneOffYen ? yen(kpi.oneOffYen) : '—'} sub={kpi.avgOneOffYen ? `平均 ${yen(kpi.avgOneOffYen)}／本` : '金額未入力'} color={T.green} />
+        <Stat label="月額 (MRR)" value={kpi.mrrYen ? `${yen(kpi.mrrYen)}／月` : '—'} sub={kpi.mrrYen ? '' : '金額未入力'} color={T.green} />
       </div>
 
       {/* ---- ファネル ---- */}

@@ -2,7 +2,7 @@
 // GET /api/sales/config — カタログ・ターゲット・ステージ・価格矛盾
 // x-master-key 必須
 // ============================================================
-import { corsHeaders, json, requireMaster } from '../_lib/sales/http';
+import { corsHeaders, json, requireMaster, usingDefaultMasterKey } from '../_lib/sales/http';
 import { kvConfigured } from '../_lib/sales/kv';
 import {
   PRODUCTS, TARGETS, STAGES, OEM_RESALE, PUBLISHED_PRICES, PUBLISHED_SNAPSHOT_DATE,
@@ -32,5 +32,6 @@ export default async function handler(req: Request): Promise<Response> {
     priceConflicts: priceConflicts(),
     mayQuotePrice: mayQuotePrice(),
     storage: { configured: kvConfigured() },
+    security: { usingDefaultKey: usingDefaultMasterKey() },
   }, 200, ch);
 }

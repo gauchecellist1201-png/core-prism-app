@@ -118,7 +118,9 @@ export default async function handler(req: Request): Promise<Response> {
 
       const bulk = s(body.bulk, 40_000);
       if (bulk) {
-        const lines = bulk.split(/\r?\n/).map(parseBulkLine).filter((x): x is { name: string; url: string } => !!x);
+        const rawLines = bulk.split(/\r?\n/);
+        const parsed = rawLines.map(l => ({ raw: l, p: parseBulkLine(l) }));
+        const lines = parsed.filter(x => x.p).map(x => x.p as { name: string; url: string });
         if (!lines.length) return json({ error: 'EMPTY', message: '読み取れる行がありませんでした。1行に1社、「社名,URL」の形で貼ってください。' }, 400, ch);
         const over = lines.length > MAX_BULK;
         const use = lines.slice(0, MAX_BULK);
@@ -129,12 +131,20 @@ export default async function handler(req: Request): Promise<Response> {
           if (r.created) created += 1;
           else skipped.push(`${l.name || l.url}: ${r.reason}`);
         }
+        // 上限を超えて処理しなかった行は、そのまま返して画面の入力欄へ戻す。
+        // 件数だけ返して本文を消すと、貼った人は残りを手元から作り直すことになる。
+        const leftover = over
+          ? parsed.filter(x => x.p).slice(MAX_BULK).map(x => x.raw).join('\n')
+          : '';
         return json({
           created,
           skipped: skipped.length,
           skippedDetail: skipped.slice(0, 30),
           truncated: over ? lines.length - MAX_BULK : 0,
-          note: over ? `${MAX_BULK}件を超えた分 (${lines.length - MAX_BULK}件) は取り込んでいません。もう一度貼ってください。` : '',
+          leftover,
+          note: over
+            ? `1回に取り込めるのは${MAX_BULK}件までです。残り${lines.length - MAX_BULK}件は入力欄に残してあるので、もう一度「まとめて追加する」を押してください。`
+            : '',
         }, 200, ch);
       }
 

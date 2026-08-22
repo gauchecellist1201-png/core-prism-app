@@ -235,6 +235,35 @@ function parseActivities(raw: string[]): Activity[] {
   return out;
 }
 
+/**
+ * 企業の更新・活動履歴・日次カウンタを 1 往復で書く。
+ *
+ * 別々に投げると、企業だけ保存できて履歴が落ちた時に 500 を返すことになる。
+ * 呼び手がやり直すと段と接触回数が二重に進み、やり直さないと履歴だけ欠ける。
+ * どちらも「入れたのに数字が合わない」に化けるので、まとめて 1 リクエストにする。
+ */
+export async function commitActivity(
+  company: Company,
+  activity: Activity,
+  date = todayISO(),
+): Promise<Company> {
+  const next: Company = { ...company, updatedAt: nowISO() };
+  const raw = JSON.stringify(activity);
+  const dayKey = K.day(date);
+  await kv.pipeline([
+    ['SET', K.co(next.id), JSON.stringify(next)],
+    ['HSET', K.idx, next.id, JSON.stringify(toRow(next))],
+    ['LPUSH', K.act(next.id), raw],
+    ['LTRIM', K.act(next.id), 0, ACT_KEEP - 1],
+    ['LPUSH', K.feed, raw],
+    ['LTRIM', K.feed, 0, FEED_KEEP - 1],
+    ['HINCRBY', dayKey, activity.kind, 1],
+    ['HINCRBY', dayKey, 'total', 1],
+    ['EXPIRE', dayKey, DAY_TTL],
+  ]);
+  return next;
+}
+
 // ---- 日次カウンタ --------------------------------------------------------
 export async function bumpDay(kind: ActivityKind, date = todayISO()): Promise<void> {
   const key = K.day(date);

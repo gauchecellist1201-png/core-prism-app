@@ -66,6 +66,7 @@ export interface SalesConfig {
   priceConflicts: PriceConflict[];
   mayQuotePrice: boolean;
   storage: { configured: boolean };
+  security: { usingDefaultKey: boolean };
 }
 
 export const fetchConfig = () => call<SalesConfig>('/api/sales/config');
@@ -81,10 +82,18 @@ export const createCompany = (seed: Record<string, string>) =>
     method: 'POST', body: JSON.stringify(seed),
   });
 
+export interface BulkResult {
+  created: number;
+  skipped: number;
+  skippedDetail: string[];
+  truncated: number;
+  /** 上限を超えて処理しなかった行。入力欄に戻して続きを取り込ませる */
+  leftover: string;
+  note: string;
+}
+
 export const createBulk = (bulk: string) =>
-  call<{ created: number; skipped: number; skippedDetail: string[]; truncated: number; note: string }>(
-    '/api/sales/companies', { method: 'POST', body: JSON.stringify({ bulk }) },
-  );
+  call<BulkResult>('/api/sales/companies', { method: 'POST', body: JSON.stringify({ bulk }) });
 
 export const patchCompany = (id: string, patch: Record<string, string>) =>
   call<{ company: Company }>('/api/sales/companies', {

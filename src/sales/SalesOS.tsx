@@ -169,6 +169,16 @@ export default function SalesOS() {
           </div>
         )}
 
+        {cfg?.security?.usingDefaultKey && (
+          <div style={{ marginBottom: 12 }}>
+            <ErrorNote>
+              合言葉が既定値のままです。この文字列は公開済みで、知っている人は誰でも
+              この営業先データを読み書きできます。Vercel の環境変数に MASTER_KEY を
+              設定してください (設定するとこの警告は消えます)。
+            </ErrorNote>
+          </div>
+        )}
+
         {cfg?.storage.configured === false && (
           <div style={{ marginBottom: 14 }}>
             <ErrorNote>

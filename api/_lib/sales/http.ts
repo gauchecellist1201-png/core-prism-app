@@ -8,8 +8,22 @@ const ALLOWED_ORIGINS = [
   'http://localhost:4173',
 ];
 
-/** 既存 api/* と同じ合言葉。env があればそちらを優先。 */
-const MASTER_KEY = (typeof process !== 'undefined' && process.env?.MASTER_KEY) || 'GAUCHE2026';
+// ---- 合言葉 --------------------------------------------------------------
+// 既定値 'GAUCHE2026' は、このリポジトリと配信中のクライアントバンドルに
+// すでに何度も出てくる = 実質公開されている文字列。
+// Vercel env に MASTER_KEY を入れればそちらが優先され、既定値は無効になる。
+//
+// ここで「env が無ければ 401」にしていない理由: 既存の /api/master/* 系 103 本が
+// 同じ既定値で動いており、ここだけ閉じると営業OSが今日から使えなくなる。
+// 代わりに、既定値のままかどうかを /api/sales/config で返し、画面に警告を出し続ける。
+const ENV_MASTER_KEY = (typeof process !== 'undefined' && process.env?.MASTER_KEY) || '';
+const DEFAULT_MASTER_KEY = 'GAUCHE2026';
+const MASTER_KEY = ENV_MASTER_KEY || DEFAULT_MASTER_KEY;
+
+/** 合言葉が公開済みの既定値のままか (画面に警告を出すため) */
+export function usingDefaultMasterKey(): boolean {
+  return !ENV_MASTER_KEY;
+}
 
 export function corsHeaders(req: Request): Record<string, string> {
   const origin = req.headers.get('origin') || '';

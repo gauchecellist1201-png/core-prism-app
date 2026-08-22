@@ -113,6 +113,7 @@ export default function CompaniesView(props: {
         open={addOpen}
         onClose={() => setAddOpen(false)}
         onDone={() => { setAddOpen(false); reload(); onChanged(); }}
+        onAdded={() => { reload(); onChanged(); }}
       />
     </div>
   );
@@ -151,7 +152,13 @@ function Row({ row, onOpen }: { row: CompanyRow; onOpen: (id: string) => void })
 }
 
 // ---- 追加シート ----------------------------------------------------------
-function AddSheet({ open, onClose, onDone }: { open: boolean; onClose: () => void; onDone: () => void }) {
+function AddSheet({ open, onClose, onDone, onAdded }: {
+  open: boolean; onClose: () => void;
+  /** 追加が終わってシートを閉じてよいとき */
+  onDone: () => void;
+  /** 追加はできたが、まだシートに用があるとき (残り行・飛ばした行の説明) */
+  onAdded: () => void;
+}) {
   const [mode, setMode] = useState<'one' | 'bulk'>('one');
   const [name, setName] = useState('');
   const [url, setUrl] = useState('');
@@ -185,7 +192,13 @@ function AddSheet({ open, onClose, onDone }: { open: boolean; onClose: () => voi
       if (r.skipped) msgs.push(`${r.skipped} 社は重複などで飛ばしました。`);
       if (r.truncated) msgs.push(r.note);
       setResult(msgs.join(' '));
-      if (r.created > 0) { setBulk(''); onDone(); }
+      // 上限で入らなかった行は入力欄に残す。消してしまうと貼った人が作り直しになる。
+      setBulk(r.leftover || '');
+      if (r.created > 0) {
+        // 残りがある / 飛ばした行がある間はシートを閉じない (説明が読めなくなる)
+        onAdded();
+        if (!r.truncated && !r.skipped) onDone();
+      }
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e));
     } finally { setBusy(false); }

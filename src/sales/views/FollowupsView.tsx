@@ -3,7 +3,7 @@
 // 期限超過 → 今日 → 今週 → 先 の順。切り口 (何回目に何を送るか) も出す。
 // ============================================================
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { T, daysFromToday, shortDate } from '../theme';
+import { T, daysFromToday, shortDate, todayStr } from '../theme';
 import { Btn, Card, Chip, Empty, ErrorNote, Label, Muted, Spinner } from '../ui';
 import { fetchRows } from '../api';
 import type { CompanyRow } from '../shared/types';
@@ -32,7 +32,10 @@ export default function FollowupsView({ rev, onOpen }: { rev: number; onOpen: (i
   useEffect(() => { void load(); }, [load, rev]);
 
   const buckets = useMemo<Bucket[]>(() => {
-    const list = (rows ?? []).filter(r => r.stage !== 'LOST' && r.nextActionAt);
+    // 失注も、再アプローチ日が来ていれば出す (来ていないうちは出さない)。
+    const today = todayStr();
+    const list = (rows ?? []).filter(r =>
+      r.nextActionAt && (r.stage !== 'LOST' || r.nextActionAt <= today));
     const b: Bucket[] = [
       { key: 'over', label: '期限を過ぎている', color: T.red, rows: [] },
       { key: 'today', label: '今日', color: T.amber, rows: [] },

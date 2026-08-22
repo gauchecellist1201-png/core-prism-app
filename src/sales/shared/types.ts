@@ -239,8 +239,12 @@ export interface TodayResponse {
     replyRatePct: number;
     winRatePct: number;
     pipelineYen: number;
-    wonYen: number;
-    avgDealYen: number;
+    /** 単発受注 (TRIAL/WON) の合計。月額とは単位が違うので必ず分けて持つ */
+    oneOffYen: number;
+    /** 月額継続・OEM の月額合計 (MRR) */
+    mrrYen: number;
+    /** 単発1件あたりの平均。月額は混ぜない */
+    avgOneOffYen: number;
   };
   funnel: FunnelRow[];
   overdue: number;
@@ -258,7 +262,10 @@ export interface IndustryStat {
   replyRatePct: number;
   meetingRatePct: number;
   winRatePct: number;
-  avgDealYen: number;
+  /** 単発1件あたりの平均。月額とは単位が違うので混ぜない */
+  avgOneOffYen: number;
+  /** この区分の月額合計 (MRR) */
+  mrrYen: number;
   /** 母数が小さすぎて率を読んではいけない */
   tooSmall: boolean;
 }
@@ -277,7 +284,10 @@ export interface ReportResponse {
     monthly: number;
     oem: number;
     lost: number;
-    wonYen: number;
+    /** 単発受注の合計 (累計) */
+    oneOffYen: number;
+    /** 月額継続・OEM の月額合計 (MRR・累計) */
+    mrrYen: number;
   };
   byIndustry: IndustryStat[];
   byTier: IndustryStat[];

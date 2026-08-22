@@ -12,7 +12,7 @@ import { corsHeaders, errMessage, json, requireMaster } from '../_lib/sales/http
 import { KvNotConfigured } from '../_lib/sales/kv';
 import { listRows, readDay, todayISO } from '../_lib/sales/store';
 import { priorityValue, scoreBand } from '../../src/sales/shared/score';
-import { FUNNEL_STAGES, WON_STAGES, stageMeta, targetByTier } from '../../src/sales/shared/catalog';
+import { FUNNEL_STAGES, ONE_OFF_STAGES, RECURRING_STAGES, WON_STAGES, stageMeta, targetByTier } from '../../src/sales/shared/catalog';
 import type { CompanyRow, FunnelRow, Mission, TodayLead, TodayResponse } from '../../src/sales/shared/types';
 
 export const config = { runtime: 'edge' };
@@ -20,7 +20,10 @@ export const config = { runtime: 'edge' };
 const LEAD_LIMIT = 12;
 
 function decide(row: CompanyRow, today: string): { action: TodayLead['action']; label: string } {
-  if (row.stage === 'NEW' || row.score === 0) return { action: 'analyze', label: '企業分析をかける' };
+  // 未分析かどうかは stage だけで決める。
+  // 「根拠が取れず 0 点」は正しい分析結果なので、score 0 を未分析の代わりにすると
+  // 分析ずみの会社に永遠に「分析をかける」を出し続け、本来の追客を押しのける。
+  if (row.stage === 'NEW') return { action: 'analyze', label: '企業分析をかける' };
   if (row.nextActionAt && row.nextActionAt <= today && row.touches > 0) {
     return { action: 'followup', label: row.nextActionLabel || '追客する' };
   }
@@ -35,6 +38,7 @@ function decide(row: CompanyRow, today: string): { action: TodayLead['action']; 
 
 function reasons(row: CompanyRow, today: string): string[] {
   const out: string[] = [];
+  if (row.stage === 'LOST') out.push('失注からの再アプローチ');
   if (row.nextActionAt && row.nextActionAt < today) out.push(`期限を ${daysBetween(row.nextActionAt, today)} 日超過`);
   else if (row.nextActionAt === today) out.push('今日が予定日');
   if (row.score >= 60) out.push(`スコア ${row.score} (${scoreBand(row.score).label})`);
@@ -65,7 +69,9 @@ export default async function handler(req: Request): Promise<Response> {
     const today = todayISO();
     const [rows, day] = await Promise.all([listRows(), readDay(today)]);
 
-    const active = rows.filter(r => r.stage !== 'LOST');
+    // 失注は普段は出さないが、90日後の再アプローチ日が来たら戻す。
+    // 出さないままだと applyActivity が入れた再アプローチ日が永久に届かない。
+    const active = rows.filter(r => r.stage !== 'LOST' || (r.nextActionAt !== null && r.nextActionAt <= today));
 
     const ranked = active
       .map(r => ({ r, p: priorityValue({ score: r.score, nextActionAt: r.nextActionAt, touches: r.touches, todayISO: today }) }))
@@ -108,7 +114,10 @@ export default async function handler(req: Request): Promise<Response> {
     const replied = rows.filter(r => step(r) >= 3).length;
     const meetings = rows.filter(r => step(r) >= 4).length;
     const wonRows = rows.filter(r => WON_STAGES.includes(r.stage));
-    const wonYen = wonRows.reduce((a, r) => a + (r.dealYen || 0), 0);
+    // dealYen は単発なら1本の金額、継続なら月額。足すと単位の無い数字になるので分ける。
+    const oneOff = rows.filter(r => ONE_OFF_STAGES.includes(r.stage));
+    const oneOffYen = oneOff.reduce((a, r) => a + (r.dealYen || 0), 0);
+    const mrrYen = rows.filter(r => RECURRING_STAGES.includes(r.stage)).reduce((a, r) => a + (r.dealYen || 0), 0);
     const pipelineYen = rows
       .filter(r => r.stage === 'MEETING' || r.stage === 'PROPOSAL')
       .reduce((a, r) => a + (r.dealYen || 0), 0);
@@ -129,8 +138,9 @@ export default async function handler(req: Request): Promise<Response> {
         replyRatePct: contacted ? Math.round((replied / contacted) * 1000) / 10 : 0,
         winRatePct: contacted ? Math.round((wonRows.length / contacted) * 1000) / 10 : 0,
         pipelineYen,
-        wonYen,
-        avgDealYen: wonRows.length ? Math.round(wonYen / wonRows.length) : 0,
+        oneOffYen,
+        mrrYen,
+        avgOneOffYen: oneOff.length ? Math.round(oneOffYen / oneOff.length) : 0,
       },
       funnel,
       overdue: active.filter(r => r.nextActionAt && r.nextActionAt < today).length,

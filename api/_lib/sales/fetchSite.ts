@@ -105,6 +105,13 @@ async function resolveAt(base: string, host: string, type: 'A' | 'AAAA', signal:
 /**
  * ホスト名を実際に引いて、社内・ループバック・メタデータへ向いていないか確かめる。
  * 引けなかったときは通さない (fail-closed)。穴を開けたままにするより止める。
+ *
+ * 【残っている穴】ここで引いたアドレスと、直後の fetch() が実際に繋ぐアドレスは別物になりうる
+ * (DNS rebinding / split-horizon)。塞ぐには「検査したIPに固定して繋ぐ」必要があるが、
+ * Vercel Edge の fetch にはその手段が無い (接続先IPを指定できない)。
+ * 完全に塞ぐなら egress プロキシを立てて宛先レンジをそこで制限する。
+ * 現時点では、この経路は master 合言葉が要る = URL を入れられるのはオーナーだけ、
+ * という前提で残存リスクを受け入れている。公開フォームからは絶対に呼ばないこと。
  */
 export async function assertPublicHost(host: string, signal: AbortSignal): Promise<void> {
   let addrs: string[] = [];
