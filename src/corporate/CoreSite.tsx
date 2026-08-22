@@ -2126,19 +2126,52 @@ function HeroVideo({ onAnchor }: { onAnchor?: (e: ReactMouseEvent<HTMLAnchorElem
       window.removeEventListener('orientationchange', measure);
     };
   }, []);
-  // ロゴ画像に焼き込み済みの「CORE / AI TRANSFORMATION COMPANY」が、
-  // 下のコピー帯（暗幕グラデーション）に被って消える事故を防ぐため、
-  // コピー帯の実測高さぶん画像側の表示枠を上に切り詰める（横長・低いビューポートほど致命的）。
-  // window resize だけだとフォント読み込み後の再レイアウトを取りこぼすため、
-  // コピー帯の実サイズ変化そのものを ResizeObserver で監視する。
+  /**
+   * ロゴの表示枠の高さ。
+   *
+   * 2026-08-22 事故: 枠を「ヒーローの高さ − コピー帯の高さ」＝“余り物”で決めていたため、
+   * 画面が短いほどロゴが潰れた。375x667 の本番実測で枠は 45px しか残らず、
+   * object-fit:contain が 3:2 の画像をその高さに合わせて縮めた結果、
+   * ロゴの実描画は 68x45（画面幅の 18%）まで小さくなっていた。
+   * 画面が短いほど小さくなる＝背の低い端末ほど壊れる作りだった。
+   *
+   * ここでは余りではなく「下限つきの取り分」として決める。
+   * コピー帯を削ってもなお足りない場合はロゴ側を LOGO_MIN で止め、
+   * section は minHeight なので必要なぶんだけ下に伸びる（CTA が消えるより潰れない方を優先）。
+   *
+   * 高さは % ではなく実測 px で渡す。親が minHeight（高さ不定）なので、
+   * % 指定の height/maxHeight は解決されず効かない。
+   */
+  const LOGO_MAX = 340;
   const [copyH, setCopyH] = useState(0);
+  const [viewportH, setViewportH] = useState(0);
   useEffect(() => {
     const el = copyRef.current;
     if (!el) return;
+    // window resize だけだとフォント読み込み後の再レイアウトを取りこぼすため、
+    // コピー帯の実サイズ変化そのものを ResizeObserver で監視する。
     const ro = new ResizeObserver(() => setCopyH(el.offsetHeight));
     ro.observe(el);
-    return () => ro.disconnect();
+    const measure = () => setViewportH(window.innerHeight);
+    measure();
+    window.addEventListener('resize', measure);
+    window.addEventListener('orientationchange', measure);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('resize', measure);
+      window.removeEventListener('orientationchange', measure);
+    };
   }, []);
+  // ロゴは「コピー帯を引いた残り」をそのまま取る。ただし
+  //  - LOGO_HARD_MIN 未満はロゴとして成立しないので、そこで止める（＝section がはみ出す）
+  //  - LOGO_MAX を超えるとコピーを食うので、そこで止める
+  // 残りを超えて取らない限り CTA は折り目の中に残る（実測で確認済み）。
+  // 残りそのものは、上の短い画面向け CSS でコピー帯を詰めたぶんだけ増える。
+  const LOGO_HARD_MIN = 110;
+  const avail = viewportH - chromeH - copyH;
+  const logoH = viewportH && copyH
+    ? Math.min(LOGO_MAX, Math.max(LOGO_HARD_MIN, avail))
+    : LOGO_HARD_MIN;
   return (
     <section
       id="top"
@@ -2149,26 +2182,34 @@ function HeroVideo({ onAnchor }: { onAnchor?: (e: ReactMouseEvent<HTMLAnchorElem
         minHeight: chromeH ? `calc(100dvh - ${chromeH}px)` : '100dvh',
         overflow: 'hidden',
         display: 'flex',
-        alignItems: 'flex-end',
-        justifyContent: 'center',
+        flexDirection: 'column',
+        justifyContent: 'flex-end',
         background: '#000',
       }}
     >
       <div
-        /* 画像はコピー帯と重ならない上側の枠に閉じ込める。
-           横長で低いビューポート（デスクトップ等）では画像が縦いっぱいまで
-           拡大されるため、コピー帯の暗幕にロゴの文字部分が沈んで消える。 */
-        style={{ position: 'absolute', inset: 0, bottom: copyH || undefined, zIndex: 0 }}
+        /* ロゴ枠。コピー帯と重ならない上側に、下限つきの高さで確保する。
+           画像の地は #000（section と同色）なので object-fit:contain の
+           レターボックスが継ぎ目なく馴染む。 */
+        style={{
+          flex: '1 1 auto', minHeight: logoH, display: 'flex',
+          alignItems: 'center', justifyContent: 'center',
+          padding: '0.5rem 1rem 0', zIndex: 0,
+        }}
       >
         <img
-          src="/corp-hero-logo.webp"
+          src="/corp-hero-logo-trim.webp"
           alt="CORE — AI Transformation Company"
-          width={1536}
-          height={1024}
+          width={952}
+          height={868}
           fetchPriority="high"
-          /* 画像の地は #000（section と同色）なので object-fit:contain で
-             トリミングせず全体を見せても、レターボックスが継ぎ目なく馴染む。 */
-          style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+          /* 元画像は左右 42%・下 17% が真っ黒な余白で、contain が枠の高さに
+             合わせて縮めるとロゴ本体はさらにその 58% しか残らなかった。
+             余白を切り落とした trim 版（952x868）を使い、枠いっぱいまでロゴ本体で埋める。 */
+          style={{
+            width: 'min(74vw, 420px)', maxWidth: '100%',
+            height: logoH, objectFit: 'contain', display: 'block',
+          }}
         />
       </div>
       {/*
@@ -2184,8 +2225,9 @@ function HeroVideo({ onAnchor }: { onAnchor?: (e: ReactMouseEvent<HTMLAnchorElem
            全体の暗幕とは別に、コピーの帯そのものに地を持たせて、
            どのコマでも同じ読みやすさにする。 */
         style={{
-          position: 'relative', zIndex: 3, textAlign: 'center', width: '100%',
-          padding: '3.5rem 1.25rem calc(env(safe-area-inset-bottom, 0px) + 3.2rem)',
+          position: 'relative', zIndex: 3, textAlign: 'center', width: '100%', flex: '0 0 auto',
+          /* 上の余白はロゴ枠の取り分を直接削る。ロゴと見出しは隣り合うので 3.5rem は空きすぎだった。 */
+          padding: '2rem 1.25rem calc(env(safe-area-inset-bottom, 0px) + 3.2rem)',
           background: 'linear-gradient(180deg, rgba(4,3,2,0) 0%, rgba(4,3,2,0.62) 26%, rgba(4,3,2,0.88) 58%, rgba(4,3,2,0.96) 100%)',
         }}
       >
@@ -2208,7 +2250,7 @@ function HeroVideo({ onAnchor }: { onAnchor?: (e: ReactMouseEvent<HTMLAnchorElem
         }}>
           AIとテクノロジーで、企業の仕組みそのものを変える。
         </p>
-        <p style={{
+        <p className="corp-hero-lede" style={{
           fontFamily: FONT_SERIF_JA, fontSize: 'clamp(0.78rem, 1.4vw, 0.92rem)',
           color: 'rgba(255,255,255,0.8)', lineHeight: 1.95, maxWidth: 620, margin: '0 auto 1.5rem',
           textShadow: '0 2px 14px rgba(0,0,0,0.85)',
