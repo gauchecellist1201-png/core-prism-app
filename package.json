@@ -7,7 +7,7 @@
     "dev": "vite",
     "sync-plan": "node scripts/syncBusinessPlan.mjs",
     "prebuild": "node scripts/syncBusinessPlan.mjs",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b && tsc -p tsconfig.sales-api.json && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
     "smoke": "node scripts/smoke.mjs",

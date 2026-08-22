@@ -1,0 +1,29 @@
+{
+  // ============================================================
+  // Sales OS の API だけを型チェックする。
+  //
+  // tsconfig.app.json は include が "src" だけなので、api/ 配下は
+  // tsc -b では見られない (Vercel も esbuild で型を落として通すだけ)。
+  // その結果「未定義の変数を使っている」ような明らかな誤りでも
+  // ビルドが緑のまま本番に出てしまう。ここで sales 配下だけを見る。
+  //
+  // 既存の api/*.ts 全部を対象にすると、以前からある型の乱れで
+  // ビルドが止まってしまうため、対象は意図的に絞っている。
+  // ============================================================
+  "compilerOptions": {
+    "target": "es2023",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "types": ["node"],
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "verbatimModuleSyntax": true,
+    "erasableSyntaxOnly": true,
+    "noFallthroughCasesInSwitch": true
+  },
+  "include": ["api/sales/**/*.ts", "api/_lib/sales/**/*.ts"]
+}

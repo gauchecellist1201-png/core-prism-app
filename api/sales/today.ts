@@ -151,7 +151,9 @@ export default async function handler(req: Request): Promise<Response> {
         todayEmails: countToday('email'),
         replies: replied,
         meetings,
-        won: rows.filter(r => r.stage === 'WON' || r.stage === 'TRIAL').length,
+        // 受注率と同じ数え方 (到達段)。現在の段で数えると、月額に上がった会社が
+        // 受注0件なのに受注率だけ出ている、という画面になる。
+        won: wonRows.length,
         monthly: rows.filter(r => r.stage === 'MONTHLY').length,
         oem: rows.filter(r => r.stage === 'OEM').length,
         replyRatePct: contacted ? Math.round((replied / contacted) * 1000) / 10 : 0,

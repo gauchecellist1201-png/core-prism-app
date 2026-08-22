@@ -16,7 +16,7 @@ import {
 } from '../_lib/sales/prompts';
 import { toCall, toEmail, toPlans } from '../_lib/sales/normalize';
 import { FOLLOWUPS, nextFollowUp } from '../../src/sales/shared/catalog';
-import type { Company, PlanKind } from '../../src/sales/shared/types';
+import type { Company, PlanKind, VideoPlan } from '../../src/sales/shared/types';
 
 export const config = { runtime: 'edge' };
 
@@ -56,10 +56,15 @@ export default async function handler(req: Request): Promise<Response> {
     // 生成には10〜20秒かかる。その間に結果入力や編集が入ることがあり、
     // 読み込み時のスナップショットで丸ごと書き戻すと、その入力が黙って消える。
     const patch: Partial<Company> = {};
+    // 企画は「作っただけ」にしておき、札を取ったあとの最新 plans に重ねる。
+    // ここで配列を組み立てて丸ごと書くと、別タブが先に保存した別の案を消してしまう。
+    let madePlan: VideoPlan | null = null;
+    let planKind: PlanKind = 'A';
 
     if (kind === 'plan') {
       const pk = String(body.planKind || 'A').toUpperCase() as PlanKind;
       if (!PLAN_KINDS.includes(pk)) return json({ error: 'BAD_PLAN', message: 'planKind は A / B / C のいずれかです。' }, 400, ch);
+      planKind = pk;
       const already = (company.plans || []).filter(p => p.kind !== pk);
       const ai = await askJson<Record<string, unknown>>({
         req, system: plansSystem(), user: planUser(company, analysis, pk, already),
@@ -68,9 +73,7 @@ export default async function handler(req: Request): Promise<Response> {
       if (!ai.ok || !ai.data) return json({ error: 'AI_FAILED', message: ai.note || 'AI が企画を返しませんでした。' }, 502, ch);
       const made = toPlans({ plans: [ai.data] });
       if (!made.length) return json({ error: 'AI_EMPTY', message: 'AI が使える企画を返しませんでした。もう一度お試しください。' }, 502, ch);
-      const merged = [...already, { ...made[0], kind: pk }];
-      merged.sort((x, y) => PLAN_KINDS.indexOf(x.kind) - PLAN_KINDS.indexOf(y.kind));
-      patch.plans = merged;
+      madePlan = { ...made[0], kind: pk };
     }
 
     if (kind === 'email') {
@@ -135,6 +138,21 @@ export default async function handler(req: Request): Promise<Response> {
           message: '作っている間にURLが変わりました。前のサイト向けの内容は保存していません。分析からやり直してください。',
           company: fresh,
         }, 409, ch);
+      }
+      // メールは「何回目の接触か」で中身が変わる。作っている間に別のタブで記録が入ると、
+      // 2回目を送るべき相手に初回のメールを保存してしまう。
+      if (kind === 'email' && fresh.touches !== company.touches) {
+        return json({
+          error: 'STALE',
+          message: '作っている間にこの営業先の記録が進みました。回数がずれるので保存していません。もう一度書き直してください。',
+          company: fresh,
+        }, 409, ch);
+      }
+      // 企画は最新の plans に重ねる (別タブが保存した別の案を消さない)
+      if (madePlan) {
+        const merged = [...(fresh.plans || []).filter(p => p.kind !== planKind), madePlan];
+        merged.sort((x, y) => PLAN_KINDS.indexOf(x.kind) - PLAN_KINDS.indexOf(y.kind));
+        patch.plans = merged;
       }
       const saved = await putCompany({ ...fresh, ...patch });
       return json({ company: saved }, 200, ch);
