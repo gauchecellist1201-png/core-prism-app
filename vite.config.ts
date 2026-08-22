@@ -25,6 +25,9 @@ export default defineConfig({
         keynote: resolve(__dirname, 'keynote.html'),
         studio: resolve(__dirname, 'studio.html'),
         studioFilm: resolve(__dirname, 'studio-film.html'),
+        // CORE Studio Sales OS (/sales) — オーナー専用の営業画面。
+        // Prism 本体 (index.html/App.tsx) とは別エントリにして影響を切り離している。
+        sales: resolve(__dirname, 'sales.html'),
       },
       output: {
         // ──────────────────────────────────────────────────────────────

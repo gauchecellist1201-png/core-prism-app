@@ -207,6 +207,18 @@
       "destination": "/corp.html"
     },
     {
+      "source": "/sales",
+      "destination": "/sales.html"
+    },
+    {
+      "source": "/sales/",
+      "destination": "/sales.html"
+    },
+    {
+      "source": "/sales/(.*)",
+      "destination": "/sales.html"
+    },
+    {
       "source": "/keynote",
       "destination": "/keynote.html"
     },
