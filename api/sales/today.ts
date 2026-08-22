@@ -102,9 +102,11 @@ export default async function handler(req: Request): Promise<Response> {
     }));
 
     // ---- KPI ----
-    const contacted = rows.filter(r => stageMeta(r.stage).step >= 2 || r.touches > 0).length;
-    const replied = rows.filter(r => stageMeta(r.stage).step >= 3).length;
-    const meetings = rows.filter(r => stageMeta(r.stage).step >= 4).length;
+    // 失注しても「返信はもらえた」「商談まで行けた」は消さない (report.ts と同じ数え方)
+    const step = (r: CompanyRow) => Math.max(r.maxStep ?? 0, stageMeta(r.stage).step);
+    const contacted = rows.filter(r => step(r) >= 2 || r.touches > 0).length;
+    const replied = rows.filter(r => step(r) >= 3).length;
+    const meetings = rows.filter(r => step(r) >= 4).length;
     const wonRows = rows.filter(r => WON_STAGES.includes(r.stage));
     const wonYen = wonRows.reduce((a, r) => a + (r.dealYen || 0), 0);
     const pipelineYen = rows

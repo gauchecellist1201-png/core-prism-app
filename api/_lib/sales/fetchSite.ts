@@ -5,7 +5,10 @@
 // 社内ネットワーク / クラウドのメタデータ endpoint を踏ませない防御が要る。
 //   - http / https 以外を拒否
 //   - IP リテラル (v4/v6) を拒否 = 169.254.169.254 等を名前解決なしで弾く
+//   - ホスト名の中に IP が埋まっている形 (127.0.0.1.nip.io) を拒否
 //   - localhost / *.local / *.internal / ドット無しホストを拒否
+//   - DNS over HTTPS で実際に引いて、private / loopback / link-local に
+//     向くホストを拒否 (文字列検査だけでは 127.0.0.1.nip.io の類を防げない)
 //   - リダイレクトは手動で 3 回まで、毎回同じ検査をかける
 //   - 本文サイズ上限 / タイムアウト
 // ============================================================
@@ -14,6 +17,14 @@ const MAX_BYTES = 600_000;
 const MAX_REDIRECTS = 3;
 
 const BLOCKED_HOST = /^(localhost|.*\.local|.*\.internal|.*\.localdomain|metadata.*)$/i;
+
+// ワイルドカードDNS (任意のIPへ解決させられる) は名前の時点で落とす
+const WILDCARD_DNS = /(^|\.)(nip\.io|sslip\.io|xip\.io|localtest\.me|traefik\.me|lvh\.me|vcap\.me)$/i;
+
+/** ホスト名のどこかに v4 の点付き表記が埋まっているか (127.0.0.1.nip.io 等) */
+function embedsIpv4(host: string): boolean {
+  return /(^|\.)\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(\.|$)/.test(host);
+}
 
 /** IPv4 / IPv6 リテラルか (ホスト名としての形だけで判定) */
 function isIpLiteral(host: string): boolean {
@@ -37,9 +48,80 @@ export function assertSafeUrl(raw: string): URL {
   const host = u.hostname.toLowerCase();
   if (!host) throw new Error('URL にホスト名がありません。');
   if (isIpLiteral(host)) throw new Error('IPアドレス直指定のURLは開けません。');
+  if (embedsIpv4(host)) throw new Error('IPアドレスを名前に埋め込んだURLは開けません。');
+  if (WILDCARD_DNS.test(host)) throw new Error('任意のアドレスへ解決させられるドメインは開けません。');
   if (BLOCKED_HOST.test(host)) throw new Error('社内・ローカル向けのURLは開けません。');
   if (!host.includes('.')) throw new Error('社内・ローカル向けのURLは開けません。');
   return u;
+}
+
+// ---- 解決先アドレスの検査 ------------------------------------------------
+/** private / loopback / link-local / CGNAT など、外に出てはいけない宛先か */
+export function isForbiddenAddress(ip: string): boolean {
+  const a = ip.trim().toLowerCase();
+  if (!a) return true;
+  if (a.includes(':')) {
+    // IPv6: ::1 / fc00::/7 (ユニークローカル) / fe80::/10 (リンクローカル) / ::ffff:v4
+    if (a === '::' || a === '::1') return true;
+    if (/^f[cd][0-9a-f]{2}:/.test(a)) return true;
+    if (/^fe[89ab][0-9a-f]:/.test(a)) return true;
+    const mapped = a.match(/^::ffff:(\d{1,3}(?:\.\d{1,3}){3})$/);
+    if (mapped) return isForbiddenAddress(mapped[1]);
+    return false;
+  }
+  const p = a.split('.').map(Number);
+  if (p.length !== 4 || p.some(n => !Number.isInteger(n) || n < 0 || n > 255)) return true;
+  const [x, y] = p;
+  if (x === 0 || x === 10 || x === 127) return true;                 // this / private / loopback
+  if (x === 169 && y === 254) return true;                            // link-local (メタデータ)
+  if (x === 172 && y >= 16 && y <= 31) return true;                   // private
+  if (x === 192 && y === 168) return true;                            // private
+  if (x === 192 && y === 0) return true;                              // IETF 予約
+  if (x === 100 && y >= 64 && y <= 127) return true;                  // CGNAT
+  if (x >= 224) return true;                                          // multicast / 予約
+  return false;
+}
+
+interface DohAnswer { data?: string; type?: number }
+
+// 片方が届かないだけで分析が全部止まらないよう、2社に順に聞く
+const DOH = [
+  'https://cloudflare-dns.com/dns-query',
+  'https://dns.google/resolve',
+];
+
+async function resolveAt(base: string, host: string, type: 'A' | 'AAAA', signal: AbortSignal): Promise<string[]> {
+  const r = await fetch(`${base}?name=${encodeURIComponent(host)}&type=${type}`, {
+    headers: { accept: 'application/dns-json' },
+    signal,
+  });
+  if (!r.ok) throw new Error(`dns ${r.status}`);
+  const j = (await r.json()) as { Answer?: DohAnswer[] };
+  return (j.Answer || [])
+    .filter(a => a.type === (type === 'A' ? 1 : 28) && typeof a.data === 'string')
+    .map(a => String(a.data));
+}
+
+/**
+ * ホスト名を実際に引いて、社内・ループバック・メタデータへ向いていないか確かめる。
+ * 引けなかったときは通さない (fail-closed)。穴を開けたままにするより止める。
+ */
+export async function assertPublicHost(host: string, signal: AbortSignal): Promise<void> {
+  let addrs: string[] = [];
+  let resolved = false;
+  for (const base of DOH) {
+    try {
+      const [v4, v6] = await Promise.all([
+        resolveAt(base, host, 'A', signal).catch(() => [] as string[]),
+        resolveAt(base, host, 'AAAA', signal).catch(() => [] as string[]),
+      ]);
+      if (v4.length || v6.length) { addrs = [...v4, ...v6]; resolved = true; break; }
+    } catch { /* 次の提供元へ */ }
+  }
+  // 引けなかったら通さない (fail-closed)。穴を開けたままにするより止める。
+  if (!resolved || !addrs.length) throw new Error('このURLの宛先を確認できませんでした。');
+  const bad = addrs.find(isForbiddenAddress);
+  if (bad) throw new Error('社内・ローカル向けのアドレスに解決されるURLは開けません。');
 }
 
 export interface SiteText {
@@ -139,6 +221,8 @@ export async function fetchSiteText(rawUrl: string, signal: AbortSignal): Promis
   try {
     let res: Response | null = null;
     for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
+      // 名前が通っても、解決先が社内かもしれない。毎ホップ引き直す。
+      await assertPublicHost(current.hostname, signal);
       res = await fetch(current.toString(), {
         redirect: 'manual',
         signal,

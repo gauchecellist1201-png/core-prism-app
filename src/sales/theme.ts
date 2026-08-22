@@ -48,7 +48,12 @@ export const shortDate = (iso: string | null | undefined): string => {
   return m && day ? `${Number(m)}/${Number(day)}` : d;
 };
 
-export const todayStr = (): string => new Date().toISOString().slice(0, 10);
+// 営業の「今日」は日本時間の今日 (サーバー側 api/_lib/sales/store.ts と必ず揃える)。
+// UTC で切ると JST 00:00〜08:59 の間ずっと前日になり、期限の色分けが1日ずれる。
+export const todayStr = (d: Date = new Date()): string =>
+  new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Tokyo', year: 'numeric', month: '2-digit', day: '2-digit',
+  }).format(d);
 
 export function daysFromToday(dateISO: string | null): number | null {
   if (!dateISO) return null;

@@ -11,13 +11,13 @@
 import { Deadline, corsHeaders, errMessage, json, requireMaster } from '../_lib/sales/http';
 import { KvNotConfigured } from '../_lib/sales/kv';
 import {
-  blankCompany, claimDomain, domainOf, getCompany, newId, normalizeUrl, putCompany,
+  blankCompany, claimDomain, domainOf, getCompany, newId, normalizeUrl, putCompany, todayISO,
 } from '../_lib/sales/store';
 import { fetchSiteText } from '../_lib/sales/fetchSite';
 import { MODEL_FAST, askJson } from '../_lib/sales/ai';
 import { analysisSystem, analysisUser } from '../_lib/sales/prompts';
 import { analysisName, rawScoreItems, toAnalysis } from '../_lib/sales/normalize';
-import { buildScore } from '../../src/sales/shared/score';
+import { buildScore, emptyScore } from '../../src/sales/shared/score';
 import type { Company } from '../../src/sales/shared/types';
 
 export const config = { runtime: 'edge' };
@@ -66,6 +66,31 @@ export default async function handler(req: Request): Promise<Response> {
     // ---- サイト取得 ----
     const site = await fetchSiteText(company.url, deadline.signal(4_500));
 
+    // 本文が取れていないのに AI を呼ぶと、15 秒かけて「何も分かりませんでした」が返るだけ。
+    // 呼ばずに、取れなかった理由をそのまま画面へ返す。
+    if (!site.ok) {
+      const blocked: Company = {
+        ...company,
+        analysis: {
+          summary: '', business: '', products: [], customers: '',
+          sns: { value: '', evidence: '' }, videoUsage: { value: '', evidence: '' },
+          ads: { value: '', evidence: '' }, hiring: { value: '', evidence: '' },
+          competitors: [], aiVideoFit: '', painHypothesis: [], angle: '',
+          recommendedPlan: 'entry', budgetGuess: '',
+          targetTier: company.targetTier, industry: company.industry,
+          warnings: [site.note || 'サイト本文を取得できませんでした。'],
+        },
+        score: emptyScore(),
+      };
+      const savedBlocked = await putCompany(blocked);
+      return json({
+        error: 'SITE_UNREADABLE',
+        message: `${site.note || 'サイト本文を取得できませんでした。'} URLを確かめるか、会社情報をメモに書いてから分析してください。`,
+        company: savedBlocked,
+        site: { ok: false, note: site.note },
+      }, 422, ch);
+    }
+
     if (deadline.remaining() < 5_000) {
       return json({
         error: 'TIMEOUT',
@@ -106,7 +131,7 @@ export default async function handler(req: Request): Promise<Response> {
       analysis,
       score,
       stage: company.stage === 'NEW' ? 'ANALYZED' : company.stage,
-      nextActionAt: company.nextActionAt ?? new Date().toISOString().slice(0, 10),
+      nextActionAt: company.nextActionAt ?? todayISO(),
       nextActionLabel: company.touches > 0 ? company.nextActionLabel : '電話またはメールで接触する',
     };
     const saved = await putCompany(next);

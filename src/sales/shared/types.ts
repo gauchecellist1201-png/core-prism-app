@@ -161,6 +161,13 @@ export interface Company {
   email1: EmailDraft | null;
   call: CallScript | null;
 
+  /**
+   * これまでに到達した最高段 (stageMeta().step)。
+   * 失注すると stage は LOST (step -1) になるので、現在の段だけで率を数えると
+   * 「返信も商談もあったのに失注した会社」が返信率・商談率から消える。
+   * 古いデータには無いので、読むときは必ず ?? で今の段から補う。
+   */
+  maxStep: number;
   /** 接触回数 (メール+電話) */
   touches: number;
   lastTouchAt: string | null;
@@ -184,6 +191,8 @@ export interface CompanyRow {
   industry: string;
   targetTier: TargetTier;
   stage: Stage;
+  /** 到達した最高段。失注しても消えない (Company.maxStep と同じ) */
+  maxStep: number;
   score: number;
   touches: number;
   nextActionAt: string | null;

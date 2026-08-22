@@ -10,7 +10,8 @@ import { buildScore, priorityValue } from '../shared/score';
 import { applyActivity } from '../../../api/_lib/sales/flow';
 import { blankCompany } from '../../../api/_lib/sales/store';
 import type { ActivityKind, Stage } from '../shared/types';
-import { stageMeta } from '../shared/catalog';
+import { FUNNEL_STAGES, stageMeta } from '../shared/catalog';
+import { assertSafeUrl, isForbiddenAddress } from '../../../api/_lib/sales/fetchSite';
 
 describe('CORE SALES SCORE', () => {
   it('根拠が無い項目は 0 点・未確認になる', () => {
@@ -100,5 +101,46 @@ describe('今日の並び順', () => {
     const later = priorityValue({ score: 90, nextActionAt: '2026-09-30', touches: 1, todayISO: '2026-08-22' });
     const today = priorityValue({ score: 50, nextActionAt: '2026-08-22', touches: 1, todayISO: '2026-08-22' });
     expect(today).toBeGreaterThan(later);
+  });
+});
+
+// ---- Codex レビュー (2026-08-22) の指摘に対する回帰テスト ----
+describe('失注しても到達段は消えない', () => {
+  it('商談まで行って失注した会社は、商談まで到達した扱いのまま残る', () => {
+    let c = blankCompany({ id: 'y', name: '失注テスト' });
+    c = applyActivity({ company: c, kind: 'meeting', today: '2026-08-22', nowISO: '2026-08-22T00:00:00.000Z' }).company;
+    expect(c.maxStep).toBe(stageMeta('MEETING').step);
+    c = applyActivity({ company: c, kind: 'lost', today: '2026-08-22', nowISO: '2026-08-22T00:00:00.000Z', lostReason: '予算' }).company;
+    expect(c.stage).toBe<Stage>('LOST');
+    // 現在の段は -1 でも、到達段は商談のまま = 商談率から消えない
+    expect(stageMeta(c.stage).step).toBe(-1);
+    expect(c.maxStep).toBe(stageMeta('MEETING').step);
+  });
+});
+
+describe('ファネル', () => {
+  it('初回受注 (TRIAL) が段から抜け落ちていない', () => {
+    expect(FUNNEL_STAGES).toContain('TRIAL');
+    const steps = FUNNEL_STAGES.map(s => stageMeta(s).step);
+    expect([...steps].sort((a, b) => a - b)).toEqual(steps);
+  });
+});
+
+describe('SSRF ガード', () => {
+  it('社内・ループバック・メタデータ宛のアドレスを弾く', () => {
+    for (const ip of ['127.0.0.1', '10.0.0.5', '172.16.0.1', '192.168.1.1', '169.254.169.254', '100.64.0.1', '0.0.0.0', '::1', 'fd00::1', 'fe80::1', '::ffff:127.0.0.1']) {
+      expect(isForbiddenAddress(ip), `${ip} を通してしまった`).toBe(true);
+    }
+  });
+  it('公開アドレスは通す', () => {
+    for (const ip of ['1.1.1.1', '8.8.8.8', '203.0.113.10', '2606:4700:4700::1111']) {
+      expect(isForbiddenAddress(ip), `${ip} を弾いてしまった`).toBe(false);
+    }
+  });
+  it('IPを名前に埋め込んだホスト・ワイルドカードDNSを弾く', () => {
+    for (const u of ['http://127.0.0.1.nip.io/', 'https://10.0.0.1.sslip.io/', 'http://localhost/', 'http://169.254.169.254/', 'http://intranet/']) {
+      expect(() => assertSafeUrl(u), `${u} を通してしまった`).toThrow();
+    }
+    expect(() => assertSafeUrl('https://www.cyberagent.co.jp/')).not.toThrow();
   });
 });

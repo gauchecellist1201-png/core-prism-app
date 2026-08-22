@@ -103,5 +103,8 @@ export function applyActivity(input: FlowInput): FlowResult {
       break;
   }
 
+  // 到達した最高段は下げない。失注 (step -1) でも過去の到達は残す。
+  c.maxStep = Math.max(c.maxStep ?? 0, stageMeta(c.stage).step);
+
   return { company: c, nextActionLabel: c.nextActionLabel };
 }

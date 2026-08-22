@@ -18,9 +18,12 @@ export const config = { runtime: 'edge' };
 const MIN_BASE = 10;
 
 function statOf(label: string, rows: CompanyRow[]): IndustryStat {
-  const contacted = rows.filter(r => r.touches > 0 || stageMeta(r.stage).step >= 2).length;
-  const replied = rows.filter(r => stageMeta(r.stage).step >= 3).length;
-  const meetings = rows.filter(r => stageMeta(r.stage).step >= 4).length;
+  // 失注すると stage は LOST (step -1) になる。現在の段で数えると
+  // 「商談まで行ったが失注した10件」が商談率 0% として出て、次に狙う業種を誤らせる。
+  const step = (r: CompanyRow) => Math.max(r.maxStep ?? 0, stageMeta(r.stage).step);
+  const contacted = rows.filter(r => r.touches > 0 || step(r) >= 2).length;
+  const replied = rows.filter(r => step(r) >= 3).length;
+  const meetings = rows.filter(r => step(r) >= 4).length;
   const wonRows = rows.filter(r => WON_STAGES.includes(r.stage));
   const wonYen = wonRows.reduce((a, r) => a + (r.dealYen || 0), 0);
   const pct = (n: number) => (contacted ? Math.round((n / contacted) * 1000) / 10 : 0);
@@ -66,7 +69,7 @@ export default async function handler(req: Request): Promise<Response> {
 
     const today = todayISO();
     const fromMs = Date.now() - days * 86_400_000;
-    const weekFrom = new Date(fromMs).toISOString().slice(0, 10);
+    const weekFrom = todayISO(new Date(fromMs));
     const inWindow = feed.filter(a => Date.parse(a.at) >= fromMs);
 
     const countKind = (k: string) => inWindow.filter(a => a.kind === k).length;
@@ -97,7 +100,7 @@ export default async function handler(req: Request): Promise<Response> {
       .filter(s => s.companies > 0);
 
     // ---- 失注理由 (活動メモから) ----
-    const lostNotes = feed.filter(a => a.kind === 'lost').map(a => (a.note || '理由未入力').trim() || '理由未入力');
+    const lostNotes = inWindow.filter(a => a.kind === 'lost').map(a => (a.note || '理由未入力').trim() || '理由未入力');
     const lostReasons = [...groupBy(lostNotes, n => n.slice(0, 40))]
       .map(([reason, arr]) => ({ reason, count: arr.length }))
       .sort((a, b) => b.count - a.count)

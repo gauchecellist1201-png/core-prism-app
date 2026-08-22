@@ -11,6 +11,7 @@
 // ============================================================
 import type { Activity, ActivityKind, Company, CompanyRow } from '../../../src/sales/shared/types';
 import { emptyScore } from '../../../src/sales/shared/score';
+import { stageMeta } from '../../../src/sales/shared/catalog';
 import * as kv from './kv';
 
 export const K = {
@@ -27,7 +28,16 @@ const FEED_KEEP = 5000;
 const DAY_TTL = 400 * 24 * 3600;
 
 export const nowISO = () => new Date().toISOString();
-export const todayISO = () => new Date().toISOString().slice(0, 10);
+
+/**
+ * 営業の「今日」は日本時間の今日。
+ * toISOString().slice(0,10) は UTC なので、JST 00:00〜08:59 の間ずっと
+ * 前日を返す = その時間に入れた活動が昨日に付き、今日期限の追客が「まだ先」に見える。
+ */
+export const todayISO = (d: Date = new Date()): string =>
+  new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Tokyo', year: 'numeric', month: '2-digit', day: '2-digit',
+  }).format(d);
 
 export function newId(): string {
   try {
@@ -60,6 +70,11 @@ export function domainOf(url: string): string {
 }
 
 // ---- 企業 ----------------------------------------------------------------
+/** 到達した最高段。古いデータ (maxStep 無し) は今の段で補う。 */
+export function reachedStep(c: Pick<Company, 'stage' | 'maxStep'>): number {
+  return Math.max(c.maxStep ?? 0, stageMeta(c.stage).step);
+}
+
 export function toRow(c: Company): CompanyRow {
   return {
     id: c.id,
@@ -68,6 +83,7 @@ export function toRow(c: Company): CompanyRow {
     industry: c.industry,
     targetTier: c.targetTier,
     stage: c.stage,
+    maxStep: reachedStep(c),
     score: c.score?.total ?? 0,
     touches: c.touches,
     nextActionAt: c.nextActionAt,
@@ -90,6 +106,7 @@ export function blankCompany(seed: Partial<Company>): Company {
     industry: seed.industry || '',
     targetTier: seed.targetTier || 'X',
     stage: seed.stage || 'NEW',
+    maxStep: seed.maxStep ?? 0,
     phone: seed.phone || '',
     email: seed.email || '',
     sns: seed.sns || '',

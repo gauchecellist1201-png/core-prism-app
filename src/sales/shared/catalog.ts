@@ -245,7 +245,7 @@ export const stageMeta = (s: Stage): StageMeta =>
 
 /** ファネル表示に使う段 (LOST を除く) */
 export const FUNNEL_STAGES: Stage[] = [
-  'NEW', 'ANALYZED', 'CONTACTED', 'REPLIED', 'MEETING', 'PROPOSAL', 'WON', 'MONTHLY', 'OEM',
+  'NEW', 'ANALYZED', 'CONTACTED', 'REPLIED', 'MEETING', 'PROPOSAL', 'TRIAL', 'WON', 'MONTHLY', 'OEM',
 ];
 
 /** 受注として数える段 */
