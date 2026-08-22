@@ -83,7 +83,10 @@ export default async function handler(req: Request): Promise<Response> {
     const today = todayISO();
     const fromMs = Date.now() - days * 86_400_000;
     const weekFrom = todayISO(new Date(fromMs));
-    const inWindow = feed.filter(a => Date.parse(a.at) >= fromMs);
+    // 削除した会社の活動はフィードに残る (会社ごとのリストは消えるが横断フィードは消えない)。
+    // 消したはずのテスト会社の電話・受注・失注が、いつまでも合計に効くのを防ぐ。
+    const alive = new Set(rows.map(r => r.id));
+    const inWindow = feed.filter(a => Date.parse(a.at) >= fromMs && alive.has(a.companyId));
 
     const countKind = (k: string) => inWindow.filter(a => a.kind === k).length;
 

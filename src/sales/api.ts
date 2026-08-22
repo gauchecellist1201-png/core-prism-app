@@ -47,7 +47,13 @@ async function call<T>(path: string, init: RequestInit = {}): Promise<T> {
   try { body = text ? JSON.parse(text) : null; } catch { /* 本文が JSON でない */ }
   if (!res.ok) {
     const b = (body || {}) as { error?: string; message?: string };
-    if (res.status === 401) clearKey();
+    if (res.status === 401) {
+      clearKey();
+      // 子の画面から出た 401 でも、親 (SalesOS) を合言葉入力へ戻す。
+      // storage を消すだけだと親は古い key state を持ったままで、
+      // 以後ずっと空ヘッダで叩き続ける画面になる。
+      try { window.dispatchEvent(new CustomEvent('sales:unauthorized')); } catch { /* noop */ }
+    }
     throw new ApiError(res.status, b.error || 'ERROR', b.message || `通信に失敗しました (HTTP ${res.status})`);
   }
   return body as T;
@@ -68,6 +74,7 @@ export interface SalesConfig {
   storage: { configured: boolean };
   security: { usingDefaultKey: boolean };
 }
+
 
 export const fetchConfig = () => call<SalesConfig>('/api/sales/config');
 

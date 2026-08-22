@@ -2,7 +2,7 @@
 // GET /api/sales/config — カタログ・ターゲット・ステージ・価格矛盾
 // x-master-key 必須
 // ============================================================
-import { corsHeaders, json, requireMaster, usingDefaultMasterKey } from '../_lib/sales/http';
+import { corsHeaders, json, requireMaster } from '../_lib/sales/http';
 import { kvConfigured } from '../_lib/sales/kv';
 import {
   PRODUCTS, TARGETS, STAGES, OEM_RESALE, PUBLISHED_PRICES, PUBLISHED_SNAPSHOT_DATE,
@@ -32,6 +32,8 @@ export default async function handler(req: Request): Promise<Response> {
     priceConflicts: priceConflicts(),
     mayQuotePrice: mayQuotePrice(),
     storage: { configured: kvConfigured() },
-    security: { usingDefaultKey: usingDefaultMasterKey() },
+    // ここへ来られている時点で合言葉は env 由来。
+    // 未設定なら requireMaster が 503 を返して一切開かない。
+    security: { usingDefaultKey: false },
   }, 200, ch);
 }

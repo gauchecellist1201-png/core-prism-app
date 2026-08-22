@@ -51,6 +51,14 @@ export default async function handler(req: Request): Promise<Response> {
       const domain = domainOf(url);
       const claim = await claimDomain(domain, newId());
       const existing = claim.created ? null : await getCompany(claim.id);
+      // 札はあるが本体がまだ = 別のリクエストが同じドメインを登録中。
+      // ここで作ると相手の id で別の中身を書き、互いに上書きし合う。
+      if (!claim.created && !existing) {
+        return json({
+          error: 'PENDING',
+          message: 'この会社はいま別の処理が登録中です。少し待ってからもう一度お試しください。',
+        }, 409, ch);
+      }
       company = existing ?? blankCompany({
         id: claim.id,
         name: s(body.name, 120) || domain,

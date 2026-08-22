@@ -33,6 +33,8 @@ export default function SalesOS() {
   const [authFailed, setAuthFailed] = useState(false);
   const [booted, setBooted] = useState(false);
   const [conflictOpen, setConflictOpen] = useState(false);
+  // サーバーに合言葉が設定されていないとき (503) の案内
+  const [setupNeeded, setSetupNeeded] = useState('');
   const [tab, setTab] = useState<Tab>('today');
   const [openId, setOpenId] = useState<string | null>(null);
   // 一覧側に「変わったよ」を伝えるための世代番号
@@ -50,6 +52,7 @@ export default function SalesOS() {
       setCfgErr('');
     } catch (e) {
       if (e instanceof ApiError && e.status === 401) { setAuthFailed(true); return; }
+      if (e instanceof ApiError && e.code === 'MASTER_KEY_NOT_CONFIGURED') { setSetupNeeded(e.message); return; }
       setCfgErr(e instanceof Error ? e.message : String(e));
     } finally {
       setBooted(true);
@@ -59,6 +62,33 @@ export default function SalesOS() {
   // 初回の読み込みだけ。合言葉を入れた直後は下のボタンから直接呼ぶ
   // (効果が key state に依存すると、そのstateを書き換える処理と循環する)
   useEffect(() => { void loadConfig(); }, [loadConfig]);
+
+  // どの画面からの通信でも、401 が出たら合言葉入力へ戻す
+  useEffect(() => {
+    const onUnauthorized = () => setAuthFailed(true);
+    window.addEventListener('sales:unauthorized', onUnauthorized);
+    return () => window.removeEventListener('sales:unauthorized', onUnauthorized);
+  }, []);
+
+  // ---- サーバー側に合言葉が無い ----
+  if (setupNeeded) {
+    return (
+      <div style={{ minHeight: '100svh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+        <div style={{ width: '100%', maxWidth: 420 }}>
+          <div style={{ textAlign: 'center', marginBottom: 18 }}>
+            <div style={{ fontSize: 10.5, letterSpacing: '0.3em', color: T.gold, fontWeight: 800 }}>CORE STUDIO</div>
+            <h1 style={{ fontSize: 20, margin: '8px 0 6px', fontWeight: 900 }}>あと1つだけ設定が要ります</h1>
+          </div>
+          <Card>
+            <div style={{ fontSize: 13, color: T.body, lineHeight: 2 }}>{setupNeeded}</div>
+            <div style={{ marginTop: 14 }}>
+              <Btn full onClick={() => { setSetupNeeded(''); void loadConfig(); }}>設定したので開き直す</Btn>
+            </div>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   // ---- 合言葉 ----
   if (!key || authFailed) {
@@ -166,19 +196,6 @@ export default function SalesOS() {
                 </div>
               </div>
             )}
-          </div>
-        )}
-
-        {cfg?.security?.usingDefaultKey && (
-          <div style={{ marginBottom: 12 }}>
-            <ErrorNote>
-              合言葉が既定値のままです。この文字列は公開済みで、知っている人は誰でも
-              この営業先データを読み書きできます。Vercel の環境変数に MASTER_KEY を
-              設定してください (設定するとこの警告は消えます)。
-              変更したら、この画面では新しい合言葉を入れ直してください。
-              他のアプリ (Prism / Iris など) は端末側の定数
-              src/lib/billing.ts も合わせて更新が必要です。
-            </ErrorNote>
           </div>
         )}
 

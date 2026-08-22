@@ -14,9 +14,12 @@ import { createServer as createVite } from 'vite';
 const ROOT = new URL('..', import.meta.url).pathname;
 const FAKE_KV_PORT = 5598;
 const PORT = 5199;
-// 本番が MASTER_KEY を設定したら、そちらを使わないと /api/ai が 401 になる。
-// 既定値はあくまで未設定時のフォールバック。
-const MASTER = process.env.MASTER_KEY || 'GAUCHE2026';
+// /api/sales/* は MASTER_KEY が無ければ開かない (fail-closed)。
+// ここで勝手に値を入れると、その「開かない」挙動を手元で再現できなくなるので、
+// 呼び出し側が渡したときだけ通す。
+const MASTER = process.env.MASTER_KEY || '';
+// /api/ai (本番へ中継) は互換のため旧既定値も受けるので、そちらはこれを使う。
+const AI_KEY = MASTER || 'GAUCHE2026';
 const AI_UPSTREAM = 'https://core-prism-app.vercel.app/api/ai';
 
 // ---------- 偽 Upstash ----------
@@ -112,7 +115,8 @@ createHttp(async (req, res) => {
 
 process.env.UPSTASH_REDIS_REST_URL = `http://127.0.0.1:${FAKE_KV_PORT}`;
 process.env.UPSTASH_REDIS_REST_TOKEN = 'fake';
-process.env.MASTER_KEY = MASTER;
+if (MASTER) process.env.MASTER_KEY = MASTER;
+else delete process.env.MASTER_KEY;
 
 // ---------- Vite (実UI) + 本物のハンドラ ----------
 const vite = await createVite({ root: ROOT, server: { middlewareMode: true }, appType: 'mpa' });
@@ -138,7 +142,7 @@ const server = createHttp(async (req, res) => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-master-key': req.headers['x-master-key'] || '',
+        'x-master-key': AI_KEY,
         'x-ai-weight': req.headers['x-ai-weight'] || '',
         'x-ai-format': req.headers['x-ai-format'] || '',
         Origin: 'https://core-prism-app.vercel.app',
@@ -188,4 +192,4 @@ const server = createHttp(async (req, res) => {
   vite.middlewares(req, res);
 });
 
-server.listen(PORT, () => console.log(`sales dev  http://localhost:${PORT}/sales`));
+server.listen(PORT, () => console.log(`sales dev  http://localhost:${PORT}/sales  (MASTER_KEY ${MASTER ? 'あり' : 'なし = /api/sales/* は503'})`));
