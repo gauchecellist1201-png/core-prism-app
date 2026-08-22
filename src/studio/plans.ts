@@ -4,6 +4,8 @@
 // 価格や文言の変更はこのファイルだけを編集すれば全画面に反映される
 // 一人称は「私たち/当社」・顧客は「貴社」。数字と実績が信頼の主役。
 // ============================================================
+import { FILM_PLANS } from './film';
+import { SUITE_ALL } from '../corporate/suiteData';
 
 export const STUDIO = {
   name: 'CORE Studio',
@@ -31,16 +33,25 @@ export const CONTACT = {
 } as const;
 
 // ------------------------------------------------------------
-// 数字バー (実数のみ・嘘禁止)
+// 自社プロダクト — 本数も並びも suiteData (SUITE_ALL) から数える
+//
+// 2026-08-22 の実態: このページの中だけで「6」「7」の2通りが同時に書かれていた
+// (数字バー=6 / 選ばれる理由=7 / 受託開発リード=7 / 会社概要の列挙=6)。
+// 実在するのは8つ。ここで並べ直すと同じ食い違いを別の場所で作り直すことになるので、
+// /corp と同じ SUITE_ALL を唯一の出どころにする。
+//
+// suiteData は ServiceFinder / ServiceGuideData を import しているが、
+// SUITE_ALL だけを取ると tree-shaking でどちらも落ちる
+// (studio チャンクの実測は 42,270 → 42,406 バイト = +136 バイト)。
+// 表示名は key の頭文字を大きくするだけ (prism → Prism)。名前を別で持つと、
+// また2か所を手で合わせることになる。
 // ------------------------------------------------------------
-export type Stat = { value: string; label: string };
+export const CORE_PRODUCTS = SUITE_ALL.map(m => m.key.charAt(0).toUpperCase() + m.key.slice(1));
 
-export const STATS: Stat[] = [
-  { value: '6', label: '自社開発・運営プロダクト' },
-  { value: '6+', label: '公開済みサイト実績' },
-  { value: '2週間〜', label: '最短公開' },
-  { value: 'AI-native', label: '開発体制' },
-];
+/** 8。本文には CORE_PRODUCT_COUNT を書き、数字を直打ちしない。 */
+export const CORE_PRODUCT_COUNT = CORE_PRODUCTS.length;
+
+// 数字バー (STATS) は WORKS を数えるため、WORKS の定義より後ろに置いてある。
 
 // ------------------------------------------------------------
 // 選ばれる理由 3つ
@@ -51,7 +62,7 @@ export const REASONS: Reason[] = [
   {
     id: 'products',
     title: '自社プロダクトを持つ制作会社です',
-    body: '受託だけの会社と違い、当社はAIエージェントをはじめとする7つの自社サービスを開発・運営しています。日々自分たちの事業で検証を重ねた設計と技術を、貴社の案件にそのまま投入します。',
+    body: `受託だけの会社と違い、当社はAIエージェントをはじめとする${CORE_PRODUCT_COUNT}つの自社サービスを開発・運営しています。日々自分たちの事業で検証を重ねた設計と技術を、貴社の案件にそのまま投入します。`,
   },
   {
     id: 'onestop',
@@ -213,7 +224,7 @@ export type DevTier = {
   pricing: string;      // 価格の考え方
 };
 
-export const DEV_LEAD = '業務システムからSaaSまで。自社で7つのAIプロダクトを運営する開発力で、構想を動くかたちにします。';
+export const DEV_LEAD = `業務システムからSaaSまで。自社で${CORE_PRODUCT_COUNT}つのAIプロダクトを運営する開発力で、構想を動くかたちにします。`;
 
 export const DEV_TIERS: DevTier[] = [
   {
@@ -293,6 +304,8 @@ export type CarePlan = {
   id: string;
   name: string;
   price: string;
+  /** 月額の下限 (万円)。ホームの一覧で「月 ¥◯万〜」を組み立てるのに使う。price と必ず一致させる */
+  minMonthly: number;
   lead: string;
   includes: string[];
 };
@@ -302,6 +315,7 @@ export const CARE_PLANS: CarePlan[] = [
     id: 'maintain',
     name: '保守・運用',
     price: '月 ¥1〜10万',
+    minMonthly: 1,
     lead: '公開後の安定稼働と継続的な改善を、当社が担当します。',
     includes: [
       '稼働監視・障害発生時の対応',
@@ -315,6 +329,7 @@ export const CARE_PLANS: CarePlan[] = [
     id: 'ai-subsc',
     name: 'サイト × AI サブスクリプション',
     price: '月 ¥2〜5万〜',
+    minMonthly: 2,
     lead: '初期費用を抑え、AI接客を標準搭載したサイトを月額でご提供します。',
     includes: [
       'サイト制作費を月額に分散 (初期費用0円プランあり)',
@@ -327,6 +342,74 @@ export const CARE_PLANS: CarePlan[] = [
 ];
 
 // ------------------------------------------------------------
+// ご依頼いただけること — ホームに置く4サービスの一覧
+//
+// なぜ必要か (2026-08-22):
+//   ホームには映像制作への入口しかなく、サイト制作・受託開発・運用の3つは
+//   タブを開くまで存在すら分からなかった。さらにホーム全体で価格が1円も出ておらず、
+//   発注を検討する人の最初の問い「何を頼めて、いくらからか」に1画面も答えていない。
+//
+// 価格は必ず各プランデータから組み立てる (手打ちすると値上げのたびにここだけ古くなる)。
+// ------------------------------------------------------------
+export type ServiceLine = {
+  /** 遷移先タブ (StudioSite の TabId と一致させる) */
+  tab: 'film' | 'plans' | 'dev' | 'care';
+  en: string;
+  name: string;
+  /** 何をする仕事か。1行で言い切る */
+  lead: string;
+  /** 「〜から」の下限。数値データから組み立てる */
+  from: string;
+  /** 下限の内訳。金額だけ出して条件を隠さない */
+  fromNote: string;
+  /**
+   * 最安プランだけに付く重要な除外。
+   * 「◯◯できます」と謳いながら最安プランではそれが対象外、という食い違いは
+   * 支払った後で発覚する種類の嘘になる。下限を出すなら必ずここも一緒に出す。
+   */
+  fromCaveat?: string;
+};
+
+export const SERVICE_LINES: ServiceLine[] = [
+  {
+    tab: 'film',
+    en: 'Film',
+    name: '映像制作',
+    // 「広告に出せる映像」と書かない。下限の TRIAL は広告出稿が対象外で、
+    // ヒーローの一言と最安プランの条件が食い違う (film.ts の excludes が正)。
+    lead: 'ブランドムービーからSNS縦型まで。企画・脚本・ディレクション・仕上げまで一貫制作します。',
+    from: `¥${FILM_PLANS[0].priceYen.toLocaleString('ja-JP')}〜`,
+    fromNote: `${FILM_PLANS[0].name} ${FILM_PLANS[0].unit} / ${FILM_PLANS[0].terms}`,
+    // STANDARD の includes に「広告二次利用 (期間・回数の制限なし)」があるので、行き先はここ
+    fromCaveat: `${FILM_PLANS[0].name} は「${FILM_PLANS[0].excludes[0]}」。広告に出す映像は ${FILM_PLANS[1].name} ${FILM_PLANS[1].price} から`,
+  },
+  {
+    tab: 'plans',
+    en: 'Website',
+    name: 'サイト制作',
+    lead: '1ページのLPから、予約・決済を備えた企業サイトまで。原稿と写真がなくても始められます。',
+    from: `¥${PRODUCTION_PLANS[0].minPrice}万〜`,
+    fromNote: `${PRODUCTION_PLANS[0].name} ${PRODUCTION_PLANS[0].pages} / ${PRODUCTION_PLANS[0].duration}`,
+  },
+  {
+    tab: 'dev',
+    en: 'Development',
+    name: '受託開発',
+    lead: '業務システム・SaaS・AIを組み込んだアプリ。構想の段階からご相談いただけます。',
+    from: `¥${DEV_TIERS[0].minPrice}万〜`,
+    fromNote: `${DEV_TIERS[0].name} / ${DEV_TIERS[0].duration}`,
+  },
+  {
+    tab: 'care',
+    en: 'Maintenance',
+    name: '運用',
+    lead: '公開後の監視・更新代行・改善提案まで。他社で制作されたサイトのみのご依頼も承ります。',
+    from: `月 ¥${CARE_PLANS[0].minMonthly}万〜`,
+    fromNote: `${CARE_PLANS[0].name} / 月次レポート付き`,
+  },
+];
+
+// ------------------------------------------------------------
 // Works 実績 (成果・特徴ベースの紹介文)
 // ------------------------------------------------------------
 export type Work = {
@@ -335,9 +418,17 @@ export type Work = {
   category: '企業サイト' | 'EC・ブランド' | 'アプリ' | '個人';
   copy: string;
   url: string;
-  /** トップページの実物スクリーンショット (public/studio/) */
+  /** トップページの実物スクリーンショット (public/studio/、960×600) */
   img: string;
 };
+
+/**
+ * 実績サムネイル (480px 版) のパス。
+ * ホームの流れる帯は8件を一度に読み込むため、原寸 (合計約620KB) のままでは
+ * 弱い回線でヒーローが白いまま止まる。480px 版は合計約200KB。
+ * 新しい実績を足したら public/studio/ に `-sm` 版も置くこと。
+ */
+export const thumbOf = (w: Work) => w.img.replace(/\.(jpg|png|webp)$/i, '-sm$&');
 
 export const WORKS: Work[] = [
   { id: 'tengoku', name: 'ヘッドスパ「天国」', category: '企業サイト', copy: '出張型ドライヘッドスパのブランドサイト。白×ゴールドの世界観づくりから、施術の流れ・料金・予約導線までを1ページに。', url: 'https://headspa-luxury.vercel.app/', img: '/studio/works-tengoku.jpg' },
@@ -351,13 +442,30 @@ export const WORKS: Work[] = [
 ];
 
 // ------------------------------------------------------------
+// 数字バー (実数のみ・嘘禁止)
+//
+// 2026-08-22 改定: 「AI-native / 開発体制」は数字ではないため数字バーから外した
+// (体制の説明は REASONS が担う)。代わりに、発注を検討する人が確かめる4項目 —
+// 実績・納期・返信の速さ・自社プロダクト — を、すべて当ページ内で検証できる
+// 実数に置き換えた。実績数は WORKS を数える (「6+」と書いていたが実際は8件)。
+// ------------------------------------------------------------
+export type Stat = { value: string; label: string };
+
+export const STATS: Stat[] = [
+  { value: String(WORKS.length), label: '公開中の制作実績' },
+  { value: '2週間〜', label: '最短公開' },
+  { value: '1営業日', label: '以内にご返信' },   // PROCESS[01] の「1営業日以内にご返信します」と同じ約束
+  { value: String(CORE_PRODUCT_COUNT), label: '自社開発・運営プロダクト' },
+];
+
+// ------------------------------------------------------------
 // 会社案内
 // ------------------------------------------------------------
 export const COMPANY = {
   title: '会社案内',
   messageTitle: '代表メッセージ',
   message: [
-    '私たちCOREは、AIプロダクトを自社で開発・運営する制作スタジオです。経営支援・SNS運用・AI接客——7つのサービスを自らの事業として日々運営し、そこで検証を重ねた設計と技術を、貴社のウェブ制作・受託開発の案件に投入しています。',
+    `私たちCOREは、AIプロダクトを自社で開発・運営する制作スタジオです。経営支援・SNS運用・AI接客——${CORE_PRODUCT_COUNT}つのサービスを自らの事業として日々運営し、そこで検証を重ねた設計と技術を、貴社のウェブ制作・受託開発の案件に投入しています。`,
     '代表の井出は、歯学部で医療を学び、チューリッヒで音楽を学び、世界100カ国を歩いてきました。分野の異なる知見は、業種ごとに大きく異なるお客様の事業を深く理解するための土台になっています。',
     '私たちがお約束するのは、成果から逆算した設計、ご契約時に確定する明朗な金額、そして公開後も続く改善です。貴社の事業を前に進めるパートナーとして、末永くお付き合いできれば幸いです。',
   ],
@@ -366,7 +474,8 @@ export const COMPANY = {
   profile: [
     { label: '名称', value: 'CORE（設立準備中）' },
     { label: '代表', value: '井出 直毅' },
-    { label: '事業内容', value: 'Webサイト制作・システム受託開発・AIプロダクトの開発運営 (Prism, Iris, Resonance, Crystal, Guild, Lume)' },
+    // 列挙も本数も CORE_PRODUCTS から出す (ここだけ6つしか書かれておらず、上の本文と食い違っていた)
+    { label: '事業内容', value: `映像制作・Webサイト制作・システム受託開発・AIプロダクトの開発運営 (${CORE_PRODUCTS.join(', ')})` },
     { label: '連絡先', value: 'core.inc.guild@gmail.com' },
   ],
 } as const;

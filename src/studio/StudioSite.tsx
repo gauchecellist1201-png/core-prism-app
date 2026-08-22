@@ -8,11 +8,10 @@
 import { lazy, Suspense, useEffect, useMemo, useState, type ReactNode } from 'react';
 import {
   STUDIO, STATS, REASONS, PROCESS, PRODUCTION_PLANS, DEV_LEAD, DEV_TIERS,
-  CARE_PLANS, WORKS, COMPANY,
+  CARE_PLANS, WORKS, COMPANY, SERVICE_LINES, thumbOf,
   type ProductionPlan, type DevTier,
 } from './plans';
 import { CONTACT } from './plans';
-import { FILM } from './film';
 import { estimate, type EstimateAnswers, type Purpose, type Scale, type Feature, type Timeline, type Budget } from './estimate';
 import { C, D, SERIF, SANS } from './theme';
 import { Band, H2, Note, IconCheck, IconArrow, IconChat, IconCopy } from './ui';
@@ -163,6 +162,55 @@ export default function StudioSite() {
         .st-worklink { color: ${C.ink}; }
         .st-worklink:hover { color: ${C.gold}; }
         a { -webkit-tap-highlight-color: rgba(168,130,60,0.15); }
+
+        /* ── ヒーロー直下の実績帯 ───────────────────────────────
+           制作会社のトップページで、実際に作ったものが1画面目に1枚も無かった。
+           文章で「制作します」と言う代わりに、公開中のサイトの実物を流す。
+           rAF は使わず CSS アニメーションだけで動かす (タブが隠れている間は
+           ブラウザ側が勝手に止め、復帰時も位置が飛ばない)。 */
+        .st-strip { position: relative; margin: 0 -20px; overflow: hidden;
+          -webkit-mask-image: linear-gradient(90deg, transparent, #000 40px, #000 calc(100% - 40px), transparent);
+                  mask-image: linear-gradient(90deg, transparent, #000 40px, #000 calc(100% - 40px), transparent); }
+        /* 動かす箱に padding を付けてはいけない。translate の % は border box 基準なので、
+           左右 20px を足すと 1周が 20px だけ行き過ぎ、周回のたびに帯が飛ぶ
+           (端のぼかしは 40px しかないので隠しきれない)。両端は mask のぼかしで処理する。 */
+        .st-strip-track { display: flex; gap: 12px; width: max-content; }
+        .st-strip-item { flex-shrink: 0; width: 168px; background: none; border: none; padding: 0; cursor: pointer;
+          text-align: left; font-family: ${SANS}; -webkit-tap-highlight-color: rgba(168,130,60,0.15); }
+        /* span のままだと inline 扱いで aspect-ratio が効かず、帯が線に潰れる */
+        .st-strip-shot { display: block; position: relative; aspect-ratio: 16 / 10; overflow: hidden; border-radius: 8px;
+          border: 1px solid ${C.line}; background: ${C.alt}; transition: border-color 180ms ease; }
+        .st-strip-item:hover .st-strip-shot, .st-strip-item:focus-visible .st-strip-shot { border-color: ${C.gold}; }
+        .st-strip-shot img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: top; }
+        .st-strip-name { display: block; font-size: 11.5px; color: ${C.mute}; margin-top: 7px; letter-spacing: 0.03em;
+          white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        @media (prefers-reduced-motion: no-preference) {
+          /* 半分ぶん + 隙間1つ ぶん動かすと、複製した後半が元の先頭に重なって継ぎ目が消える */
+          .st-strip-track { animation: st-strip-scroll 52s linear infinite; }
+          .st-strip:hover .st-strip-track, .st-strip:focus-within .st-strip-track { animation-play-state: paused; }
+          @keyframes st-strip-scroll { from { transform: translate3d(0,0,0); } to { transform: translate3d(calc(-50% - 6px),0,0); } }
+        }
+        /* 動きを減らす設定の端末では、流さずに指でなぞる帯にする (複製は消す) */
+        @media (prefers-reduced-motion: reduce) {
+          .st-strip { overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+          .st-strip::-webkit-scrollbar { display: none; }
+          .st-strip-dup { display: none; }
+        }
+
+        /* ── ご依頼いただけること (暗部) ── */
+        .st-svc { display: grid; gap: 12px; }
+        @media (min-width: 700px) { .st-svc { grid-template-columns: 1fr 1fr; } }
+        .st-svc-card { display: flex; flex-direction: column; gap: 10px; width: 100%; box-sizing: border-box;
+          background: ${D.raise}; border: 1px solid ${D.line}; border-radius: 14px; padding: 20px 18px;
+          cursor: pointer; text-align: left; font-family: ${SANS}; color: ${D.body};
+          transition: border-color 180ms ease, background 180ms ease; }
+        .st-svc-card:hover, .st-svc-card:focus-visible { border-color: ${D.goldLine}; background: #1A1A1D; }
+        .st-svc-card[data-featured="true"] { border-color: ${D.goldLine}; }
+
+        /* ヒーローに fade-up の入場アニメーションは付けない。
+           opacity:0 から始める演出は、アニメーションのタイムラインが進まない状況
+           (ページが隠れたまま読み込まれた場合など) で見出しが消えたままになる。
+           トップページの最重要要素を、たかだか0.6秒の演出のために消える可能性に晒さない。 */
       `}</style>
 
       {/* ヘッダー */}
@@ -256,6 +304,47 @@ function studioJsonLd() {
   };
 }
 
+// ---- ヒーロー直下の実績帯 ----
+// 制作会社のトップページなのに、1画面目に実際に作ったものが1枚も無く、
+// 説明の文章だけが並んでいた。公開中のサイトの実物をここで流す。
+// 同じ並びを2度描いて継ぎ目のない周回にする (後半は読み上げ・タブ移動の対象から外す)。
+function WorksStrip({ go }: { go: (t: TabId) => void }) {
+  const half = WORKS.map((w, i) => ({ w, key: `a-${w.id}`, dup: false, i }));
+  const dup = WORKS.map((w, i) => ({ w, key: `b-${w.id}`, dup: true, i }));
+  return (
+    <div style={{ marginTop: 34 }}>
+      <div className="st-strip">
+        <div className="st-strip-track">
+          {[...half, ...dup].map(({ w, key, dup: isDup, i }) => (
+            <button
+              key={key}
+              type="button"
+              className={`st-strip-item${isDup ? ' st-strip-dup' : ''}`}
+              aria-hidden={isDup || undefined}
+              tabIndex={isDup ? -1 : undefined}
+              onClick={() => go('works')}
+            >
+              <span className="st-strip-shot">
+                {/* 先頭3枚だけ先に読む。残りは帯が回ってくるまで取りに行かない */}
+                <img src={thumbOf(w)} alt={isDup ? '' : `${w.name} のトップページ`}
+                  loading={!isDup && i < 3 ? 'eager' : 'lazy'} decoding="async" width={480} height={300} />
+              </span>
+              <span className="st-strip-name">{w.name}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+      <div style={{ marginTop: 6, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' }}>
+        <span style={{ fontSize: 12.5, color: C.mute, letterSpacing: '0.03em' }}>いずれも公開中のサイト・システムです</span>
+        <button onClick={() => go('works')}
+          style={{ minHeight: 44, display: 'inline-flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontFamily: SANS, fontSize: 13, fontWeight: 700, color: C.ink }}>
+          {WORKS.length}件の実績を見る <IconArrow color={C.gold} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ============================================================
 // ホーム
 // ============================================================
@@ -274,11 +363,15 @@ function HomeTab({ go }: { go: (t: TabId) => void }) {
         </p>
         <div style={{ display: 'flex', gap: 12, marginTop: 30, flexWrap: 'wrap' }}>
           <LineCta where="home-hero" />
-          <button className="st-btn st-btn-ghost" onClick={() => go('works')}>実績を見る</button>
+          {/* 実績は真下の帯で見えているので、2つ目のボタンは「相場を知る」に充てる */}
+          <button className="st-btn st-btn-ghost" onClick={() => go('contact')}>6つの質問で概算を出す</button>
         </div>
 
+        {/* 実績の帯 — 「制作します」と書く代わりに、公開中のサイトの実物を1画面目に置く */}
+        <WorksStrip go={go} />
+
         {/* 数字バー */}
-        <div className="st-stats" style={{ marginTop: 44 }}>
+        <div className="st-stats" style={{ marginTop: 28 }}>
           {STATS.map(s => (
             <div key={s.label} style={{ background: '#FFFFFF', padding: '18px 14px', textAlign: 'center' }}>
               <div className="st-serif" style={{ fontSize: 22, fontWeight: 700, color: C.ink, letterSpacing: '0.02em' }}>{s.value}</div>
@@ -288,21 +381,47 @@ function HomeTab({ go }: { go: (t: TabId) => void }) {
         </div>
       </Band>
 
-      {/* 映像制作への入口 — 白基調のサイトの中で、ここだけ暗部に落として章の違いを見せる */}
+      {/* ご依頼いただけること — 白基調のサイトの中で、ここだけ暗部に落として章の違いを見せる。
+          以前はここが映像制作だけの帯で、サイト制作・受託開発・運用はタブを開くまで存在が分からず、
+          ホーム全体で価格が1円も出ていなかった。4つの領域と「いくらから」をこの1章にまとめる。 */}
       <section style={{ background: D.bg, padding: '48px 0' }}>
         <div className="st-inner">
-          <div className="st-label" style={{ color: D.gold, marginBottom: 14 }}>{FILM.label}</div>
-          <h2 className="st-serif" style={{ fontSize: 'clamp(23px, 6.2vw, 32px)', fontWeight: 700, lineHeight: 1.55, color: D.ink, margin: 0, whiteSpace: 'pre-line' }}>
-            {FILM.hero}
+          <div className="st-label" style={{ color: D.gold, marginBottom: 14 }}>Services</div>
+          <h2 className="st-serif" style={{ fontSize: 'clamp(23px, 6.2vw, 32px)', fontWeight: 700, lineHeight: 1.55, color: D.ink, margin: 0 }}>
+            映像から、サイト、システム、<br />そのあとの運用まで。
           </h2>
-          <p style={{ fontSize: 14.5, lineHeight: 2.05, color: D.body, margin: '18px 0 0', maxWidth: 580 }}>
-            {FILM.heroSub}
+          <p style={{ fontSize: 14.5, lineHeight: 2.05, color: D.body, margin: '18px 0 26px', maxWidth: 580 }}>
+            4つの領域を、ひとつの体制で担当します。金額はご契約時に確定し、以後の追加費用はいただきません。
           </p>
-          <div style={{ marginTop: 26 }}>
-            <button className="st-btn" style={{ background: '#FFFFFF', color: C.ink, border: '1px solid #FFFFFF' }} onClick={() => go('film')}>
-              映像制作を見る
-            </button>
+          {/* button の中身は span だけで組む (p / div は button の内容モデルに入らない) */}
+          <div className="st-svc">
+            {SERVICE_LINES.map(s => (
+              <button key={s.tab} className="st-svc-card" data-featured={s.tab === 'film'} onClick={() => go(s.tab)}>
+                <span style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10 }}>
+                  <span>
+                    <span className="st-label" style={{ color: D.gold, fontSize: 10.5, display: 'block', marginBottom: 6 }}>{s.en}</span>
+                    <span className="st-serif" style={{ fontSize: 19, fontWeight: 700, color: D.ink }}>{s.name}</span>
+                  </span>
+                  <span className="st-serif" style={{ fontSize: 17, fontWeight: 700, color: D.gold, flexShrink: 0, whiteSpace: 'nowrap' }}>{s.from}</span>
+                </span>
+                {/* 金額だけ出して条件を隠さない (「〜から」が何のことか、その場で読めるようにする) */}
+                <span style={{ display: 'block', fontSize: 11.5, color: D.mute, lineHeight: 1.7, letterSpacing: '0.02em', marginTop: -2 }}>{s.fromNote}</span>
+                {/* 最安プランだけに付く除外は、金額と同じ画面で読めないと意味がない */}
+                {s.fromCaveat && (
+                  <span style={{ display: 'block', fontSize: 11.5, color: D.gold, lineHeight: 1.7, letterSpacing: '0.02em', borderLeft: `2px solid ${D.goldLine}`, paddingLeft: 9 }}>
+                    {s.fromCaveat}
+                  </span>
+                )}
+                <span style={{ display: 'block', fontSize: 13.5, lineHeight: 1.95, color: D.body }}>{s.lead}</span>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 700, color: D.ink, marginTop: 'auto', paddingTop: 4 }}>
+                  {s.name}を見る <IconArrow color={D.gold} />
+                </span>
+              </button>
+            ))}
           </div>
+          <p style={{ fontSize: 12, color: D.mute, lineHeight: 1.9, margin: '18px 0 0' }}>
+            {CONTACT.lineNote}
+          </p>
         </div>
       </section>
 
