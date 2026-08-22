@@ -58,6 +58,9 @@ function parseBulkLine(line: string): { name: string; url: string } | null {
 
 async function createOne(seed: Seed): Promise<{ company: Company | null; created: boolean; reason: string }> {
   const url = normalizeUrl(seed.url);
+  // 社名が入っていると「URLは壊れているが登録は成功」になり、URL が黙って消えて
+  // 分析もできない会社ができる。PATCH 側と同じく弾く。
+  if (seed.url && !url) return { company: null, created: false, reason: 'URLの形が正しくありません' };
   const name = seed.name || (url ? domainOf(url) : '');
   if (!name && !url) return { company: null, created: false, reason: '社名もURLもありません' };
 
@@ -166,6 +169,7 @@ export default async function handler(req: Request): Promise<Response> {
         return json({ error: 'EMPTY', message: '社名かURLのどちらかは必要です。' }, 400, ch);
       }
       const r = await createOne(seed);
+      if (!r.created && r.reason === 'URLの形が正しくありません') return badUrl(ch);
       if (!r.created) {
         return json({ created: false, company: r.company, message: r.reason }, 200, ch);
       }
