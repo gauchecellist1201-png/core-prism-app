@@ -53,7 +53,9 @@ function parseBulkLine(line: string): { name: string; url: string } | null {
   const urlCol = cols.find(c => /^(https?:\/\/|www\.)/i.test(c) || /\.[a-z]{2,}(\/|$)/i.test(c)) || '';
   const nameCol = cols.find(c => c !== urlCol) || '';
   if (!urlCol && !nameCol) return null;
-  return { name: nameCol, url: normalizeUrl(urlCol) };
+  // ここでは正規化しない。壊れた URL を空にして渡すと、createOne からは
+  // 「URL の指定が無い行」に見え、社名だけの会社が黙ってできてしまう。
+  return { name: nameCol, url: urlCol };
 }
 
 async function createOne(seed: Seed): Promise<{ company: Company | null; created: boolean; reason: string }> {

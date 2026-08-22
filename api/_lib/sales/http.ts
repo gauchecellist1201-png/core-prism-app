@@ -19,9 +19,13 @@ const ALLOWED_ORIGINS = [
 // 既存 /api/master/* 系まで一斉に env 由来へ移すのは影響が大きいので別タスク。
 const ENV_MASTER_KEY = (typeof process !== 'undefined' && process.env?.MASTER_KEY) || '';
 
-/** 合言葉がサーバー側に設定されているか (8文字未満は未設定扱い) */
+// リポジトリとクライアントバンドルに載っている旧合言葉。env にこれを入れても
+// 「設定した」ことにはならない (長さだけ見ていると素通りする)。
+const PUBLISHED_KEYS = new Set(['GAUCHE2026']);
+
+/** 合言葉がサーバー側に設定されているか (短いもの・公開ずみのものは未設定扱い) */
 export function masterKeyConfigured(): boolean {
-  return ENV_MASTER_KEY.length >= 8;
+  return ENV_MASTER_KEY.length >= 8 && !PUBLISHED_KEYS.has(ENV_MASTER_KEY);
 }
 
 export function corsHeaders(req: Request): Record<string, string> {
@@ -60,9 +64,9 @@ export function requireMaster(req: Request, ch: Record<string, string>): Respons
     return json({
       error: 'MASTER_KEY_NOT_CONFIGURED',
       message: '合言葉がサーバーに設定されていません。営業先の連絡先や金額を扱うため、'
-        + 'リポジトリに載っている既定の合言葉では開かないようにしています。'
-        + 'Vercel の環境変数に MASTER_KEY を 8 文字以上で登録し、再デプロイしてから、'
-        + 'この画面で同じ文字列を入力してください。',
+        + 'リポジトリに載っている既存の合言葉 (GAUCHE2026) では開かないようにしています。'
+        + 'Vercel の環境変数に MASTER_KEY を、他で使っていない 8 文字以上の文字列で登録し、'
+        + '再デプロイしてから、この画面で同じ文字列を入力してください。',
     }, 503, ch);
   }
   const key = req.headers.get('x-master-key') || '';

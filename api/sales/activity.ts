@@ -10,7 +10,8 @@
 import { corsHeaders, errMessage, json, requireMaster } from '../_lib/sales/http';
 import { KvNotConfigured } from '../_lib/sales/kv';
 import {
-  claimRequest, commitActivity, getCompany, listActivities, newId, nowISO, releaseRequest, todayISO,
+  acquireCompanyLock, claimRequest, commitActivity, getCompany, listActivities, newId, nowISO,
+  releaseCompanyLock, releaseRequest, todayISO,
 } from '../_lib/sales/store';
 import { applyActivity } from '../_lib/sales/flow';
 import type { Activity, ActivityKind } from '../../src/sales/shared/types';
@@ -37,6 +38,37 @@ export default async function handler(req: Request): Promise<Response> {
     if (!id) return json({ error: 'EMPTY', message: 'id がありません。' }, 400, ch);
     if (!KINDS.includes(kind)) return json({ error: 'BAD_KIND', message: '記録できる種類ではありません。' }, 400, ch);
 
+    // 「読む→直す→丸ごと書く」なので、同じ会社に同時に来ると後勝ちで
+    // 前の接触回数・段・受注額が消える (履歴は両方残るので気づきにくい)。会社ごとに直列化する。
+    const lock = await acquireCompanyLock(id);
+    if (!lock) {
+      return json({
+        error: 'BUSY',
+        message: 'この営業先はいま別の記録を処理中です。数秒おいてからもう一度お試しください。',
+      }, 409, ch);
+    }
+
+    try {
+      return await record(ch, id, kind, body);
+    } finally {
+      await releaseCompanyLock(id, lock);
+    }
+  } catch (e) {
+    if (e instanceof KvNotConfigured) {
+      return json({ error: 'STORAGE_NOT_CONFIGURED', message: '保存先 (Upstash Redis) が未設定です。' }, 503, ch);
+    }
+    return json({ error: 'INTERNAL', message: errMessage(e).slice(0, 200) }, 500, ch);
+  }
+}
+
+/** 会社ごとの札を取ったあとの本体。呼び出し側が必ず札を返す。 */
+async function record(
+  ch: Record<string, string>,
+  id: string,
+  kind: ActivityKind,
+  body: Record<string, unknown>,
+): Promise<Response> {
+  {
     const company = await getCompany(id);
     if (!company) return json({ error: 'NOT_FOUND', message: 'その営業先は見つかりませんでした。' }, 404, ch);
 
@@ -96,10 +128,5 @@ export default async function handler(req: Request): Promise<Response> {
     }
 
     return json({ company: saved, activity, duplicate: false }, 200, ch);
-  } catch (e) {
-    if (e instanceof KvNotConfigured) {
-      return json({ error: 'STORAGE_NOT_CONFIGURED', message: '保存先 (Upstash Redis) が未設定です。' }, 503, ch);
-    }
-    return json({ error: 'INTERNAL', message: errMessage(e).slice(0, 200) }, 500, ch);
   }
 }

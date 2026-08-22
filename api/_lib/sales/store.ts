@@ -22,6 +22,7 @@ export const K = {
   feed: 'sales:feed',
   day: (d: string) => `sales:day:${d}`,
   idem: (rid: string) => `sales:idem:${rid}`,
+  lock: (id: string) => `sales:lock:${id}`,
 };
 
 const ACT_KEEP = 200;
@@ -216,6 +217,30 @@ export async function confirmDomain(domain: string, id: string): Promise<void> {
   if (!domain) return;
   const cur = await kv.get(K.dom(domain));
   if (cur === id) await kv.set(K.dom(domain), id);
+}
+
+// ---- 同じ会社への同時更新の直列化 ----------------------------------------
+/** 読んで直して書くまでの間、同じ会社を他のリクエストに触らせない秒数 */
+const LOCK_TTL = 15;
+
+/**
+ * 結果入力は「読む → 直す → 丸ごと書く」なので、同じ会社に2つ同時に来ると
+ * 後から書いた方が前の接触回数・段・受注額を消す (履歴は両方残るので気づきにくい)。
+ * 会社ごとの札で直列化する。取れなければ待ってもらう。
+ */
+export async function acquireCompanyLock(companyId: string): Promise<string | null> {
+  const token = newId();
+  const got = await kv.setNXEX(K.lock(companyId), token, LOCK_TTL);
+  return got ? token : null;
+}
+
+/** 自分が取った札だけ外す (他のリクエストの札を外さない) */
+export async function releaseCompanyLock(companyId: string, token: string): Promise<void> {
+  if (!token) return;
+  try {
+    const cur = await kv.get(K.lock(companyId));
+    if (cur === token) await kv.del(K.lock(companyId));
+  } catch { /* 外せなくても TTL で消える */ }
 }
 
 // ---- 二重記録の防止 ------------------------------------------------------
