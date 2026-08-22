@@ -73,7 +73,12 @@ export default async function handler(req: Request): Promise<Response> {
     // 出さないままだと applyActivity が入れた再アプローチ日が永久に届かない。
     const active = rows.filter(r => r.stage !== 'LOST' || (r.nextActionAt !== null && r.nextActionAt <= today));
 
-    const ranked = active
+    // 予定日が先の会社は今日の相手ではない。
+    // 順位を下げるだけだと、母数が少ない日に「2日後に再架電」の会社が上位に出て、
+    // decide() が「今すぐ電話」と言ってしまい、せっかく決めた予定が崩れる。
+    const dueToday = active.filter(r => !r.nextActionAt || r.nextActionAt <= today);
+
+    const ranked = dueToday
       .map(r => ({ r, p: priorityValue({ score: r.score, nextActionAt: r.nextActionAt, touches: r.touches, todayISO: today }) }))
       .sort((a, b) => (b.p - a.p) || (b.r.score - a.r.score) || a.r.name.localeCompare(b.r.name, 'ja'));
 

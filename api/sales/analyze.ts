@@ -67,8 +67,10 @@ export default async function handler(req: Request): Promise<Response> {
     const site = await fetchSiteText(company.url, deadline.signal(4_500));
 
     // 本文が取れていないのに AI を呼ぶと、15 秒かけて「何も分かりませんでした」が返るだけ。
-    // 呼ばずに、取れなかった理由をそのまま画面へ返す。
-    if (!site.ok) {
+    // ただし営業担当がメモに会社情報を書いていれば、それを材料に分析できる。
+    // メモも無いときだけ、取れなかった理由をそのまま画面へ返す。
+    const memoUsable = company.memo.trim().length >= 20;
+    if (!site.ok && !memoUsable) {
       const blocked: Company = {
         ...company,
         analysis: {
@@ -85,7 +87,7 @@ export default async function handler(req: Request): Promise<Response> {
       const savedBlocked = await putCompany(blocked);
       return json({
         error: 'SITE_UNREADABLE',
-        message: `${site.note || 'サイト本文を取得できませんでした。'} URLを確かめるか、会社情報をメモに書いてから分析してください。`,
+        message: `${site.note || 'サイト本文を取得できませんでした。'} URLを確かめるか、会社情報をメモに20文字以上書いてから、もう一度分析してください (メモがあればそれを材料に分析します)。`,
         company: savedBlocked,
         site: { ok: false, note: site.note },
       }, 422, ch);
@@ -118,7 +120,12 @@ export default async function handler(req: Request): Promise<Response> {
     }
 
     const analysis = toAnalysis(ai.data, company.industry);
-    if (!site.ok && site.note) analysis.warnings = [site.note, ...analysis.warnings].slice(0, 6);
+    if (!site.ok) {
+      analysis.warnings = [
+        `${site.note || 'サイト本文を取得できませんでした。'} 営業担当のメモだけを材料に分析しています。`,
+        ...analysis.warnings,
+      ].slice(0, 6);
+    }
 
     const score = buildScore(rawScoreItems(ai.data));
     const foundName = analysisName(ai.data);

@@ -175,6 +175,9 @@ export default function SalesOS() {
               合言葉が既定値のままです。この文字列は公開済みで、知っている人は誰でも
               この営業先データを読み書きできます。Vercel の環境変数に MASTER_KEY を
               設定してください (設定するとこの警告は消えます)。
+              変更したら、この画面では新しい合言葉を入れ直してください。
+              他のアプリ (Prism / Iris など) は端末側の定数
+              src/lib/billing.ts も合わせて更新が必要です。
             </ErrorNote>
           </div>
         )}

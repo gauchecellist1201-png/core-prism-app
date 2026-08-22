@@ -270,8 +270,14 @@ export default async function handler(req: Request) {
   }
 
   // ─── マスターキー判定 (rate limit より先に確定。master は無制限) ───
+  // env に MASTER_KEY があればそれを使う。未設定なら従来どおり既定値。
+  // ここを既定値固定にしていると、合言葉を安全な値に変えた瞬間に
+  // /api/sales/* 等は通るのにこの中継だけが master と認めず、
+  // Claude ではなく公開 Gemini 経路に落ちる (もしくは no_ai_key で失敗する)。
+  // ※ 合言葉を変えるときは src/lib/billing.ts の端末側の定数も併せて更新すること。
+  const MASTER_KEY = (typeof process !== 'undefined' && process.env?.MASTER_KEY) || 'GAUCHE2026';
   const masterKey = req.headers.get('x-master-key') || '';
-  const isMaster = masterKey === 'GAUCHE2026';
+  const isMaster = masterKey === MASTER_KEY;
 
   // ─── レート制限 (master は無制限、user 鍵持ちは 2 倍緩和) ───
   const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim()

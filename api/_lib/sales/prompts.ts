@@ -81,7 +81,11 @@ export function analysisUser(args: { name: string; url: string; site: { ok: bool
     if (site.description) parts.push(`ページ説明: ${site.description}`);
     parts.push(untrusted(url, site.text));
   } else {
-    parts.push(`※サイト本文を取得できませんでした (${site.note})。この場合、事実として書けることはほとんどありません。summary / business は空に近くなって構いません。すべてのスコア項目の evidence を空にし、value を 0 にしてください。warnings に取得できなかったことを書いてください。`);
+    parts.push(
+      memo
+        ? `※サイト本文を取得できませんでした (${site.note})。材料は上の「営業担当のメモ」だけです。メモに書かれていることは事実として扱ってよく、その場合 evidence には「営業担当のメモ」と書いてください。メモに無いことは書かず、該当するスコア項目は value 0 / evidence 空にしてください。`
+        : `※サイト本文を取得できませんでした (${site.note})。この場合、事実として書けることはほとんどありません。summary / business は空に近くなって構いません。すべてのスコア項目の evidence を空にし、value を 0 にしてください。warnings に取得できなかったことを書いてください。`,
+    );
   }
   parts.push(
     [
