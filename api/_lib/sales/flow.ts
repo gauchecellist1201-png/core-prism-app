@@ -113,6 +113,9 @@ export function applyActivity(input: FlowInput): FlowResult {
     case 'lost':
       c.stage = 'LOST';
       c.lostReason = (lostReason || '').slice(0, 200);
+      // 解約したら今の月額から外す。残したままだと、集計が「現在のMRR」と言いながら
+      // 解約ぶんを足し続ける。単発の実績 (oneOffYen) は実際に売れたので消さない。
+      c.mrrYen = 0;
       setNext(90, '新しい企画で再アプローチする');
       break;
     case 'note':

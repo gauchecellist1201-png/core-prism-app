@@ -150,6 +150,16 @@ describe('金額の単位', () => {
     expect(c.mrrYen, '月額を足してしまっている').toBe(248000);
   });
 
+  it('解約したら今の月額から外れる (単発の実績は消さない)', () => {
+    let c = base();
+    c = applyActivity({ company: c, kind: 'trial', today: '2026-08-22', nowISO: '2026-08-22T00:00:00.000Z', dealYen: 49800 }).company;
+    c = applyActivity({ company: c, kind: 'monthly', today: '2026-09-01', nowISO: '2026-09-01T00:00:00.000Z', dealYen: 248000 }).company;
+    expect(c.mrrYen).toBe(248000);
+    c = applyActivity({ company: c, kind: 'lost', today: '2026-12-01', nowISO: '2026-12-01T00:00:00.000Z', lostReason: '解約' }).company;
+    expect(c.mrrYen, '解約したのに月額が残っている').toBe(0);
+    expect(c.oneOffYen, '実際に売れた単発まで消している').toBe(49800);
+  });
+
   it('金額を入れずに受注しても件数が増えない (平均が半分にならない)', () => {
     let c = base();
     c = applyActivity({ company: c, kind: 'won', today: '2026-08-22', nowISO: '2026-08-22T00:00:00.000Z', dealYen: 100000 }).company;

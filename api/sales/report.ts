@@ -1,7 +1,9 @@
 // ============================================================
 // GET /api/sales/report — CORE Studio Sales Report (週次) + 業種別学習
 //
-// ?days=7 (既定) で集計期間を変えられる。
+// ?days=7 (既定) は「活動の合計」と「失注理由」にだけ効く。
+// 業種別・区分別の表は累計 (breakdownScope: 'lifetime')。
+// 7日で切ると母数が10件に届かず、率を読める区分が一生できないため。
 // 「母数が小さいのに率を出して意思決定させる」のが一番の事故なので、
 // 接触 10 件未満の区分は tooSmall を立て、率を根拠にした提案を出さない。
 // x-master-key 必須
@@ -143,6 +145,8 @@ export default async function handler(req: Request): Promise<Response> {
     const untouched = rows.filter(r => r.stage === 'NEW').length;
     if (untouched > 0) recommendations.push(`未分析が ${untouched} 件あります。分析をかけないと弾が作れません。`);
 
+    notes.push('業種別・区分別の表は累計です。上の合計と失注理由だけが選んだ期間の数字です。');
+
     if (!inWindow.length) {
       notes.push(`直近 ${days} 日の活動記録が 0 件です。結果を入れていないと、この数字は「営業していない」ではなく「記録していない」を表します。`);
     }
@@ -154,6 +158,7 @@ export default async function handler(req: Request): Promise<Response> {
       totals,
       byIndustry,
       byTier,
+      breakdownScope: 'lifetime',
       lostReasons,
       recommendations,
       notes,

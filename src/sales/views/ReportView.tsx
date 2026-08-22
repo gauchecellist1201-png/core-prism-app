@@ -48,7 +48,9 @@ export default function ReportView({ rev }: { rev: number }) {
 
       <Card style={{ marginBottom: 14 }}>
         <Label>Sales Report</Label>
-        <div style={{ fontSize: 12, color: T.mute, margin: '6px 0 12px' }}>{data.weekFrom} 〜 {data.weekTo}</div>
+        <div style={{ fontSize: 12, color: T.mute, margin: '6px 0 12px' }}>
+          {data.weekFrom} 〜 {data.weekTo}（この期間の活動）
+        </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(92px, 1fr))', gap: 8 }}>
           <Stat label="接触" value={t.contacted} />
           <Stat label="返信" value={t.replied} color={T.blue} />
@@ -85,8 +87,9 @@ export default function ReportView({ rev }: { rev: number }) {
         </Card>
       )}
 
-      <StatTable title="ターゲット区分ごと" rows={data.byTier} />
-      <StatTable title="業種ごと" rows={data.byIndustry} />
+      {/* この2表だけ累計。期間で切ると母数が10件に届かず率を読める区分ができない */}
+      <StatTable title="ターゲット区分ごと (累計)" rows={data.byTier} />
+      <StatTable title="業種ごと (累計)" rows={data.byIndustry} />
 
       {data.lostReasons.length > 0 && (
         <div style={{ marginTop: 18 }}>

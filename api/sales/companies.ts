@@ -210,6 +210,9 @@ export default async function handler(req: Request): Promise<Response> {
       }
 
       const saved = await putCompany(next);
+      // 取った札は TTL 30 秒付きなので、本体を書いたら必ず恒久化する。
+      // 忘れると 30 秒後に札が消え、同じドメインをもう一度登録できてしまう。
+      if (next.domain && next.domain !== c.domain) await confirmDomain(next.domain, saved.id);
       return json({ company: saved }, 200, ch);
     }
 

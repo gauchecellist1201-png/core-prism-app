@@ -305,6 +305,12 @@ export interface ReportResponse {
   };
   byIndustry: IndustryStat[];
   byTier: IndustryStat[];
+  /**
+   * 業種別・区分別の集計範囲。'lifetime' = 全期間。
+   * 7日で切ると母数が10件に届かず「読める区分」が一生できないため、
+   * 学習用のこの表だけは累計で出す。上の合計は期間で切っている。
+   */
+  breakdownScope: 'lifetime';
   lostReasons: Array<{ reason: string; count: number }>;
   /** データから機械的に出した「来週ここに寄せる」提案 */
   recommendations: string[];
