@@ -106,7 +106,7 @@ export const createBulk = (bulk: string) =>
   call<BulkResult>('/api/sales/companies', { method: 'POST', body: JSON.stringify({ bulk }) });
 
 export const patchCompany = (id: string, patch: Record<string, string>) =>
-  call<{ company: Company }>('/api/sales/companies', {
+  call<{ company: Company; reanalyzeNeeded?: boolean; message?: string }>('/api/sales/companies', {
     method: 'PATCH', body: JSON.stringify({ id, patch }),
   });
 

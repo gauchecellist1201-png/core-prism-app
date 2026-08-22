@@ -14,7 +14,8 @@ import {
   blankCompany, claimDomain, deleteCompany, domainOf, getCompany, listActivities,
   confirmDomain, listRows, newId, normalizeUrl, putCompany, releaseDomain,
 } from '../_lib/sales/store';
-import { guessTier } from '../../src/sales/shared/catalog';
+import { guessTier, stageMeta } from '../../src/sales/shared/catalog';
+import { emptyScore } from '../../src/sales/shared/score';
 import type { Company } from '../../src/sales/shared/types';
 
 export const config = { runtime: 'edge' };
@@ -228,6 +229,21 @@ export default async function handler(req: Request): Promise<Response> {
         }
       }
 
+      // 別のサイトに変わったなら、前のサイトから作った分析・スコア・企画・文面は
+      // もうこの会社の話ではない。残すと「分析ずみ」の顔をしたまま、
+      // よその会社向けのメールをそのまま送れてしまう。
+      let reanalyzeNeeded = false;
+      if (domainChanged && (c.analysis || c.plans || c.email1 || c.call)) {
+        next.analysis = null;
+        next.score = emptyScore();
+        next.plans = null;
+        next.email1 = null;
+        next.call = null;
+        next.stage = stageMeta(c.stage).step <= 1 ? 'NEW' : c.stage;
+        next.nextActionLabel = '企業分析をかけ直す';
+        reanalyzeNeeded = true;
+      }
+
       const saved = await putCompany(next);
 
       if (domainChanged) {
@@ -236,7 +252,13 @@ export default async function handler(req: Request): Promise<Response> {
         // ここまで来て初めて古い札を外す。
         if (c.domain) await releaseDomain(c.domain, c.id);
       }
-      return json({ company: saved }, 200, ch);
+      return json({
+        company: saved,
+        reanalyzeNeeded,
+        ...(reanalyzeNeeded
+          ? { message: 'URLが別のサイトに変わったので、前のサイトで作った分析・企画・文面は消しました。分析をかけ直してください。' }
+          : {}),
+      }, 200, ch);
     }
 
     if (req.method === 'DELETE') {

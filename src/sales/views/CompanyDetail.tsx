@@ -487,7 +487,11 @@ function EditSheet({ open, company, onClose, onSaved }: {
       {err ? <div style={{ marginBottom: 12 }}><ErrorNote>{err}</ErrorNote></div> : null}
       <Btn variant="primary" full disabled={busy} onClick={async () => {
         setBusy(true); setErr('');
-        try { onSaved((await patchCompany(company.id, f)).company); }
+        try {
+          const r = await patchCompany(company.id, f);
+          if (r.reanalyzeNeeded && r.message) window.alert(r.message);
+          onSaved(r.company);
+        }
         catch (e) { setErr(e instanceof Error ? e.message : String(e)); }
         finally { setBusy(false); }
       }}>{busy ? '保存しています…' : '保存する'}</Btn>
