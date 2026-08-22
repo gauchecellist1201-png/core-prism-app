@@ -10,7 +10,8 @@ import { buildScore, priorityValue } from '../shared/score';
 import { applyActivity } from '../../../api/_lib/sales/flow';
 import { blankCompany } from '../../../api/_lib/sales/store';
 import type { ActivityKind, Stage } from '../shared/types';
-import { FUNNEL_STAGES, stageMeta } from '../shared/catalog';
+import { FUNNEL_STAGES, mayQuotePrice, nextFollowUp, stageMeta } from '../shared/catalog';
+import { redactPrices } from '../../../api/_lib/sales/normalize';
 import { assertSafeUrl, isForbiddenAddress } from '../../../api/_lib/sales/fetchSite';
 
 describe('CORE SALES SCORE', () => {
@@ -197,5 +198,40 @@ describe('SSRF ガード', () => {
       expect(() => assertSafeUrl(u), `${u} を通してしまった`).toThrow();
     }
     expect(() => assertSafeUrl('https://www.cyberagent.co.jp/')).not.toThrow();
+  });
+});
+
+describe('金額の漏れ止め', () => {
+  it('公開ページと食い違っている間は、生成物から金額を消す', () => {
+    // このリポジトリでは月額3プランが食い違っている = mayQuotePrice() は false
+    expect(mayQuotePrice()).toBe(false);
+    const cases: Array<[string, string]> = [
+      ['月4本で¥148,000です', '月4本で別途お見積りです'],
+      ['1本 49,800円から', '1本 別途お見積りから'],
+      ['まずは5万円で', 'まずは別途お見積りで'],
+      ['￥248,000／月', '別途お見積り／月'],
+    ];
+    for (const [input, want] of cases) {
+      expect(redactPrices(input), `「${input}」を消せていない`).toBe(want);
+    }
+  });
+
+  it('金額でない数字は消さない', () => {
+    for (const s of ['月4本', '15秒の動画', '3案お出しします', '2026年']) {
+      expect(redactPrices(s)).toBe(s);
+    }
+  });
+});
+
+describe('追客の回数', () => {
+  it('決めた6回を過ぎても、番号が実際の接触回数とずれない', () => {
+    for (let touch = 1; touch <= 10; touch++) {
+      expect(nextFollowUp(touch).touch, `${touch}回目のあと`).toBe(touch + 1);
+    }
+  });
+
+  it('6回を過ぎたら季節企画を回し続ける', () => {
+    expect(nextFollowUp(9).angle).toBe(nextFollowUp(20).angle);
+    expect(nextFollowUp(9).afterDays).toBeGreaterThan(0);
   });
 });

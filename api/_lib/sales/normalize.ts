@@ -2,7 +2,7 @@
 // Sales OS — AI の生 JSON を型に落とす (信用しない側の処理)
 // ============================================================
 import type { Analysis, CallScript, EmailDraft, Fact, PlanKind, TargetTier, VideoPlan } from '../../../src/sales/shared/types';
-import { guessTier, productById } from '../../../src/sales/shared/catalog';
+import { guessTier, mayQuotePrice, productById } from '../../../src/sales/shared/catalog';
 import { str, strArr } from './ai';
 
 type Raw = Record<string, unknown>;
@@ -91,29 +91,43 @@ export function toPlans(raw: unknown): VideoPlan[] {
   return out;
 }
 
+/**
+ * 金額を出してよくない状態のときに、万一 AI が書いてしまった金額を消す。
+ * 「書くな」と指示するだけでは守られる保証が無く、間違った金額が1回でも
+ * お客様に出たら取り返しがつかないので、最後に機械で落とす。
+ */
+export function redactPrices(text: string): string {
+  if (!text || mayQuotePrice()) return text;
+  return text
+    // ¥49,800 / 49,800円 / 5万円 / 10万円〜 など
+    .replace(/[¥￥]\s?[\d,]+(?:\s?[〜~]\s?[¥￥]?[\d,]+)?(?:円)?/g, '別途お見積り')
+    .replace(/[\d,]+\s?円(?:\s?[〜~]\s?[\d,]+\s?円)?/g, '別途お見積り')
+    .replace(/[\d,]+\s?万円(?:\s?[〜~]\s?[\d,]+\s?万円)?/g, '別途お見積り');
+}
+
 export function toEmail(raw: unknown, touch: number, angle: string): EmailDraft | null {
   const o = asObj(raw);
-  const subject = str(o.subject, 120);
-  const body = str(o.body, 1600);
+  const subject = redactPrices(str(o.subject, 120));
+  const body = redactPrices(str(o.body, 1600));
   if (!subject || body.length < 40) return null;
   return { subject, body, touch, angle };
 }
 
 export function toCall(raw: unknown): CallScript | null {
   const o = asObj(raw);
-  const opening = str(o.opening, 300);
-  const question = str(o.question, 200);
+  const opening = redactPrices(str(o.opening, 300));
+  const question = redactPrices(str(o.question, 200));
   if (!opening || !question) return null;
   const objRaw = Array.isArray(o.objections) ? (o.objections as unknown[]) : [];
   return {
     opening,
     question,
-    bridge: str(o.bridge, 240),
-    hook: str(o.hook, 300),
-    close: str(o.close, 240),
+    bridge: redactPrices(str(o.bridge, 240)),
+    hook: redactPrices(str(o.hook, 300)),
+    close: redactPrices(str(o.close, 240)),
     objections: objRaw.slice(0, 6).map(x => {
       const oo = asObj(x);
-      return { q: str(oo.q, 80), a: str(oo.a, 200) };
+      return { q: str(oo.q, 80), a: redactPrices(str(oo.a, 200)) };
     }).filter(x => x.q && x.a),
   };
 }

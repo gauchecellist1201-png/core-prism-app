@@ -139,6 +139,14 @@ export default async function handler(req: Request): Promise<Response> {
           company: fresh,
         }, 409, ch);
       }
+      // 作っている間に分析がやり直されていたら、この内容は古い分析から作ったもの。
+      if (fresh.analysisAt !== company.analysisAt) {
+        return json({
+          error: 'STALE_ANALYSIS',
+          message: '作っている間に分析がやり直されました。古い分析から作った内容は保存していません。もう一度作ってください。',
+          company: fresh,
+        }, 409, ch);
+      }
       // メールは「何回目の接触か」で中身が変わる。作っている間に別のタブで記録が入ると、
       // 2回目を送るべき相手に初回のメールを保存してしまう。
       if (kind === 'email' && fresh.touches !== company.touches) {

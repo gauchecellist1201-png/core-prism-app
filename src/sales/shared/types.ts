@@ -157,6 +157,12 @@ export interface Company {
 
   score: ScoreResult | null;
   analysis: Analysis | null;
+  /**
+   * 分析を書いた時刻。生成 (企画/メール/トーク) は、この値が変わっていたら
+   * 「もう別の分析で作り直された」とみなして保存しない。
+   * 古い分析から作った文面を、新しい分析の会社に重ねないため。
+   */
+  analysisAt: string | null;
   plans: VideoPlan[] | null;
   email1: EmailDraft | null;
   call: CallScript | null;

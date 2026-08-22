@@ -120,6 +120,7 @@ export function blankCompany(seed: Partial<Company>): Company {
     memo: seed.memo || '',
     score: seed.score ?? emptyScore(),
     analysis: seed.analysis ?? null,
+    analysisAt: seed.analysisAt ?? null,
     plans: seed.plans ?? null,
     email1: seed.email1 ?? null,
     call: seed.call ?? null,

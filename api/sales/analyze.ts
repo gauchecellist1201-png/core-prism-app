@@ -120,6 +120,7 @@ export default async function handler(req: Request): Promise<Response> {
       }, 502, ch);
     }
 
+    const nowStamp = new Date().toISOString();
     const analysis = toAnalysis(ai.data, company.industry);
     if (!site.ok) {
       analysis.warnings = [
@@ -157,6 +158,7 @@ export default async function handler(req: Request): Promise<Response> {
       industry: analysis.industry || fresh.industry,
       targetTier: analysis.targetTier,
       analysis,
+      analysisAt: nowStamp,
       score,
       stage: fresh.stage === 'NEW' ? 'ANALYZED' : fresh.stage,
       nextActionAt: fresh.nextActionAt ?? todayISO(),

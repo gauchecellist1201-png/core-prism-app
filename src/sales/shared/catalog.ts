@@ -272,8 +272,17 @@ export const FOLLOWUPS: FollowUpStep[] = [
   { afterDays: 90, touch: 6, angle: '季節・イベント企画', instruction: '時期に合わせた企画 (年末年始/新生活/決算期/採用シーズン等) を1本提案する。' },
 ];
 
+/**
+ * 次に送る回の型を返す。
+ * 決めてある 6 回を過ぎたら、90日ごとの季節企画を回し続ける。
+ * 最後の1件をそのまま返すと、7回目でも「追客6回目」と表示され、
+ * 実際の接触回数と画面の数字がずれていく。
+ */
 export function nextFollowUp(touch: number): FollowUpStep {
-  return FOLLOWUPS.find(f => f.touch === touch + 1) ?? FOLLOWUPS[FOLLOWUPS.length - 1];
+  const found = FOLLOWUPS.find(f => f.touch === touch + 1);
+  if (found) return found;
+  const last = FOLLOWUPS[FOLLOWUPS.length - 1];
+  return { ...last, touch: touch + 1 };
 }
 
 // ---- ポジショニング (AI プロンプトの土台) --------------------------------

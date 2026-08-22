@@ -248,6 +248,7 @@ export default async function handler(req: Request): Promise<Response> {
       let reanalyzeNeeded = false;
       if (domainChanged && (c.analysis || c.plans || c.email1 || c.call)) {
         next.analysis = null;
+        next.analysisAt = null;
         next.score = emptyScore();
         next.plans = null;
         next.email1 = null;

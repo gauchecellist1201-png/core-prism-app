@@ -10,15 +10,24 @@ import type { Analysis, Company, PlanKind, VideoPlan } from '../../../src/sales/
 import { UNTRUSTED_RULE, untrusted } from './ai';
 
 // ---- 共通の土台 ----------------------------------------------------------
+/**
+ * 商品一覧。金額を出してよい状態でなければ、そもそも金額を渡さない。
+ * 「渡すけれど書くな」は守られる保証が無い (守るのはモデルの気分次第) ので、
+ * 公開ページと食い違っている間は材料そのものを持たせない。
+ */
 function catalogBlock(): string {
+  const withPrice = mayQuotePrice();
   const lines = PRODUCTS.map(p =>
-    `- ${p.id} / ${p.name} (${p.tagline}) ${p.price} — ${p.purpose}。用途: ${p.uses.join('、')}`,
+    `- ${p.id} / ${p.name} (${p.tagline})${withPrice ? ` ${p.price}` : ''} — ${p.purpose}。用途: ${p.uses.join('、')}`,
   );
   const oem = productById('oem');
   return [
     'CORE Studio の商品:',
     ...lines,
-    oem ? `代理店の想定再販レンジ: ${yen(OEM_RESALE.low)}〜${yen(OEM_RESALE.high)} (卸 ${yen(oem.priceYen)})` : '',
+    withPrice && oem
+      ? `代理店の想定再販レンジ: ${yen(OEM_RESALE.low)}〜${yen(OEM_RESALE.high)} (卸 ${yen(oem.priceYen)})`
+      : '',
+    withPrice ? '' : '※金額はこのプロンプトには含めていません。文中に金額を書かないでください。',
   ].filter(Boolean).join('\n');
 }
 
