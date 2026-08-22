@@ -12,7 +12,7 @@ import { corsHeaders, errMessage, json, requireMaster } from '../_lib/sales/http
 import { KvNotConfigured } from '../_lib/sales/kv';
 import {
   blankCompany, claimDomain, deleteCompany, domainOf, getCompany, listActivities,
-  listRows, newId, normalizeUrl, putCompany, releaseDomain,
+  confirmDomain, listRows, newId, normalizeUrl, putCompany, releaseDomain,
 } from '../_lib/sales/store';
 import { guessTier } from '../../src/sales/shared/catalog';
 import type { Company } from '../../src/sales/shared/types';
@@ -69,7 +69,11 @@ async function createOne(seed: Seed): Promise<{ company: Company | null; created
 
   if (!claim.created) {
     const existing = await getCompany(claim.id);
-    return { company: existing, created: false, reason: 'すでに登録ずみです' };
+    return {
+      company: existing,
+      created: false,
+      reason: claim.pending ? '同じドメインをいま登録中です' : 'すでに登録ずみです',
+    };
   }
 
   const c = blankCompany({
@@ -87,6 +91,8 @@ async function createOne(seed: Seed): Promise<{ company: Company | null; created
     nextActionLabel: '企業分析をかける',
   });
   const saved = await putCompany(c);
+  // 本体を書き終えてから札を恒久化する (TTL を外す)
+  await confirmDomain(domain, saved.id);
   return { company: saved, created: true, reason: '' };
 }
 

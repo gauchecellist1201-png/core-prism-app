@@ -121,11 +121,20 @@ export const generatePlan = (id: string, planKind: PlanKind) =>
   });
 
 // ---- 活動 ----------------------------------------------------------------
+/** 押し直し・再送で二重に記録されないための札。1回の送信につき1つ作って使い回す。 */
+export function newRequestId(): string {
+  try {
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') return crypto.randomUUID();
+  } catch { /* noop */ }
+  return `r_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
+}
+
 export const logActivity = (payload: {
   id: string; kind: ActivityKind; note?: string; dealYen?: number; lostReason?: string;
-}) => call<{ company: Company; activity: Activity }>('/api/sales/activity', {
-  method: 'POST', body: JSON.stringify(payload),
-});
+  requestId: string;
+}) => call<{ company: Company; activity: Activity | null; duplicate: boolean; message?: string }>(
+  '/api/sales/activity', { method: 'POST', body: JSON.stringify(payload) },
+);
 
 // ---- ダッシュボード ------------------------------------------------------
 export const fetchToday = () => call<TodayResponse>('/api/sales/today');

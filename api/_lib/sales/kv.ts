@@ -78,6 +78,12 @@ export async function setNX(key: string, value: string): Promise<boolean> {
   return r === 'OK' || (r != null && String(r).toUpperCase() === 'OK');
 }
 
+/** SET key value NX EX ttl → 取れたら true。取り損ねた札が永久に居座らない */
+export async function setNXEX(key: string, value: string, ttlSeconds: number): Promise<boolean> {
+  const r = await cmd(['SET', key, value, 'NX', 'EX', ttlSeconds]);
+  return r === 'OK' || (r != null && String(r).toUpperCase() === 'OK');
+}
+
 export async function del(...keys: string[]): Promise<void> {
   if (!keys.length) return;
   await cmd(['DEL', ...keys]);

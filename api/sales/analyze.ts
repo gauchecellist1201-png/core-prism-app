@@ -11,13 +11,14 @@
 import { Deadline, corsHeaders, errMessage, json, requireMaster } from '../_lib/sales/http';
 import { KvNotConfigured } from '../_lib/sales/kv';
 import {
-  blankCompany, claimDomain, domainOf, getCompany, newId, normalizeUrl, putCompany, todayISO,
+  blankCompany, claimDomain, confirmDomain, domainOf, getCompany, newId, normalizeUrl,
+  putCompany, todayISO,
 } from '../_lib/sales/store';
 import { fetchSiteText } from '../_lib/sales/fetchSite';
 import { MODEL_FAST, askJson } from '../_lib/sales/ai';
 import { analysisSystem, analysisUser } from '../_lib/sales/prompts';
 import { analysisName, rawScoreItems, toAnalysis } from '../_lib/sales/normalize';
-import { buildScore, emptyScore } from '../../src/sales/shared/score';
+import { buildScore } from '../../src/sales/shared/score';
 import type { Company } from '../../src/sales/shared/types';
 
 export const config = { runtime: 'edge' };
@@ -56,7 +57,10 @@ export default async function handler(req: Request): Promise<Response> {
         url,
         domain,
       });
-      if (!existing) company = await putCompany(company);
+      if (!existing) {
+        company = await putCompany(company);
+        await confirmDomain(domain, company.id);
+      }
     }
 
     if (!company.url) {
@@ -71,24 +75,13 @@ export default async function handler(req: Request): Promise<Response> {
     // メモも無いときだけ、取れなかった理由をそのまま画面へ返す。
     const memoUsable = company.memo.trim().length >= 20;
     if (!site.ok && !memoUsable) {
-      const blocked: Company = {
-        ...company,
-        analysis: {
-          summary: '', business: '', products: [], customers: '',
-          sns: { value: '', evidence: '' }, videoUsage: { value: '', evidence: '' },
-          ads: { value: '', evidence: '' }, hiring: { value: '', evidence: '' },
-          competitors: [], aiVideoFit: '', painHypothesis: [], angle: '',
-          recommendedPlan: 'entry', budgetGuess: '',
-          targetTier: company.targetTier, industry: company.industry,
-          warnings: [site.note || 'サイト本文を取得できませんでした。'],
-        },
-        score: emptyScore(),
-      };
-      const savedBlocked = await putCompany(blocked);
+      // ここで空の分析を保存してはいけない。前回うまく取れていた分析を、
+      // 今回のタイムアウト1回で消してしまう (しかも analysis が null でなくなるので
+      // 画面も /generate も「分析ずみ」として空データから文面を作ってしまう)。
       return json({
         error: 'SITE_UNREADABLE',
         message: `${site.note || 'サイト本文を取得できませんでした。'} URLを確かめるか、会社情報をメモに20文字以上書いてから、もう一度分析してください (メモがあればそれを材料に分析します)。`,
-        company: savedBlocked,
+        company,
         site: { ok: false, note: site.note },
       }, 422, ch);
     }
@@ -130,16 +123,20 @@ export default async function handler(req: Request): Promise<Response> {
     const score = buildScore(rawScoreItems(ai.data));
     const foundName = analysisName(ai.data);
 
+    // 分析の間 (10〜20秒) に結果入力や編集が入っているかもしれない。
+    // 読み込み時のスナップショットで丸ごと上書きすると、その入力が黙って消える。
+    // 最新を読み直して、分析が作った項目だけを重ねる。
+    const fresh = (await getCompany(company.id)) ?? company;
     const next: Company = {
-      ...company,
-      name: company.name && company.name !== company.domain ? company.name : (foundName || company.name),
-      industry: analysis.industry || company.industry,
+      ...fresh,
+      name: fresh.name && fresh.name !== fresh.domain ? fresh.name : (foundName || fresh.name),
+      industry: analysis.industry || fresh.industry,
       targetTier: analysis.targetTier,
       analysis,
       score,
-      stage: company.stage === 'NEW' ? 'ANALYZED' : company.stage,
-      nextActionAt: company.nextActionAt ?? todayISO(),
-      nextActionLabel: company.touches > 0 ? company.nextActionLabel : '電話またはメールで接触する',
+      stage: fresh.stage === 'NEW' ? 'ANALYZED' : fresh.stage,
+      nextActionAt: fresh.nextActionAt ?? todayISO(),
+      nextActionLabel: fresh.touches > 0 ? fresh.nextActionLabel : '電話またはメールで接触する',
     };
     const saved = await putCompany(next);
 

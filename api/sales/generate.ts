@@ -52,7 +52,10 @@ export default async function handler(req: Request): Promise<Response> {
       }, 409, ch);
     }
 
-    let next: Company = { ...company };
+    // 生成した項目だけを、最後に読み直した最新の企業へ重ねる。
+    // 生成には10〜20秒かかる。その間に結果入力や編集が入ることがあり、
+    // 読み込み時のスナップショットで丸ごと書き戻すと、その入力が黙って消える。
+    const patch: Partial<Company> = {};
 
     if (kind === 'plan') {
       const pk = String(body.planKind || 'A').toUpperCase() as PlanKind;
@@ -67,7 +70,7 @@ export default async function handler(req: Request): Promise<Response> {
       if (!made.length) return json({ error: 'AI_EMPTY', message: 'AI が使える企画を返しませんでした。もう一度お試しください。' }, 502, ch);
       const merged = [...already, { ...made[0], kind: pk }];
       merged.sort((x, y) => PLAN_KINDS.indexOf(x.kind) - PLAN_KINDS.indexOf(y.kind));
-      next.plans = merged;
+      patch.plans = merged;
     }
 
     if (kind === 'email') {
@@ -93,7 +96,7 @@ export default async function handler(req: Request): Promise<Response> {
       if (!ai.ok || !ai.data) return json({ error: 'AI_FAILED', message: ai.note || 'AI がメールを返しませんでした。' }, 502, ch);
       const draft = toEmail(ai.data, touch, step?.angle || '初回');
       if (!draft) return json({ error: 'AI_EMPTY', message: 'AI が使えるメールを返しませんでした。もう一度お試しください。' }, 502, ch);
-      next.email1 = draft;
+      patch.email1 = draft;
     }
 
     if (kind === 'call') {
@@ -104,11 +107,12 @@ export default async function handler(req: Request): Promise<Response> {
       if (!ai.ok || !ai.data) return json({ error: 'AI_FAILED', message: ai.note || 'AI がトークを返しませんでした。' }, 502, ch);
       const script = toCall(ai.data);
       if (!script) return json({ error: 'AI_EMPTY', message: 'AI が使えるトークを返しませんでした。もう一度お試しください。' }, 502, ch);
-      next.call = script;
+      patch.call = script;
     }
 
-    next = await putCompany(next);
-    return json({ company: next }, 200, ch);
+    const fresh = (await getCompany(id)) ?? company;
+    const saved = await putCompany({ ...fresh, ...patch });
+    return json({ company: saved }, 200, ch);
   } catch (e) {
     if (e instanceof KvNotConfigured) {
       return json({ error: 'STORAGE_NOT_CONFIGURED', message: '保存先 (Upstash Redis) が未設定です。' }, 503, ch);

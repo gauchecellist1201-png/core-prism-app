@@ -21,6 +21,7 @@ export const K = {
   act: (id: string) => `sales:act:${id}`,
   feed: 'sales:feed',
   day: (d: string) => `sales:day:${d}`,
+  idem: (rid: string) => `sales:idem:${rid}`,
 };
 
 const ACT_KEEP = 200;
@@ -172,34 +173,71 @@ export async function listRows(): Promise<CompanyRow[]> {
   return out;
 }
 
+/** 札を取ってから本体を書き終えるまでの猶予 (秒)。過ぎれば札は自然に消える */
+const CLAIM_TTL = 30;
+
 /**
  * ドメインの札を取る。
- *   - 取れた           → { id: newId, created: true }
- *   - すでに他が持っている → { id: existingId, created: false }
- *   - 札はあるのに本体が無い (途中で落ちた) → 札を張り替えて created: true
- * 「札は取れたが本体が書かれていない」穴を必ず塞ぐ。
+ *   - 取れた             → { id: candidateId, created: true }  ※必ず confirmDomain を呼ぶこと
+ *   - すでに本体がある     → { id: existingId, created: false }
+ *   - 誰かが登録中 (札はあるが本体はまだ) → { id: existingId, created: false, pending: true }
+ *
+ * 札はまず TTL 付きで取り、本体を書き終えてから confirmDomain で恒久化する。
+ * こうしないと (a) 札だけ残って本体が無い状態が永久に居座るか、
+ * (b) それを「古い札」と見て奪い、同じ会社が2件できるか、のどちらかになる。
+ * TTL があれば、途中で落ちた札は勝手に消えるので奪う必要が無い。
  */
-export async function claimDomain(domain: string, candidateId: string): Promise<{ id: string; created: boolean }> {
+export async function claimDomain(
+  domain: string,
+  candidateId: string,
+): Promise<{ id: string; created: boolean; pending?: boolean }> {
   if (!domain) return { id: candidateId, created: true };
   const key = K.dom(domain);
-  const got = await kv.setNX(key, candidateId);
-  if (got) return { id: candidateId, created: true };
+
+  if (await kv.setNXEX(key, candidateId, CLAIM_TTL)) {
+    return { id: candidateId, created: true };
+  }
 
   const existing = await kv.get(key);
   if (!existing) {
-    // 札が消えた直後。もう一度だけ取りに行く。
-    const retry = await kv.setNX(key, candidateId);
-    if (retry) return { id: candidateId, created: true };
+    // ちょうど期限切れになった直後。もう一度だけ取りに行く。
+    if (await kv.setNXEX(key, candidateId, CLAIM_TTL)) return { id: candidateId, created: true };
     const again = await kv.get(key);
-    return again ? { id: again, created: false } : { id: candidateId, created: true };
+    return again ? { id: again, created: false, pending: true } : { id: candidateId, created: true };
   }
 
   const body = await getCompany(existing);
-  if (body) return { id: existing, created: false };
+  // 本体がまだ無い = 別のリクエストが今まさに書いている最中。奪わない。
+  return { id: existing, created: false, pending: !body };
+}
 
-  // 札だけ残って本体が無い → 張り替える
-  await kv.set(key, candidateId);
-  return { id: candidateId, created: true };
+/** 本体を書き終えたら札を恒久化する (TTL を外す) */
+export async function confirmDomain(domain: string, id: string): Promise<void> {
+  if (!domain) return;
+  const cur = await kv.get(K.dom(domain));
+  if (cur === id) await kv.set(K.dom(domain), id);
+}
+
+// ---- 二重記録の防止 ------------------------------------------------------
+/** 同じ操作を2回適用しない札の寿命 (秒)。押し直し・再送はこの間なら弾かれる */
+const IDEM_TTL = 600;
+
+/**
+ * 操作の札を取る。取れたら true = まだ適用していない。
+ *
+ * 通信が途中で切れて画面がエラーになっても、サーバー側では適用ずみのことがある。
+ * そこで押し直すと、接触回数・日次カウンタ・単発の受注額 (足し算) が二重になる。
+ * 札はクライアントが作った requestId で決め、サーバーが持つ (送り主の控えに任せない)。
+ */
+export async function claimRequest(requestId: string): Promise<boolean> {
+  if (!requestId) return true;   // 札が無い呼び出しは従来どおり通す
+  return kv.setNXEX(K.idem(requestId), '1', IDEM_TTL);
+}
+
+/** 適用に失敗したら札を返す (返さないと、正しいやり直しまで弾いてしまう) */
+export async function releaseRequest(requestId: string): Promise<void> {
+  if (!requestId) return;
+  try { await kv.del(K.idem(requestId)); } catch { /* 消せなくても本処理は続ける */ }
 }
 
 /** 自分が持っている札だけを外す (他社の札を消さない) */

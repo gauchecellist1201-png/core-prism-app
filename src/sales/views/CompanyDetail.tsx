@@ -2,12 +2,12 @@
 // 企業カード — 1社の全部。ここだけ見れば次の一手が打てる。
 // スマホ: 電話 / メール / サイト / SNS はワンタップ。
 // ============================================================
-import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { RADIUS, T, shortDate, yen } from '../theme';
 import { Btn, Card, Chip, CopyBtn, ErrorNote, Field, Label, Muted, ScoreBar, Sheet, Spinner } from '../ui';
 import {
-  analyze, fetchCompany, generate, generatePlan, logActivity, patchCompany, removeCompany,
-  type SalesConfig,
+  analyze, fetchCompany, generate, generatePlan, logActivity, newRequestId,
+  patchCompany, removeCompany, type SalesConfig,
 } from '../api';
 import type { Activity, ActivityKind, Company, PlanKind, VideoPlan } from '../shared/types';
 import { scoreBand } from '../shared/score';
@@ -278,10 +278,14 @@ export default function CompanyDetail(props: {
 
       {/* ---- 結果を入れる ---- */}
       <Section title="結果を入れる">
-        <Muted>入れた瞬間に、次にやる日と内容が決まります。</Muted>
+        <Muted>
+          {busy ? 'いま作成中です。終わってから入れてください。' : '入れた瞬間に、次にやる日と内容が決まります。'}
+        </Muted>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7, marginTop: 10 }}>
           {ACTIVITY_BUTTONS.map(b => (
-            <Chip key={b.kind} color={b.color} active onClick={() => setLogOpen(b.kind)}>{b.label}</Chip>
+            <Chip key={b.kind} color={b.color} active onClick={() => { if (!busy) setLogOpen(b.kind); }}>
+              {b.label}
+            </Chip>
           ))}
         </div>
         {/* 単発の累計と月額は単位が違うので、必ず別の行に出す */}
@@ -498,8 +502,14 @@ function LogSheet({ kind, company, onClose, onSaved }: {
   const [amount, setAmount] = useState('');
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
+  // 二重記録を防ぐ札。開いている間は同じものを使い、押し直しても1回しか適用されない。
+  const reqId = useRef(newRequestId());
 
-  useEffect(() => { if (kind) { setNote(''); setAmount(''); setErr(''); } }, [kind]);
+  useEffect(() => {
+    if (!kind) return;
+    setNote(''); setAmount(''); setErr('');
+    reqId.current = newRequestId();
+  }, [kind]);
 
   if (!kind) return null;
   const def = ACTIVITY_BUTTONS.find(b => b.kind === kind);
@@ -527,7 +537,7 @@ function LogSheet({ kind, company, onClose, onSaved }: {
         try {
           const dealYen = Number(amount.replace(/[^\d]/g, ''));
           const r = await logActivity({
-            id: company.id, kind, note,
+            id: company.id, kind, note, requestId: reqId.current,
             ...(Number.isFinite(dealYen) && dealYen > 0 ? { dealYen } : {}),
             ...(isLost ? { lostReason: note } : {}),
           });
