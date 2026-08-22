@@ -338,6 +338,7 @@ export default function CompanyDetail(props: {
         kind={logOpen} company={c}
         onClose={() => setLogOpen(null)}
         onSaved={(co) => { setLogOpen(null); setC(co); onChanged(); load(); }}
+        onRefresh={() => { onChanged(); load(); }}
       />
     </div>
   );
@@ -495,19 +496,23 @@ function EditSheet({ open, company, onClose, onSaved }: {
 }
 
 // ---- 結果入力 ------------------------------------------------------------
-function LogSheet({ kind, company, onClose, onSaved }: {
-  kind: ActivityKind | null; company: Company; onClose: () => void; onSaved: (c: Company) => void;
+function LogSheet({ kind, company, onClose, onSaved, onRefresh }: {
+  kind: ActivityKind | null; company: Company; onClose: () => void;
+  onSaved: (c: Company) => void;
+  /** 閉じずに履歴だけ読み直す (二重かどうかを目で確かめてもらうため) */
+  onRefresh: () => void;
 }) {
   const [note, setNote] = useState('');
   const [amount, setAmount] = useState('');
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
+  const [check, setCheck] = useState('');
   // 二重記録を防ぐ札。開いている間は同じものを使い、押し直しても1回しか適用されない。
   const reqId = useRef(newRequestId());
 
   useEffect(() => {
     if (!kind) return;
-    setNote(''); setAmount(''); setErr('');
+    setNote(''); setAmount(''); setErr(''); setCheck('');
     reqId.current = newRequestId();
   }, [kind]);
 
@@ -532,8 +537,9 @@ function LogSheet({ kind, company, onClose, onSaved }: {
         />
       )}
       {err ? <div style={{ marginBottom: 12 }}><ErrorNote>{err}</ErrorNote></div> : null}
+      {check ? <div style={{ marginBottom: 12 }}><ErrorNote>{check}</ErrorNote></div> : null}
       <Btn variant="primary" full disabled={busy} onClick={async () => {
-        setBusy(true); setErr('');
+        setBusy(true); setErr(''); setCheck('');
         try {
           const dealYen = Number(amount.replace(/[^\d]/g, ''));
           const r = await logActivity({
@@ -541,6 +547,14 @@ function LogSheet({ kind, company, onClose, onSaved }: {
             ...(Number.isFinite(dealYen) && dealYen > 0 ? { dealYen } : {}),
             ...(isLost ? { lostReason: note } : {}),
           });
+          if (r.duplicate) {
+            // 「記録できたか確認できませんでした」のあとに押し直すと、札のせいで
+            // 実際には書けていなくても duplicate が返る。閉じずに確認させる。
+            setCheck('すでに記録ずみとして返ってきました。下の履歴に入っているか確認してください。'
+              + '入っていなければ、いったん閉じてからもう一度押してください。');
+            onRefresh();
+            return;
+          }
           onSaved(r.company);
         } catch (e) {
           setErr(e instanceof Error ? e.message : String(e));

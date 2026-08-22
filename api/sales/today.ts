@@ -24,8 +24,11 @@ function decide(row: CompanyRow, today: string): { action: TodayLead['action']; 
   // 「根拠が取れず 0 点」は正しい分析結果なので、score 0 を未分析の代わりにすると
   // 分析ずみの会社に永遠に「分析をかける」を出し続け、本来の追客を押しのける。
   if (row.stage === 'NEW') return { action: 'analyze', label: '企業分析をかける' };
-  if (row.nextActionAt && row.nextActionAt <= today && row.touches > 0) {
-    return { action: 'followup', label: row.nextActionLabel || '追客する' };
+  // 予定が入っていればそれが最優先。接触回数は見ない。
+  // 不在 (call_no_answer) は接触に数えない仕様なので、touches>0 を条件にすると
+  // 「2日後にかけ直す」と決めた会社に「メールを送る」と言ってしまう。
+  if (row.nextActionAt && row.nextActionAt <= today && row.nextActionLabel) {
+    return { action: 'followup', label: row.nextActionLabel };
   }
   if (row.touches === 0) {
     // 代理店(A)は電話が通りやすい。B/C は先にメールで企画を見せる。

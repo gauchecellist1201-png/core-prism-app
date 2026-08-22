@@ -250,6 +250,29 @@ export function htmlToText(html: string): string {
     .trim();
 }
 
+/**
+ * 使う文字コードを決める。日本の会社サイトは今でも Shift_JIS / EUC-JP が残っている。
+ * UTF-8 決め打ちで読むと文字化けしたまま ok:true になり、化けた文字列が
+ * そのままスコアの根拠や営業メールの材料になる。
+ */
+function pickCharset(contentType: string, head: Uint8Array): string {
+  const fromHeader = contentType.match(/charset\s*=\s*["']?([\w-]+)/i)?.[1];
+  if (fromHeader) return fromHeader.toLowerCase();
+  // HTML の宣言を先頭 2KB から拾う (ASCII 互換なので latin1 で読めば足りる)
+  const peek = new TextDecoder('windows-1252').decode(head.subarray(0, 2048));
+  const meta = peek.match(/<meta[^>]+charset\s*=\s*["']?([\w-]+)/i)?.[1]
+    || peek.match(/<meta[^>]+content\s*=\s*["'][^"']*charset\s*=\s*([\w-]+)/i)?.[1];
+  return (meta || 'utf-8').toLowerCase();
+}
+
+function decodeWith(charset: string, bytes: Uint8Array): string {
+  try {
+    return new TextDecoder(charset, { fatal: false }).decode(bytes);
+  } catch {
+    return new TextDecoder('utf-8', { fatal: false }).decode(bytes);
+  }
+}
+
 async function readCapped(res: Response, signal: AbortSignal): Promise<string> {
   const body = res.body;
   if (!body) return await res.text();
@@ -278,7 +301,7 @@ async function readCapped(res: Response, signal: AbortSignal): Promise<string> {
     off += take;
     if (off >= total) break;
   }
-  return new TextDecoder('utf-8', { fatal: false }).decode(merged);
+  return decodeWith(pickCharset(res.headers.get('content-type') || '', merged), merged);
 }
 
 /**

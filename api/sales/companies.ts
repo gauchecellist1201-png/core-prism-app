@@ -96,6 +96,13 @@ async function createOne(seed: Seed): Promise<{ company: Company | null; created
   return { company: saved, created: true, reason: '' };
 }
 
+function badUrl(ch: Record<string, string>): Response {
+  return json({
+    error: 'BAD_URL',
+    message: 'URL の形が正しくありません。https:// から始まる住所を入れてください (消したいときは空にしてください)。',
+  }, 400, ch);
+}
+
 // 手で直せる項目 (AI が作った分析・企画は API 側からしか書き換えない)
 const EDITABLE = ['name', 'url', 'phone', 'email', 'sns', 'contactName', 'memo', 'industry'] as const;
 
@@ -180,6 +187,10 @@ export default async function handler(req: Request): Promise<Response> {
         switch (k) {
           case 'url': {
             const url = normalizeUrl(v);
+            // 打ち間違いを黙って空にしない。空にすると URL が消えるうえに
+            // 重複防止の札まで外れる (200 が返るので気づけない)。
+            // 意図して空にしたいときだけ、空文字で消せる。
+            if (v && !url) return badUrl(ch);
             next.url = url;
             next.domain = domainOf(url);
             break;
