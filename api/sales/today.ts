@@ -10,7 +10,7 @@
 // ============================================================
 import { corsHeaders, errMessage, json, requireMaster } from '../_lib/sales/http';
 import { KvNotConfigured } from '../_lib/sales/kv';
-import { listRows, readDay, todayISO } from '../_lib/sales/store';
+import { listFeed, listRows, todayISO } from '../_lib/sales/store';
 import { priorityValue, scoreBand } from '../../src/sales/shared/score';
 import { FUNNEL_STAGES, stageMeta, targetByTier } from '../../src/sales/shared/catalog';
 import type { CompanyRow, FunnelRow, Mission, TodayLead, TodayResponse } from '../../src/sales/shared/types';
@@ -67,10 +67,17 @@ export default async function handler(req: Request): Promise<Response> {
 
   try {
     const today = todayISO();
-    const [rows, day] = await Promise.all([listRows(), readDay(today)]);
+    // 今日の件数は日次カウンタ (sales:day:*) ではなく活動フィードから数える。
+    // カウンタは会社を消しても減らないので、消したテスト会社の電話・メールが
+    // いつまでも「今日の接触」に残る。フィードなら生きている会社だけを数えられる。
+    const [rows, feed] = await Promise.all([listRows(), listFeed(1500)]);
 
     // 失注は普段は出さないが、90日後の再アプローチ日が来たら戻す。
     // 出さないままだと applyActivity が入れた再アプローチ日が永久に届かない。
+    const alive = new Set(rows.map(r => r.id));
+    const todayActs = feed.filter(a => alive.has(a.companyId) && todayISO(new Date(a.at)) === today);
+    const countToday = (k: string) => todayActs.filter(a => a.kind === k).length;
+
     const active = rows.filter(r => r.stage !== 'LOST' || (r.nextActionAt !== null && r.nextActionAt <= today));
 
     // 予定日が先の会社は今日の相手ではない。
@@ -136,9 +143,9 @@ export default async function handler(req: Request): Promise<Response> {
       leads,
       mission,
       kpi: {
-        todayTouched: (day.call || 0) + (day.email || 0),
-        todayCalls: (day.call || 0) + (day.call_no_answer || 0),
-        todayEmails: day.email || 0,
+        todayTouched: countToday('call') + countToday('email'),
+        todayCalls: countToday('call') + countToday('call_no_answer'),
+        todayEmails: countToday('email'),
         replies: replied,
         meetings,
         won: rows.filter(r => r.stage === 'WON' || r.stage === 'TRIAL').length,

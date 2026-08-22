@@ -1,7 +1,10 @@
 // ============================================================
 // Sales OS — API クライアント
 //
-// master key は localStorage に置く (既存 /master 系と同じ 'core_master_key_v1')。
+// 合言葉は localStorage に置くが、既存の 'core_master_key_v1' とは別の場所にする。
+// あちらは src/lib/billing.ts の isMasterAuth() / src/lib/tenant.ts が
+// 'GAUCHE2026' と一致することを前提にしているため、営業OSの新しい合言葉で
+// 上書きすると Prism / Iris のオーナーモードが同じブラウザで壊れる。
 // サーバーが 401 を返したら鍵を消して入力画面に戻す。
 // ============================================================
 import type {
@@ -10,7 +13,7 @@ import type {
 import type { FollowUpStep, PriceConflict, Product, TargetDef } from './shared/catalog';
 import type { StageMeta } from './shared/types';
 
-const KEY_STORAGE = 'core_master_key_v1';
+const KEY_STORAGE = 'core_sales_key_v1';
 
 export function getKey(): string {
   try { return localStorage.getItem(KEY_STORAGE) || ''; } catch { return ''; }

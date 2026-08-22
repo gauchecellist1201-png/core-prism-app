@@ -110,7 +110,14 @@ export default async function handler(req: Request): Promise<Response> {
       patch.call = script;
     }
 
-    const fresh = (await getCompany(id)) ?? company;
+    const fresh = await getCompany(id);
+    if (!fresh) {
+      // 生成中に削除された。古いスナップショットで書き戻すと消した会社が復活する。
+      return json({
+        error: 'NOT_FOUND',
+        message: '作成している間にこの営業先が削除されました。結果は保存していません。',
+      }, 404, ch);
+    }
     const saved = await putCompany({ ...fresh, ...patch });
     return json({ company: saved }, 200, ch);
   } catch (e) {

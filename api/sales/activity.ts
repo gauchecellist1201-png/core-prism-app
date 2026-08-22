@@ -10,7 +10,7 @@
 import { corsHeaders, errMessage, json, requireMaster } from '../_lib/sales/http';
 import { KvNotConfigured } from '../_lib/sales/kv';
 import {
-  claimRequest, commitActivity, getCompany, newId, nowISO, releaseRequest, todayISO,
+  claimRequest, commitActivity, getCompany, listActivities, newId, nowISO, releaseRequest, todayISO,
 } from '../_lib/sales/store';
 import { applyActivity } from '../_lib/sales/flow';
 import type { Activity, ActivityKind } from '../../src/sales/shared/types';
@@ -68,9 +68,31 @@ export default async function handler(req: Request): Promise<Response> {
     try {
       saved = await commitActivity(updated, activity, today);
     } catch (e) {
-      // 適用できなかったら札を返す。返さないと、正しいやり直しまで弾いてしまう。
-      await releaseRequest(requestId);
-      throw e;
+      // 書けなかったのか、書けたのに返事が届かなかったのかは、この時点では分からない。
+      // ここで無条件に札を返すと、実は書けていた場合にやり直しで二重になる
+      // (札を置いた意味が無くなる)。読み直して、どちらだったかを確かめる。
+      let applied: boolean | null = null;
+      try {
+        const after = await listActivities(id, 5);
+        applied = after.some(a => a.id === activity.id);
+      } catch { applied = null; }
+
+      if (applied === true) {
+        const co = (await getCompany(id).catch(() => null)) ?? updated;
+        return json({ company: co, activity, duplicate: false, note: '保存はできていました。' }, 200, ch);
+      }
+      if (applied === false) {
+        // 確かに書けていない → 札を返してやり直せるようにする
+        await releaseRequest(requestId);
+        throw e;
+      }
+      // 確かめられなかった → 札は返さない (二重より、1回もう一度押せない方がまし)
+      return json({
+        error: 'UNCONFIRMED',
+        message: '記録できたかどうかを確認できませんでした。画面を更新して履歴を見てください。'
+          + '入っていなければ、もう一度同じ操作をしてください。',
+        company: updated,
+      }, 503, ch);
     }
 
     return json({ company: saved, activity, duplicate: false }, 200, ch);

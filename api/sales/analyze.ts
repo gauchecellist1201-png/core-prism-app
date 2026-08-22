@@ -134,7 +134,14 @@ export default async function handler(req: Request): Promise<Response> {
     // 分析の間 (10〜20秒) に結果入力や編集が入っているかもしれない。
     // 読み込み時のスナップショットで丸ごと上書きすると、その入力が黙って消える。
     // 最新を読み直して、分析が作った項目だけを重ねる。
-    const fresh = (await getCompany(company.id)) ?? company;
+    const fresh = await getCompany(company.id);
+    if (!fresh) {
+      // 分析中に削除された。古いスナップショットで書き戻すと、消したはずの会社が復活する。
+      return json({
+        error: 'NOT_FOUND',
+        message: '分析している間にこの営業先が削除されました。結果は保存していません。',
+      }, 404, ch);
+    }
     const next: Company = {
       ...fresh,
       name: fresh.name && fresh.name !== fresh.domain ? fresh.name : (foundName || fresh.name),
