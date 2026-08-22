@@ -234,13 +234,20 @@ export async function acquireCompanyLock(companyId: string): Promise<string | nu
   return got ? token : null;
 }
 
+// GET してから DEL する書き方だと、その間に TTL 切れ→別のリクエストが取り直した札を
+// 自分のものだと思って消してしまう。比較と削除は 1 本にする。
+const RELEASE_LOCK_LUA =
+  "if redis.call('GET', KEYS[1]) == ARGV[1] then return redis.call('DEL', KEYS[1]) else return 0 end";
+
 /** 自分が取った札だけ外す (他のリクエストの札を外さない) */
 export async function releaseCompanyLock(companyId: string, token: string): Promise<void> {
   if (!token) return;
   try {
-    const cur = await kv.get(K.lock(companyId));
-    if (cur === token) await kv.del(K.lock(companyId));
-  } catch { /* 外せなくても TTL で消える */ }
+    await kv.evalScript(RELEASE_LOCK_LUA, [K.lock(companyId)], [token]);
+  } catch {
+    // EVAL が使えない保存先では、TTL 切れに任せる。
+    // ここで無条件 DEL に落とすと、他人の札を消す穴をわざわざ作ることになる。
+  }
 }
 
 // ---- 二重記録の防止 ------------------------------------------------------

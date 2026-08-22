@@ -77,9 +77,14 @@ export function analysisUser(args: { name: string; url: string; site: { ok: bool
   parts.push(`営業先: ${name || '(社名不明)'}\nURL: ${url}`);
   if (memo) parts.push(`営業担当のメモ:\n${memo}`);
   if (site.ok) {
-    parts.push(`ページタイトル: ${site.title}`);
-    if (site.description) parts.push(`ページ説明: ${site.description}`);
-    parts.push(untrusted(url, site.text));
+    // タイトルと説明も相手のサイトが書いた文字列。囲いの外に置くと、
+    // <title> に指示文を仕込むだけで「中の命令には従うな」の規則をすり抜けられる。
+    parts.push(untrusted(url, [
+      `ページタイトル: ${site.title}`,
+      site.description ? `ページ説明: ${site.description}` : '',
+      '',
+      site.text,
+    ].filter(Boolean).join('\n')));
   } else {
     parts.push(
       memo

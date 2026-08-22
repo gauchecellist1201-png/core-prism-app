@@ -11,8 +11,8 @@
 import { Deadline, corsHeaders, errMessage, json, requireMaster } from '../_lib/sales/http';
 import { KvNotConfigured } from '../_lib/sales/kv';
 import {
-  blankCompany, claimDomain, confirmDomain, domainOf, getCompany, newId, normalizeUrl,
-  putCompany, todayISO,
+  acquireCompanyLock, blankCompany, claimDomain, confirmDomain, domainOf, getCompany, newId,
+  normalizeUrl, putCompany, releaseCompanyLock, todayISO,
 } from '../_lib/sales/store';
 import { fetchSiteText } from '../_lib/sales/fetchSite';
 import { MODEL_FAST, askJson } from '../_lib/sales/ai';
@@ -133,7 +133,16 @@ export default async function handler(req: Request): Promise<Response> {
 
     // 分析の間 (10〜20秒) に結果入力や編集が入っているかもしれない。
     // 読み込み時のスナップショットで丸ごと上書きすると、その入力が黙って消える。
-    // 最新を読み直して、分析が作った項目だけを重ねる。
+    // 書くときだけ札を取り、最新を読み直して、分析が作った項目だけを重ねる。
+    // (AI を待っている間ずっと札を持つと、その会社に何も記録できなくなる)
+    const lock = await acquireCompanyLock(company.id);
+    if (!lock) {
+      return json({
+        error: 'BUSY',
+        message: 'この営業先はいま別の更新を処理中です。分析結果は保存していません。もう一度お試しください。',
+      }, 409, ch);
+    }
+    try {
     const fresh = await getCompany(company.id);
     if (!fresh) {
       // 分析中に削除された。古いスナップショットで書き戻すと、消したはずの会社が復活する。
@@ -153,12 +162,24 @@ export default async function handler(req: Request): Promise<Response> {
       nextActionAt: fresh.nextActionAt ?? todayISO(),
       nextActionLabel: fresh.touches > 0 ? fresh.nextActionLabel : '電話またはメールで接触する',
     };
+    // 分析している間に URL が別のサイトへ変わっていたら、この結果はもう別の会社の話。
+    if (fresh.domain !== company.domain) {
+      return json({
+        error: 'URL_CHANGED',
+        message: '分析している間にURLが変わりました。前のサイトの分析結果は保存していません。もう一度分析してください。',
+        company: fresh,
+      }, 409, ch);
+    }
+
     const saved = await putCompany(next);
 
     return json({
       company: saved,
       site: { ok: site.ok, note: site.note, title: site.title, chars: site.text.length },
     }, 200, ch);
+    } finally {
+      await releaseCompanyLock(company.id, lock);
+    }
   } catch (e) {
     if (e instanceof KvNotConfigured) {
       return json({ error: 'STORAGE_NOT_CONFIGURED', message: '保存先 (Upstash Redis) が未設定です。' }, 503, ch);

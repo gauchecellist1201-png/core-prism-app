@@ -9,7 +9,7 @@
 // ============================================================
 import { Deadline, corsHeaders, errMessage, json, requireMaster } from '../_lib/sales/http';
 import { KvNotConfigured } from '../_lib/sales/kv';
-import { getCompany, putCompany } from '../_lib/sales/store';
+import { acquireCompanyLock, getCompany, putCompany, releaseCompanyLock } from '../_lib/sales/store';
 import { MODEL_FAST, MODEL_WRITE, askJson } from '../_lib/sales/ai';
 import {
   callSystem, callUser, emailSystem, emailUser, plansSystem, planUser,
@@ -110,16 +110,37 @@ export default async function handler(req: Request): Promise<Response> {
       patch.call = script;
     }
 
-    const fresh = await getCompany(id);
-    if (!fresh) {
-      // 生成中に削除された。古いスナップショットで書き戻すと消した会社が復活する。
+    // 書くときだけ札を取る (生成を待っている間ずっと持つと、その会社に何も記録できない)
+    const lock = await acquireCompanyLock(id);
+    if (!lock) {
       return json({
-        error: 'NOT_FOUND',
-        message: '作成している間にこの営業先が削除されました。結果は保存していません。',
-      }, 404, ch);
+        error: 'BUSY',
+        message: 'この営業先はいま別の更新を処理中です。作ったものは保存していません。もう一度お試しください。',
+      }, 409, ch);
     }
-    const saved = await putCompany({ ...fresh, ...patch });
-    return json({ company: saved }, 200, ch);
+    try {
+      const fresh = await getCompany(id);
+      if (!fresh) {
+        // 生成中に削除された。古いスナップショットで書き戻すと消した会社が復活する。
+        return json({
+          error: 'NOT_FOUND',
+          message: '作成している間にこの営業先が削除されました。結果は保存していません。',
+        }, 404, ch);
+      }
+      // 作っている間に URL が別のサイトへ変わっていたら、この文面はもう別の会社宛て。
+      // (PATCH 側は変更時に分析・企画・文面を消しているので、ここで戻してはいけない)
+      if (fresh.domain !== company.domain) {
+        return json({
+          error: 'URL_CHANGED',
+          message: '作っている間にURLが変わりました。前のサイト向けの内容は保存していません。分析からやり直してください。',
+          company: fresh,
+        }, 409, ch);
+      }
+      const saved = await putCompany({ ...fresh, ...patch });
+      return json({ company: saved }, 200, ch);
+    } finally {
+      await releaseCompanyLock(id, lock);
+    }
   } catch (e) {
     if (e instanceof KvNotConfigured) {
       return json({ error: 'STORAGE_NOT_CONFIGURED', message: '保存先 (Upstash Redis) が未設定です。' }, 503, ch);

@@ -92,11 +92,20 @@ function runCmd(c) {
       return l.slice(Number(c[2]), stop < 0 ? undefined : stop + 1);
     }
     case 'EVAL': {
-      // 本物の Lua は動かせないので、営業OSが使う1本だけを手で写して実行する。
+      // 本物の Lua は動かせないので、営業OSが使う script を手で写して実行する。
       // (本番との差異が出ないよう、引数の並びは store.ts と必ず揃えること)
+      const script = String(c[1]);
       const numKeys = Number(c[2]);
       const keys = c.slice(3, 3 + numKeys).map(String);
       const args = c.slice(3 + numKeys).map(String);
+
+      // 札の解放 (compare-and-delete)
+      if (/GET.*ARGV\[1\].*DEL/s.test(script)) {
+        if (store.get(keys[0]) === args[0]) { store.delete(keys[0]); return 1; }
+        return 0;
+      }
+
+      // 結果入力のまとめ書き
       const [coKey, idxKey, actKey, feedKey, dayKey] = keys;
       const [coJson, id, rowJson, raw, actKeep, feedKeep, kind, dayTtl] = args;
       runCmd(['SET', coKey, coJson]);
