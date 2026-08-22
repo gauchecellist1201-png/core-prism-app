@@ -94,6 +94,7 @@ export function toRow(c: Company): CompanyRow {
     oneOffYen: c.oneOffYen ?? 0,
     oneOffCount: c.oneOffCount ?? 0,
     mrrYen: c.mrrYen ?? 0,
+    createdAt: c.createdAt,
     updatedAt: c.updatedAt,
     hasPlans: !!(c.plans && c.plans.length),
     hasEmail: !!c.email1,

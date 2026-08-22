@@ -212,6 +212,8 @@ export interface CompanyRow {
   oneOffYen: number;
   oneOffCount: number;
   mrrYen: number;
+  /** 登録した時刻。「今週の新規」はこれで数える (updatedAt は編集でも動く) */
+  createdAt: string;
   updatedAt: string;
   hasPlans: boolean;
   hasEmail: boolean;

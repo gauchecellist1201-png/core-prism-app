@@ -91,7 +91,9 @@ export default async function handler(req: Request): Promise<Response> {
     const countKind = (k: string) => inWindow.filter(a => a.kind === k).length;
 
     const totals = {
-      added: rows.filter(r => r.updatedAt >= weekFrom && r.touches === 0 && r.score === 0).length,
+      // 「登録した時刻」で数える。updatedAt + 未接触 + 0点 で見ていたときは、
+      // 分析した瞬間に新規から消え、逆に古い会社をひとこと編集しただけで新規に化けた。
+      added: rows.filter(r => r.createdAt && Date.parse(r.createdAt) >= fromMs).length,
       contacted: countKind('call') + countKind('email'),
       replied: countKind('reply'),
       meetings: countKind('meeting'),
