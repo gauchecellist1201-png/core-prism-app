@@ -10,7 +10,7 @@
 //   ブランド（金×黒・明朝・静かな余白・「核」の思想）は一切壊さない。
 //   自社プロダクト8つは「作れることの証拠」として〈製品〉タブへ移した。
 // ============================================================
-import { useEffect, useState, useRef, type ReactNode, type MouseEvent as ReactMouseEvent } from 'react';
+import { useEffect, useLayoutEffect, useState, useRef, type ReactNode, type MouseEvent as ReactMouseEvent } from 'react';
 import { motion } from 'framer-motion';
 import LegalModal, { type LegalKind } from '../components/LegalModal';
 import { Mail as MailIcon } from 'lucide-react';
@@ -2113,19 +2113,6 @@ function HeroVideo({ onAnchor }: { onAnchor?: (e: ReactMouseEvent<HTMLAnchorElem
    * 実測して引く（固定値で決め打ちしない）。
    */
   const [chromeH, setChromeH] = useState(0);
-  useEffect(() => {
-    const measure = () => {
-      const el = secRef.current;
-      if (el) setChromeH(el.offsetTop); // scrollY に依存しないよう offsetTop（＝告知バー＋ヘッダーの高さ）で測る
-    };
-    measure();
-    window.addEventListener('resize', measure);
-    window.addEventListener('orientationchange', measure);
-    return () => {
-      window.removeEventListener('resize', measure);
-      window.removeEventListener('orientationchange', measure);
-    };
-  }, []);
   /**
    * ロゴの表示枠の高さ。
    *
@@ -2145,18 +2132,32 @@ function HeroVideo({ onAnchor }: { onAnchor?: (e: ReactMouseEvent<HTMLAnchorElem
   const LOGO_MAX = 340;
   const [copyH, setCopyH] = useState(0);
   const [viewportH, setViewportH] = useState(0);
-  useEffect(() => {
-    const el = copyRef.current;
-    if (!el) return;
-    // window resize だけだとフォント読み込み後の再レイアウトを取りこぼすため、
-    // コピー帯の実サイズ変化そのものを ResizeObserver で監視する。
-    const ro = new ResizeObserver(() => setCopyH(el.offsetHeight));
-    ro.observe(el);
-    const measure = () => setViewportH(window.innerHeight);
+  // 3つを1回でまとめて測る。別々の effect にすると「chrome だけ更新された中間状態」で
+  // 一度レイアウトが決まってしまい、ロゴの高さが二段階で動く（CLS）。
+  // useEffect ではなく useLayoutEffect: 描画前に確定させ、110px → 実寸のガタつきを出さない。
+  // （このアプリは Vite の SPA で SSR していないので useLayoutEffect の警告は出ない）
+  useLayoutEffect(() => {
+    const copy = copyRef.current;
+    if (!copy) return;
+    const measure = () => {
+      const sec = secRef.current;
+      // scrollY に依存しないよう offsetTop（＝告知バー＋ヘッダー＋タブの高さ）で測る
+      if (sec) setChromeH(sec.offsetTop);
+      setCopyH(copy.offsetHeight);
+      setViewportH(window.innerHeight);
+    };
     measure();
+    // コピー帯の実サイズ変化そのものを見る（フォント読込後の再レイアウトを取りこぼさない）
+    const ro = new ResizeObserver(measure);
+    ro.observe(copy);
+    // 告知バーは幅次第で2〜3行に折れる。その高さは copy の ResizeObserver では拾えないため、
+    // Web フォント確定後にもう一度測り直す（低速回線で chromeH が古いままになるのを防ぐ）。
+    let cancelled = false;
+    void document.fonts?.ready.then(() => { if (!cancelled) measure(); });
     window.addEventListener('resize', measure);
     window.addEventListener('orientationchange', measure);
     return () => {
+      cancelled = true;
       ro.disconnect();
       window.removeEventListener('resize', measure);
       window.removeEventListener('orientationchange', measure);
