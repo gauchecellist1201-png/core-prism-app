@@ -304,13 +304,23 @@ function parseActivities(raw: string[]): Activity[] {
   return out;
 }
 
-/**
- * 企業の更新・活動履歴・日次カウンタを 1 往復で書く。
- *
- * 別々に投げると、企業だけ保存できて履歴が落ちた時に 500 を返すことになる。
- * 呼び手がやり直すと段と接触回数が二重に進み、やり直さないと履歴だけ欠ける。
- * どちらも「入れたのに数字が合わない」に化けるので、まとめて 1 リクエストにする。
- */
+// 企業・一覧行・履歴・横断フィード・日次カウンタを、全部入るか1つも入らないかで書く。
+// pipeline は「まとめて送る」だけなので、途中の LPUSH が失敗しても SET は残る。
+// そうなると「段と接触回数は進んだのに履歴が無い」= やり直すと二重、やり直さないと
+// 履歴が欠ける、という直しようのない状態になる。だから Lua で 1 本にする。
+const COMMIT_ACTIVITY_LUA = [
+  "redis.call('SET', KEYS[1], ARGV[1])",
+  "redis.call('HSET', KEYS[2], ARGV[2], ARGV[3])",
+  "redis.call('LPUSH', KEYS[3], ARGV[4])",
+  "redis.call('LTRIM', KEYS[3], 0, tonumber(ARGV[5]))",
+  "redis.call('LPUSH', KEYS[4], ARGV[4])",
+  "redis.call('LTRIM', KEYS[4], 0, tonumber(ARGV[6]))",
+  "redis.call('HINCRBY', KEYS[5], ARGV[7], 1)",
+  "redis.call('HINCRBY', KEYS[5], 'total', 1)",
+  "redis.call('EXPIRE', KEYS[5], tonumber(ARGV[8]))",
+  'return 1',
+].join('\n');
+
 export async function commitActivity(
   company: Company,
   activity: Activity,
@@ -318,18 +328,38 @@ export async function commitActivity(
 ): Promise<Company> {
   const next: Company = { ...company, updatedAt: nowISO() };
   const raw = JSON.stringify(activity);
-  const dayKey = K.day(date);
-  await kv.pipeline([
-    ['SET', K.co(next.id), JSON.stringify(next)],
-    ['HSET', K.idx, next.id, JSON.stringify(toRow(next))],
-    ['LPUSH', K.act(next.id), raw],
-    ['LTRIM', K.act(next.id), 0, ACT_KEEP - 1],
-    ['LPUSH', K.feed, raw],
-    ['LTRIM', K.feed, 0, FEED_KEEP - 1],
-    ['HINCRBY', dayKey, activity.kind, 1],
-    ['HINCRBY', dayKey, 'total', 1],
-    ['EXPIRE', dayKey, DAY_TTL],
-  ]);
+  const keys = [K.co(next.id), K.idx, K.act(next.id), K.feed, K.day(date)];
+  const args = [
+    JSON.stringify(next),
+    next.id,
+    JSON.stringify(toRow(next)),
+    raw,
+    ACT_KEEP - 1,
+    FEED_KEEP - 1,
+    activity.kind,
+    DAY_TTL,
+  ];
+
+  try {
+    await kv.evalScript(COMMIT_ACTIVITY_LUA, keys, args);
+  } catch (e) {
+    // EVAL が使えない保存先だったときだけ、まとめ送りに落とす。
+    // 原子性は落ちるが、記録できないより良い (呼び出し側は結果を読み直して確かめる)。
+    const msg = e instanceof Error ? e.message : String(e);
+    if (!/unknown command|unsupported|not supported|ERR eval/i.test(msg)) throw e;
+    console.warn('[sales] EVAL unavailable, falling back to pipeline:', msg.slice(0, 120));
+    await kv.pipeline([
+      ['SET', keys[0], String(args[0])],
+      ['HSET', keys[1], String(args[1]), String(args[2])],
+      ['LPUSH', keys[2], String(args[3])],
+      ['LTRIM', keys[2], 0, ACT_KEEP - 1],
+      ['LPUSH', keys[3], String(args[3])],
+      ['LTRIM', keys[3], 0, FEED_KEEP - 1],
+      ['HINCRBY', keys[4], activity.kind, 1],
+      ['HINCRBY', keys[4], 'total', 1],
+      ['EXPIRE', keys[4], DAY_TTL],
+    ]);
+  }
   return next;
 }
 

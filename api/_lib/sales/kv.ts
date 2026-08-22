@@ -130,6 +130,18 @@ export async function lrange(key: string, start: number, stop: number): Promise<
   return Array.isArray(r) ? r.map(String) : [];
 }
 
+/**
+ * Lua を 1 本だけ実行する。pipeline は「まとめて送る」だけで、途中の1つが失敗しても
+ * 前の分は戻らない。全部入るか1つも入らないかにしたいところはこれを使う。
+ */
+export async function evalScript(
+  script: string,
+  keys: string[],
+  args: (string | number)[],
+): Promise<unknown> {
+  return cmd(['EVAL', script, keys.length, ...keys, ...args]);
+}
+
 export async function ping(): Promise<boolean> {
   try { return String(await cmd(['PING'])).toUpperCase() === 'PONG'; } catch { return false; }
 }

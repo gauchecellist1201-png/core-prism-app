@@ -12,7 +12,8 @@ import { corsHeaders, errMessage, json, requireMaster } from '../_lib/sales/http
 import { KvNotConfigured } from '../_lib/sales/kv';
 import {
   blankCompany, claimDomain, deleteCompany, domainOf, getCompany, listActivities,
-  confirmDomain, listRows, newId, normalizeUrl, putCompany, releaseDomain,
+  acquireCompanyLock, confirmDomain, listRows, newId, normalizeUrl, putCompany,
+  releaseCompanyLock, releaseDomain,
 } from '../_lib/sales/store';
 import { guessTier, stageMeta } from '../../src/sales/shared/catalog';
 import { emptyScore } from '../../src/sales/shared/score';
@@ -183,6 +184,12 @@ export default async function handler(req: Request): Promise<Response> {
       const body = (await req.json().catch(() => ({}))) as Body;
       const id = s(body.id, 80);
       if (!id) return json({ error: 'EMPTY', message: 'id がありません。' }, 400, ch);
+
+      // 編集も「読む→直す→丸ごと書く」なので、結果入力と同じ札で直列化する。
+      // 取らないと、別のタブで入れた接触回数や段を古いスナップショットで巻き戻す。
+      const lock = await acquireCompanyLock(id);
+      if (!lock) return json({ error: 'BUSY', message: 'この営業先はいま別の更新を処理中です。数秒おいてからお試しください。' }, 409, ch);
+      try {
       const c = await getCompany(id);
       if (!c) return json({ error: 'NOT_FOUND', message: 'その営業先は見つかりませんでした。' }, 404, ch);
 
@@ -259,14 +266,24 @@ export default async function handler(req: Request): Promise<Response> {
           ? { message: 'URLが別のサイトに変わったので、前のサイトで作った分析・企画・文面は消しました。分析をかけ直してください。' }
           : {}),
       }, 200, ch);
+      } finally {
+        await releaseCompanyLock(id, lock);
+      }
     }
 
     if (req.method === 'DELETE') {
       const body = (await req.json().catch(() => ({}))) as Body;
       const id = s(body.id, 80) || new URL(req.url).searchParams.get('id') || '';
       if (!id) return json({ error: 'EMPTY', message: 'id がありません。' }, 400, ch);
-      await deleteCompany(id);
-      return json({ deleted: true }, 200, ch);
+      // 記録の途中で消すと、進行中の commitActivity が消したはずの会社を書き戻す。
+      const lock = await acquireCompanyLock(id);
+      if (!lock) return json({ error: 'BUSY', message: 'この営業先はいま別の処理を実行中です。数秒おいてからお試しください。' }, 409, ch);
+      try {
+        await deleteCompany(id);
+        return json({ deleted: true }, 200, ch);
+      } finally {
+        await releaseCompanyLock(id, lock);
+      }
     }
 
     return json({ error: 'Method not allowed' }, 405, ch);
