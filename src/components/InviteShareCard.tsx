@@ -1,8 +1,10 @@
 // ============================================================
-// Invite & Share Card — 1 紹介 = 両者に +3 日トライアル延長
+// Invite & Share Card — 1 紹介 = 両者に +REFERRAL_BONUS_DAYS 日トライアル延長
+//   (実際の日数は src/lib/referral.ts の定数が正本。
+//    ここに数字を直書きすると、また画面と食い違うので書かない)
 // Day 2 upgrade:
-//   - 巨大ヒーロー (「友だちが登録すると、あなたも友だちも +7 日無料追加」)
-//   - 3 連スタッツ (紹介人数 / 累計獲得日数 / 現在の trial 残日数)
+//   - 巨大ヒーロー (「友だちが登録すると、あなたも友だちも無料期間が追加」)
+//   - 3 連スタッツ (紹介人数 / 累計獲得日数 / 現在の無料期間の残り日数)
 //   - 5 シェア導線 (LINE / X / メール / リンクコピー / QR コード)
 //   - コピー成功スナックバー
 //   - 共有テキストの強化 (LINE / X / メールごとに最適化)
@@ -40,6 +42,8 @@ import {
   TRIAL_BASE_DAYS, TRIAL_WITH_REFERRAL_DAYS,
 } from '../lib/referral';
 import { shareToInstagram } from '../iris/instagramShare';
+// 招待でおくる文章は別ファイル (回帰テストから読めるようにするため)
+import { shareTextLine, shareTextX, shareTextMail, shareTextGeneric } from './inviteShareText';
 
 type Palette = {
   accent: string;
@@ -62,57 +66,6 @@ interface Props {
   palette?: Partial<Palette>;
   /** カードを compact 表示 (Prism サイドバー等) */
   compact?: boolean;
-}
-
-// ─────────────────────────────────────────────────────────────
-// 共有テキストテンプレ — チャネルごとに最適化
-// ─────────────────────────────────────────────────────────────
-function shareTextLine(url: string, brand: Brand, inviterName: string): string {
-  const product = brand === 'iris' ? 'CORE Iris' : 'CORE Prism';
-  const who = inviterName ? `${inviterName}です。` : '';
-  return `【共有】${who}${product} めっちゃ便利。これで AI 13 役員が代わりに働いてくれる。
-あなたも ${TRIAL_BASE_DAYS} 日無料、さらに僕からの招待で +${REFERRAL_BONUS_DAYS} 日 (合計 ${TRIAL_WITH_REFERRAL_DAYS} 日無料) →
-${url}`;
-}
-
-function shareTextX(url: string, brand: Brand, inviterName: string): string {
-  const product = brand === 'iris' ? '@core_iris' : '@core_prism';
-  const who = inviterName ? `(${inviterName} の紹介) ` : '';
-  return `14 人の AI 役員が代わりに働く ${product}、めちゃ良い。${who}リンクから登録すると ${TRIAL_BASE_DAYS} 日無料 +${REFERRAL_BONUS_DAYS} 日 (合計 ${TRIAL_WITH_REFERRAL_DAYS} 日) →
-${url}`;
-}
-
-function shareTextMail(url: string, brand: Brand, inviterName: string): { subject: string; body: string } {
-  const product = brand === 'iris' ? 'CORE Iris' : 'CORE Prism';
-  const tagline = brand === 'iris'
-    ? 'クリエイター向けの AI 戦略パートナー'
-    : 'AI が経営判断を補助する人格 OS';
-  const sender = inviterName || 'わたし';
-  return {
-    subject: `${product} を試してみてほしい (${TRIAL_WITH_REFERRAL_DAYS} 日無料)`,
-    body: `こんにちは、
-
-最近使っている ${product} (${tagline}) がとても便利で、
-${sender} からの招待リンクから登録すると ${TRIAL_BASE_DAYS} 日無料に +${REFERRAL_BONUS_DAYS} 日 (合計 ${TRIAL_WITH_REFERRAL_DAYS} 日) 無料で試せます。
-
-▼ 登録リンク
-${url}
-
-カード登録は Stripe の画面で行いますが、期限前に止めれば請求は 0 円です。
-よければ触ってみてください。
-
-— ${sender}`,
-  };
-}
-
-function shareTextGeneric(url: string, brand: Brand, inviterName: string): string {
-  const product = brand === 'iris' ? 'CORE Iris' : 'CORE Prism';
-  const opener = inviterName
-    ? `${inviterName} です。${product} を試してます。`
-    : `${product} を試してます。`;
-  return `${opener}
-このリンクから登録すると ${TRIAL_BASE_DAYS} 日間無料トライアル + さらに +${REFERRAL_BONUS_DAYS} 日延長 (合計 ${TRIAL_WITH_REFERRAL_DAYS} 日無料)。
-${url}`;
 }
 
 // 現在のトライアル残日数 (free プランの時のみ。それ以外は null)
@@ -141,7 +94,10 @@ export default function InviteShareCard({ brand, palette, compact = false }: Pro
   const [trialDaysLeft, setTrialDaysLeft] = useState<number | null>(() => getTrialDaysLeft());
 
   const [copied, setCopied] = useState<'url' | 'text' | null>(null);
-  const [snack, setSnack] = useState<string | null>(null);
+  // スナックバーは「うまくいった時」だけ緑。
+  // 以前は色が緑で固定されていたので、「コピーに失敗しました」も
+  // 「共有をキャンセルしました」も、成功と同じ緑の帯で出ていた。
+  const [snack, setSnack] = useState<{ text: string; tone: 'ok' | 'warn' } | null>(null);
   const [showQr, setShowQr] = useState(false);
   // QR は外部 API (qrserver) 生成。読み込み失敗時に壊れた画像を黙って出さないためのフラグ
   const [qrError, setQrError] = useState(false);
@@ -195,9 +151,9 @@ export default function InviteShareCard({ brand, palette, compact = false }: Pro
   // URL が変われば QR を作り直すのでエラー状態もリセット
   useEffect(() => { setQrError(false); }, [qrUrl]);
 
-  const flashSnack = useCallback((message: string) => {
-    setSnack(message);
-    setTimeout(() => setSnack(null), 2200);
+  const flashSnack = useCallback((message: string, tone: 'ok' | 'warn' = 'ok') => {
+    setSnack({ text: message, tone });
+    setTimeout(() => setSnack(null), tone === 'warn' ? 3600 : 2200);
   }, []);
 
   // QR 画像を端末に保存 (対面・名刺・ポスター用)。CORS 不可なら新規タブで開いて長押し保存に逃がす
@@ -252,13 +208,13 @@ export default function InviteShareCard({ brand, palette, compact = false }: Pro
   const copyUrl = useCallback(async () => {
     const ok = await copyText(url);
     if (ok) { flashCopied('url', '✓ リンクをコピーしました!'); bumpShare(); }
-    else flashSnack('コピーに失敗しました');
+    else flashSnack('コピーできませんでした。上の URL を長押しして、手でコピーしてください', 'warn');
   }, [url, copyText, flashCopied, flashSnack, bumpShare]);
 
   const copyInviteText = useCallback(async () => {
     const ok = await copyText(text);
     if (ok) { flashCopied('text', '✓ 招待文をコピーしました!'); bumpShare(); }
-    else flashSnack('コピーに失敗しました');
+    else flashSnack('コピーできませんでした。上の URL を長押しして、手でコピーしてください', 'warn');
   }, [text, copyText, flashCopied, flashSnack, bumpShare]);
 
   const shareLine = useCallback(() => {
@@ -298,19 +254,29 @@ export default function InviteShareCard({ brand, palette, compact = false }: Pro
         flashSnack('✓ 共有しました');
         bumpShare();
       } catch (e: any) {
-        if (e?.name !== 'AbortError') flashSnack('共有がキャンセルされました');
+        // AbortError = 本人が共有シートを閉じただけ。何も知らせない。
+        if (e?.name !== 'AbortError') flashSnack('共有できませんでした。下の「コピー」でリンクを送ってください', 'warn');
       }
     } else {
       const ok = await copyText(text);
-      flashSnack(ok ? '✓ 本文をコピーしました (共有 API 非対応)' : 'コピーに失敗しました');
+      flashSnack(
+        ok ? '✓ 招待文をコピーしました (この端末は共有シートに対応していません)'
+           : 'コピーできませんでした。上の URL を長押しして、手でコピーしてください',
+        ok ? 'ok' : 'warn',
+      );
       if (ok) bumpShare();
     }
   }, [text, url, brand, copyText, flashSnack, bumpShare]);
 
+  // Instagram: 画像は渡していないので、実際に起きるのは
+  //   スマホ → 招待文をコピーして Instagram アプリを開く
+  //   パソコン → 招待文をコピーするだけ
+  // どちらもストーリーズの投稿画面までは行かない。ボタンの文言もそれに合わせてある。
   const shareInstagram = useCallback(async () => {
     const r = await shareToInstagram({ caption: text });
-    flashSnack(r.message);
-    bumpShare();
+    const failed = r.method === 'failed' || r.message.includes('失敗');
+    flashSnack(r.message, failed ? 'warn' : 'ok');
+    if (!failed) bumpShare();
   }, [text, flashSnack, bumpShare]);
 
   const sectionPad = compact ? '1rem' : '1.5rem 1.25rem';
@@ -399,7 +365,7 @@ export default function InviteShareCard({ brand, palette, compact = false }: Pro
           padding: '0.25rem 0.65rem', borderRadius: 999,
           marginBottom: '0.65rem',
         }}>
-          <Gift size={12} strokeWidth={2.5} /> ユーザー招待プログラム
+          <Gift size={12} strokeWidth={2.5} /> 友達を招待すると無料期間がのびます
         </div>
         <h2 style={{
           margin: 0,
@@ -427,6 +393,33 @@ export default function InviteShareCard({ brand, palette, compact = false }: Pro
           通常 {TRIAL_BASE_DAYS} 日 → 合計 <strong>{TRIAL_WITH_REFERRAL_DAYS} 日無料</strong>。
           カード登録は Stripe の画面で行い、期限前に止めれば請求は 0 円です。
         </p>
+
+        {/* 3 秒で分かる手順 — 「この画面で自分は何をすればいいのか」。
+            上のヒーローは「もらえるもの」しか書いていなかったので、
+            初めて開いた人は次に何を押せばいいか分からなかった。 */}
+        <ol style={{
+          margin: '0.85rem 0 0', padding: 0, listStyle: 'none',
+          display: 'grid', gap: '0.3rem',
+          fontSize: '0.78rem', lineHeight: 1.5,
+          color: 'rgba(255,255,255,0.95)',
+        }}>
+          {[
+            'あなた専用のリンクが、この下にもう出ています',
+            'LINE・X・メールのどれかを押して、友達に送る',
+            '友達がそのリンクから登録したら、2 人とも無料期間が ' + REFERRAL_BONUS_DAYS + ' 日のびます',
+          ].map((step, i) => (
+            <li key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 7 }}>
+              <span style={{
+                flexShrink: 0,
+                width: 17, height: 17, borderRadius: '50%',
+                background: 'rgba(255,255,255,0.26)',
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: '0.62rem', fontWeight: 900, marginTop: 2,
+              }}>{i + 1}</span>
+              <span>{step}</span>
+            </li>
+          ))}
+        </ol>
       </div>
 
       {/* ─── 3 連スタッツ ─── */}
@@ -438,23 +431,33 @@ export default function InviteShareCard({ brand, palette, compact = false }: Pro
         {/* 紹介実績がある人には実数を、まだ 0 の人には「シェア回数 + 1人あたり報酬」を見せる */}
         {referredCount > 0 ? (
           <>
-            <Stat icon={<Users size={13} />} label="紹介で登録" value={`${referredCount}`} suffix="人" palette={p} />
-            <Stat icon={<Gift size={13} />} label="累計獲得" value={`+${earnedDays}`} suffix="日" palette={p} />
+            <Stat icon={<Users size={13} />} label="登録した友達" value={`${referredCount}`} suffix="人" palette={p} />
+            <Stat icon={<Gift size={13} />} label="のびた無料期間" value={`+${earnedDays}`} suffix="日" palette={p} />
           </>
         ) : (
           <>
-            <Stat icon={<Share2 size={13} />} label="シェア回数" value={`${shareCount}`} suffix="回" palette={p} />
+            {/* 「シェア回数」は友達の人数ではなく、この端末で送るボタンを押した回数。
+                そう書かないと「5 回シェアしたのに 0 人」に見えて壊れていると思われる。 */}
+            <Stat icon={<Share2 size={13} />} label="送った回数" value={`${shareCount}`} suffix="回" palette={p} />
             <Stat icon={<Gift size={13} />} label="友達1人につき" value={`+${REFERRAL_BONUS_DAYS}`} suffix="日" palette={p} />
           </>
         )}
         <Stat
           icon={<Calendar size={13} />}
-          label="trial 残"
+          label="無料期間の残り"
           value={trialDaysLeft === null ? '—' : `${trialDaysLeft}`}
           suffix={trialDaysLeft === null ? '' : '日'}
           palette={p}
         />
       </div>
+
+      {/* 「—」を説明せずに置くと、壊れているのか自分が損しているのか分からない */}
+      {trialDaysLeft === null && (
+        <p style={{ margin: '-0.4rem 0 0', fontSize: '0.7rem', color: p.inkSoft, lineHeight: 1.55 }}>
+          「無料期間の残り」が <strong>—</strong> なのは、いま無料期間の中にいないからです
+          （有料プランを使っている、または無料期間が終わっている）。招待は今でも送れます。
+        </p>
+      )}
 
       {/* ─── あなたの名前 (任意) ─── */}
       <div style={{ display: 'grid', gap: '0.35rem' }}>
@@ -531,13 +534,21 @@ export default function InviteShareCard({ brand, palette, compact = false }: Pro
         }}>
           あなたの紹介 URL
         </p>
+        {/* ★minWidth: 0 が無いと、iPhone 幅でカード全体が右に切れる。
+            この行は「カード (display:grid) の子」なので、既定の min-width:auto では
+            中の紹介 URL (whiteSpace:nowrap) の全長より細くなれない。
+            結果、カードの列が 508px に膨らみ、390px の画面では
+            「無料期間の残り」「QR」と、すべての文の右端が画面の外に出て
+            しかも横スクロールもできない (親が overflow-x:clip) 状態だった。
+            実測: 列幅 507.875px → 308px。 */}
         <div style={{
           display: 'flex', alignItems: 'center', gap: '0.5rem',
           background: '#fff', borderRadius: 10,
           border: `1px solid ${p.border}`, padding: '0.55rem 0.7rem',
+          minWidth: 0,
         }}>
           <code style={{
-            flex: 1, fontSize: '0.78rem', color: p.ink,
+            flex: 1, minWidth: 0, fontSize: '0.78rem', color: p.ink,
             overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
             fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
           }}>{url}</code>
@@ -624,10 +635,13 @@ export default function InviteShareCard({ brand, palette, compact = false }: Pro
             justifyContent: 'center', gap: 6,
           }}>
           <Share2 size={14} />
-          その他のアプリで共有 (Instagram, Slack 他)
+          ほかのアプリを選んで送る
         </button>
 
-        {/* Instagram は別ボタン (ストーリーズへ貼り付け前提) */}
+        {/* Instagram ボタン。
+            以前の文言は「Instagram ストーリーズに貼り付ける」だったが、
+            画像を渡していないので実際にストーリーズの投稿画面までは行かない。
+            起きるのは「招待文をコピー → アプリを開く」だけなので、そう書く。 */}
         <button onClick={shareInstagram}
           style={{
             background: 'linear-gradient(135deg,#FEDA75,#FA7E1E 30%,#D62976 60%,#962FBF 80%,#4F5BD5)',
@@ -636,8 +650,12 @@ export default function InviteShareCard({ brand, palette, compact = false }: Pro
             cursor: 'pointer', display: 'inline-flex', alignItems: 'center',
             justifyContent: 'center', gap: 6,
           }}>
-          Instagram ストーリーズに貼り付ける
+          招待文をコピーして Instagram を開く
         </button>
+        <p style={{ margin: '-0.2rem 0 0', fontSize: '0.68rem', color: p.inkSoft, lineHeight: 1.5 }}>
+          貼り付ける場所（ストーリーズ・プロフィール・DM）は、Instagram を開いてからご自身で選んでください。
+          パソコンでは、文字をコピーするところまでになります。
+        </p>
 
         {showQr && (
           <div
@@ -707,22 +725,28 @@ export default function InviteShareCard({ brand, palette, compact = false }: Pro
             position: 'absolute',
             bottom: 12, left: '50%',
             transform: 'translateX(-50%)',
-            background: '#16A34A',
+            background: snack.tone === 'ok' ? '#16A34A' : '#B45309',
             color: '#fff',
             padding: '0.55rem 1rem',
             borderRadius: 999,
             fontSize: '0.82rem',
             fontWeight: 700,
-            boxShadow: '0 8px 24px rgba(22,163,74,0.45)',
+            boxShadow: snack.tone === 'ok'
+              ? '0 8px 24px rgba(22,163,74,0.45)'
+              : '0 8px 24px rgba(180,83,9,0.45)',
             display: 'inline-flex',
             alignItems: 'center',
             gap: 6,
-            whiteSpace: 'nowrap',
+            // nowrap のままだと、長いほうの文 (失敗の説明) が
+            // 画面の横幅からはみ出して読めなくなるので折り返す
+            maxWidth: 'calc(100% - 1.5rem)',
+            textAlign: 'center',
+            lineHeight: 1.45,
             zIndex: 5,
             animation: 'inviteSnack 0.25s ease-out',
           }}
         >
-          {snack}
+          {snack.text}
         </div>
       )}
 
