@@ -341,7 +341,7 @@ export const PLAN_LADDER = {
 //   の順に置く。(3) は FILM_PLANS / MONTHLY_PLANS の実データから計算する
 //   (手打ちの数字は、価格改定のたびに必ず食い違う)。
 // ------------------------------------------------------------
-export type MarketRow = { item: string; market: string; core: string; highlight?: boolean };
+export type MarketRow = { group: string; item: string; market: string; core: string; highlight?: boolean };
 
 export const VALUE = {
   en: 'Cost Structure',
@@ -351,13 +351,13 @@ export const VALUE = {
   /** 相場との対比。左列は特定他社の価格ではなく、公開情報にもとづく一般的な目安 */
   tableHead: { item: '項目', market: '一般的な相場 (実写)', core: 'CORE Studio' },
   table: [
-    { item: 'SNS短尺 (20〜40秒) 1本', market: '¥50,000 〜 250,000', core: '¥49,800 〜 128,000' },
-    { item: 'ブランドムービー 1本', market: '¥500,000 〜 1,500,000', core: '¥298,000 〜' },
-    { item: '撮影費・出演費・ロケ費・機材費', market: '別途', core: '0円 (発生しません)', highlight: true },
-    { item: '修正', market: '2回まで無償・以降は有償が一般的', core: '無制限 (STANDARD以上)', highlight: true },
-    { item: '広告への二次利用', market: '別途ライセンス料', core: '料金に込み (STANDARD以上)', highlight: true },
-    { item: '継続契約の初期費用', market: '¥80,000 〜 150,000', core: '0円', highlight: true },
-    { item: '最低契約期間', market: '3〜6ヶ月が一般的', core: 'なし (1ヶ月ごとの更新)', highlight: true },
+    { group: '制作費', item: 'SNS短尺 (20〜40秒) 1本', market: '¥50,000 〜 250,000', core: '¥49,800 〜 128,000' },
+    { group: '制作費', item: 'ブランドムービー 1本', market: '¥500,000 〜 1,500,000', core: '¥298,000 〜' },
+    { group: '制作費に上乗せされる費用', item: '撮影費・出演費・ロケ費・機材費', market: '別途', core: '0円 (発生しません)', highlight: true },
+    { group: '制作費に上乗せされる費用', item: '広告への二次利用', market: '別途ライセンス料', core: '料金に込み (STANDARD以上)', highlight: true },
+    { group: '制作費に上乗せされる費用', item: '継続契約の初期費用', market: '¥80,000 〜 150,000', core: '0円', highlight: true },
+    { group: '取引の条件', item: '修正', market: '2回まで無償・以降は有償が一般的', core: '無制限 (STANDARD以上)', highlight: true },
+    { group: '取引の条件', item: '最低契約期間', market: '3〜6ヶ月が一般的', core: 'なし (1ヶ月ごとの更新)', highlight: true },
   ] as MarketRow[],
   tableNote: '左列は、2026年時点で公開されている国内の動画制作費用に関する調査記事・料金表をもとにした一般的な目安であり、特定の制作会社の価格ではありません。実写撮影では、上記に加えて撮影費・出演費・ロケ費・機材費が別途かかるのが通例です。',
 

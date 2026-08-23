@@ -4,7 +4,7 @@
 // ヒーロー / ショーケース / 思想 / 最終CTA = 暗、料金・工程・制作物 = 白。
 // 文言・価格は film.ts に集約。ここにはレイアウトと導線だけを書く。
 // ============================================================
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { C, D, SERIF, SANS } from './theme';
 import { Band, H2, Note, IconCheck, IconChat, IconCopy } from './ui';
 import { STUDIO, CONTACT } from './plans';
@@ -107,15 +107,43 @@ export default function FilmTab() {
         /* 相場との対比表。狭い画面では表を横に潰さず、1件=1ブロックの縦積みに切り替える
            (3列を375pxに押し込むと各セルが5〜6行に折れて読めなくなる) */
         .fm-cmp { display: grid; gap: 10px; }
+        .fm-cmp-group { font-size: 11px; font-weight: 700; letter-spacing: 0.12em; color: ${C.mute};
+          margin: 8px 2px 0; }
+        .fm-cmp-head + .fm-cmp-group { margin-top: 0; }
+        .fm-cmp-head { display: none; }
         .fm-cmp-row { border: 1px solid ${C.line}; border-radius: 10px; background: #FFFFFF; overflow: hidden; }
         .fm-cmp-row[data-hl="1"] { border-color: ${C.goldLine}; }
-        .fm-cmp-item { font-size: 12.5px; font-weight: 700; color: ${C.ink}; line-height: 1.6;
+        .fm-cmp-item { font-size: 13px; font-weight: 700; color: ${C.ink}; line-height: 1.6;
           padding: 11px 14px; background: ${C.alt}; border-bottom: 1px solid ${C.line}; }
-        .fm-cmp-vals { display: grid; grid-template-columns: 1fr 1fr; }
-        .fm-cmp-val { padding: 11px 14px; font-size: 12.5px; line-height: 1.7; }
-        .fm-cmp-val + .fm-cmp-val { border-left: 1px solid ${C.line}; }
+        /* 狭い画面で2列に割ると1セルが5〜6行に折れて読めない。上下に積み、
+           見るべき側 (CORE) だけを金地にして視線を止める */
+        .fm-cmp-vals { display: grid; grid-template-columns: 1fr; }
+        .fm-cmp-val { padding: 10px 14px; font-size: 13px; line-height: 1.7; color: ${C.mute}; }
+        .fm-cmp-val + .fm-cmp-val { border-top: 1px solid ${C.line}; }
+        .fm-cmp-val--core { background: rgba(168,130,60,0.06); color: ${C.ink}; font-weight: 700;
+          display: flex; align-items: flex-start; gap: 7px; }
         .fm-cmp-cap { display: block; font-size: 10px; letter-spacing: 0.1em; color: ${C.mute};
-          margin-bottom: 4px; font-weight: 600; }
+          margin-bottom: 3px; font-weight: 600; }
+        .fm-cmp-val--core .fm-cmp-cap { color: ${C.goldText}; }
+        @media (min-width: 760px) {
+          /* 3列の表に組み替える。列見出しは1度だけ出し、各セルの小見出しは消す */
+          .fm-cmp { gap: 0; border: 1px solid ${C.line}; border-radius: 12px; overflow: hidden;
+            background: #FFFFFF; }
+          .fm-cmp-group { grid-column: 1 / -1; margin: 0; padding: 10px 16px 9px; background: ${C.alt};
+            border-top: 1px solid ${C.line}; }
+          .fm-cmp-head, .fm-cmp-row { display: grid; grid-template-columns: 1.15fr 1fr 1fr; align-items: stretch; }
+          .fm-cmp-head { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; color: ${C.mute}; }
+          .fm-cmp-head > * { padding: 12px 16px; }
+          .fm-cmp-head > *:last-child { color: ${C.goldText}; background: rgba(168,130,60,0.06); }
+          .fm-cmp-row { border: 0; border-radius: 0; border-top: 1px solid ${C.line}; }
+          .fm-cmp-row[data-hl="1"] { border-color: ${C.line}; }
+          .fm-cmp-item { background: transparent; border-bottom: 0; padding: 13px 16px; display: flex; align-items: center; }
+          .fm-cmp-vals { display: contents; }
+          .fm-cmp-val { padding: 13px 16px; border-top: 0; }
+          .fm-cmp-val + .fm-cmp-val { border-top: 0; }
+          .fm-cmp-val--core { align-items: center; }
+          .fm-cmp-cap { display: none; }
+        }
         /* 工程の6ステップ。長い説明文は書かず、番号+見出しだけの帯にして
            「丸投げでなく工程を踏んでいる」ことだけを短く示す (詳細は書くと動画と重複する)。 */
         .fm-process-row { display: flex; gap: 8px; overflow-x: auto; -webkit-overflow-scrolling: touch;
@@ -453,9 +481,9 @@ function ProcessTrust() {
 // ============================================================
 // 費用の構造 — 「お得かどうか」を読む人に計算させない章。
 //
-// 料金表の直前に置く。価格を裸で見せる前に、
-//   (1) 相場との差 → (2) その差が生まれる理由 → (3) 月額に切り替えた実額
-// の順で通す。理由 (2) を挟まずに安さだけを見せると、品質への不信に変わる。
+// 2026-08-23 オーナー指示で料金表の直後へ移動。自社の金額を先に見せ、
+//   (1) 相場との差 → (2) その差が生まれる理由 → (3) 実写のほうが良い場合
+// の順で受ける。理由 (2) を挟まずに安さだけを見せると、品質への不信に変わる。
 // ============================================================
 function ValueTable() {
   return (
@@ -468,14 +496,27 @@ function ValueTable() {
       </div>
 
       <div className="fm-cmp">
-        {VALUE.table.map(row => (
-          <div key={row.item} className="fm-cmp-row" data-hl={row.highlight ? '1' : undefined}>
-            <div className="fm-cmp-item">{row.item}</div>
-            <div className="fm-cmp-vals">
-              <div className="fm-cmp-val"><span className="fm-cmp-cap">{VALUE.tableHead.market}</span>{row.market}</div>
-              <div className="fm-cmp-val"><span className="fm-cmp-cap">{VALUE.tableHead.core}</span>{row.core}</div>
+        <div className="fm-cmp-head" aria-hidden>
+          <div>{VALUE.tableHead.item}</div>
+          <div>{VALUE.tableHead.market}</div>
+          <div>{VALUE.tableHead.core}</div>
+        </div>
+        {VALUE.table.map((row, i) => (
+          <Fragment key={row.item}>
+            {/* 7行を一息に読ませない。制作費 / 上乗せ費用 / 条件 の3つに割ると、
+                どこを比べている行なのかが1行ずつ判断しなくても分かる */}
+            {row.group !== VALUE.table[i - 1]?.group && <div className="fm-cmp-group">{row.group}</div>}
+            <div className="fm-cmp-row" data-hl={row.highlight ? '1' : undefined}>
+              <div className="fm-cmp-item">{row.item}</div>
+              <div className="fm-cmp-vals">
+                <div className="fm-cmp-val"><span className="fm-cmp-cap">{VALUE.tableHead.market}</span>{row.market}</div>
+                <div className="fm-cmp-val fm-cmp-val--core">
+                  {row.highlight && <IconCheck />}
+                  <span><span className="fm-cmp-cap">{VALUE.tableHead.core}</span>{row.core}</span>
+                </div>
+              </div>
             </div>
-          </div>
+          </Fragment>
         ))}
       </div>
       <p style={{ fontSize: 11.5, lineHeight: 1.85, color: C.mute, margin: '10px 2px 0' }}>{VALUE.tableNote}</p>
@@ -733,10 +774,6 @@ function Pricing() {
           </div>
         </Reveal>
 
-        <div style={{ marginBottom: 32 }}>
-          <ValueTable />
-        </div>
-
         <div style={{ display: 'grid', gap: 14 }}>
           {FILM_PLANS.map((p, i) => (
             <Reveal key={p.id} delay={i * 50}>
@@ -884,7 +921,13 @@ function Pricing() {
           </div>
         </Reveal>
 
-        <div style={{ marginTop: 20, textAlign: 'center' }}>
+        {/* 2026-08-23 オーナー指示で料金の下へ移動。価格を見た後に相場と並べたほうが、
+            「この金額は高いのか」の判断がその場で終わる */}
+        <div style={{ marginTop: 44 }}>
+          <ValueTable />
+        </div>
+
+        <div style={{ marginTop: 28, textAlign: 'center' }}>
           <a className="st-btn st-btn-ghost" href={CONTACT.lineUrl} target="_blank" rel="noopener noreferrer"
             onClick={() => track('studio_film_pricing_cta', { plan: 'monthly', to: 'line' })}>
             <IconChat /> 本数を相談してから決める
