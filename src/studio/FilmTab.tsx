@@ -106,44 +106,57 @@ export default function FilmTab() {
         .fm-proof-label { font-size: 11px; color: ${D.mute}; line-height: 1.6; margin-top: 5px; letter-spacing: 0.02em; }
         /* 相場との対比表。狭い画面では表を横に潰さず、1件=1ブロックの縦積みに切り替える
            (3列を375pxに押し込むと各セルが5〜6行に折れて読めなくなる) */
-        .fm-cmp { display: grid; gap: 10px; }
-        .fm-cmp-group { font-size: 11px; font-weight: 700; letter-spacing: 0.12em; color: ${C.mute};
-          margin: 8px 2px 0; }
+        .fm-cmp { display: grid; gap: 12px; }
+        .fm-cmp-group { font-size: 12px; font-weight: 700; letter-spacing: 0.1em; color: ${C.ink};
+          margin: 14px 2px 0; display: flex; align-items: center; gap: 8px; }
+        /* 群の見出しは文字を大きくするより、金の短い線を頭に付けたほうが「章が変わった」が速く伝わる */
+        .fm-cmp-group::before { content: ''; width: 14px; height: 2px; background: ${C.gold}; flex: 0 0 auto; }
         .fm-cmp-head + .fm-cmp-group { margin-top: 0; }
         .fm-cmp-head { display: none; }
         .fm-cmp-row { border: 1px solid ${C.line}; border-radius: 10px; background: #FFFFFF; overflow: hidden; }
         .fm-cmp-row[data-hl="1"] { border-color: ${C.goldLine}; }
-        .fm-cmp-item { font-size: 13px; font-weight: 700; color: ${C.ink}; line-height: 1.6;
-          padding: 11px 14px; background: ${C.alt}; border-bottom: 1px solid ${C.line}; }
+        .fm-cmp-item { font-size: 14.5px; font-weight: 700; color: ${C.ink}; line-height: 1.6;
+          padding: 12px 15px; background: ${C.alt}; border-bottom: 1px solid ${C.line}; }
         /* 狭い画面で2列に割ると1セルが5〜6行に折れて読めない。上下に積み、
            見るべき側 (CORE) だけを金地にして視線を止める */
         .fm-cmp-vals { display: grid; grid-template-columns: 1fr; }
-        .fm-cmp-val { padding: 10px 14px; font-size: 13px; line-height: 1.7; color: ${C.mute}; }
+        .fm-cmp-val { padding: 11px 15px; font-size: 14.5px; line-height: 1.7; color: ${C.mute}; }
         .fm-cmp-val + .fm-cmp-val { border-top: 1px solid ${C.line}; }
-        .fm-cmp-val--core { background: rgba(168,130,60,0.06); color: ${C.ink}; font-weight: 700;
+        .fm-cmp-val--core { background: rgba(168,130,60,0.07); color: ${C.ink}; font-weight: 700;
           display: flex; align-items: flex-start; gap: 7px; }
-        .fm-cmp-cap { display: block; font-size: 10px; letter-spacing: 0.1em; color: ${C.mute};
+        .fm-cmp-cap { display: block; font-size: 11px; letter-spacing: 0.08em; color: ${C.mute};
           margin-bottom: 3px; font-weight: 600; }
         .fm-cmp-val--core .fm-cmp-cap { color: ${C.goldText}; }
         @media (min-width: 760px) {
-          /* 3列の表に組み替える。列見出しは1度だけ出し、各セルの小見出しは消す */
+          /* 3列の表に組み替える。列見出しは1度だけ出し、各セルの小見出しは
+             読み上げにだけ残す (display:none にすると支援技術からも列名が消える) */
           .fm-cmp { gap: 0; border: 1px solid ${C.line}; border-radius: 12px; overflow: hidden;
             background: #FFFFFF; }
-          .fm-cmp-group { grid-column: 1 / -1; margin: 0; padding: 10px 16px 9px; background: ${C.alt};
+          .fm-cmp-group { grid-column: 1 / -1; margin: 0; padding: 11px 18px 10px; background: ${C.alt};
             border-top: 1px solid ${C.line}; }
-          .fm-cmp-head, .fm-cmp-row { display: grid; grid-template-columns: 1.15fr 1fr 1fr; align-items: stretch; }
-          .fm-cmp-head { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; color: ${C.mute}; }
-          .fm-cmp-head > * { padding: 12px 16px; }
-          .fm-cmp-head > *:last-child { color: ${C.goldText}; background: rgba(168,130,60,0.06); }
+          /* CORE列は読ませたい側なので、相場列より広く取って折り返しを起こさせない
+             (「料金に込み (STANDARD以上)」が2行に折れるとチェックの位置がずれて読みにくい) */
+          .fm-cmp-head, .fm-cmp-row { display: grid; grid-template-columns: 1.05fr 0.92fr 1.2fr; align-items: stretch; }
+          .fm-cmp-head { font-size: 12px; font-weight: 700; letter-spacing: 0.08em; color: ${C.mute}; }
+          .fm-cmp-head > * { padding: 13px 18px; }
+          .fm-cmp-head > *:last-child { color: ${C.goldText}; background: rgba(168,130,60,0.07); }
           .fm-cmp-row { border: 0; border-radius: 0; border-top: 1px solid ${C.line}; }
           .fm-cmp-row[data-hl="1"] { border-color: ${C.line}; }
-          .fm-cmp-item { background: transparent; border-bottom: 0; padding: 13px 16px; display: flex; align-items: center; }
+          .fm-cmp-item { background: transparent; border-bottom: 0; padding: 15px 18px; display: flex; align-items: center; }
           .fm-cmp-vals { display: contents; }
-          .fm-cmp-val { padding: 13px 16px; border-top: 0; }
+          .fm-cmp-val { padding: 15px 18px; border-top: 0; }
           .fm-cmp-val + .fm-cmp-val { border-top: 0; }
           .fm-cmp-val--core { align-items: center; }
-          .fm-cmp-cap { display: none; }
+          .fm-cmp-cap { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0;
+            overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
         }
+        /* 差が生まれる理由。番号を大きく置いて、3枚が「読み物」でなく「3つの理由」に見えるようにする */
+        .fm-why { border: 1px solid ${C.line}; border-radius: 12px; background: #FFFFFF;
+          padding: 18px 18px 17px; border-top: 3px solid ${C.gold}; }
+        .fm-why-no { font-family: ${SERIF}; font-size: 22px; font-weight: 700; color: ${C.goldText};
+          line-height: 1; letter-spacing: 0.02em; }
+        .fm-why-title { font-size: 15.5px; font-weight: 700; color: ${C.ink}; line-height: 1.6; margin: 9px 0 7px; }
+        .fm-why-body { font-size: 13.5px; line-height: 1.95; color: ${C.body}; margin: 0; }
         /* 工程の6ステップ。長い説明文は書かず、番号+見出しだけの帯にして
            「丸投げでなく工程を踏んでいる」ことだけを短く示す (詳細は書くと動画と重複する)。 */
         .fm-process-row { display: flex; gap: 8px; overflow-x: auto; -webkit-overflow-scrolling: touch;
@@ -489,10 +502,10 @@ function ValueTable() {
   return (
     <Reveal>
       <div style={{ marginBottom: 22 }}>
-        <h3 className="st-serif" style={{ fontSize: 19, fontWeight: 700, color: C.ink, margin: 0, lineHeight: 1.6, whiteSpace: 'pre-line' }}>
+        <h3 className="st-serif" style={{ fontSize: 'clamp(20px, 4.6vw, 24px)', fontWeight: 700, color: C.ink, margin: 0, lineHeight: 1.6, whiteSpace: 'pre-line' }}>
           {VALUE.title}
         </h3>
-        <p style={{ fontSize: 13, lineHeight: 1.95, color: C.body, margin: '10px 0 0' }}>{VALUE.lead}</p>
+        <p style={{ fontSize: 14, lineHeight: 2, color: C.body, margin: '12px 0 0' }}>{VALUE.lead}</p>
       </div>
 
       <div className="fm-cmp">
@@ -519,24 +532,26 @@ function ValueTable() {
           </Fragment>
         ))}
       </div>
-      <p style={{ fontSize: 11.5, lineHeight: 1.85, color: C.mute, margin: '10px 2px 0' }}>{VALUE.tableNote}</p>
+      <p style={{ fontSize: 12.5, lineHeight: 1.9, color: C.mute, margin: '12px 2px 0' }}>{VALUE.tableNote}</p>
 
-      <div style={{ marginTop: 26 }}>
-        <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.1em', color: C.mute, marginBottom: 12 }}>{VALUE.reasonsTitle}</div>
+      <div style={{ marginTop: 34 }}>
+        <h4 className="st-serif" style={{ fontSize: 17, fontWeight: 700, color: C.ink, margin: '0 0 14px', lineHeight: 1.6 }}>
+          {VALUE.reasonsTitle}
+        </h4>
         <div className="fm-grid3">
           {VALUE.reasons.map(r => (
-            <div key={r.no} style={{ border: `1px solid ${C.line}`, borderRadius: 10, background: '#FFFFFF', padding: '15px 16px' }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: C.goldText, marginBottom: 6 }}>{r.no}</div>
-              <div style={{ fontSize: 13.5, fontWeight: 700, color: C.ink, marginBottom: 6, lineHeight: 1.6 }}>{r.title}</div>
-              <p style={{ fontSize: 12, lineHeight: 1.85, color: C.body, margin: 0 }}>{r.body}</p>
+            <div key={r.no} className="fm-why">
+              <div className="fm-why-no">{r.no}</div>
+              <div className="fm-why-title">{r.title}</div>
+              <p className="fm-why-body">{r.body}</p>
             </div>
           ))}
         </div>
       </div>
 
-      <div style={{ marginTop: 18, background: C.alt, borderLeft: `3px solid ${C.gold}`, borderRadius: 4, padding: '15px 16px' }}>
-        <div style={{ fontSize: 13.5, fontWeight: 700, color: C.ink, marginBottom: 6 }}>{VALUE.honest.title}</div>
-        <p style={{ fontSize: 12.5, lineHeight: 1.9, color: C.body, margin: 0 }}>{VALUE.honest.body}</p>
+      <div style={{ marginTop: 22, background: C.alt, borderLeft: `3px solid ${C.gold}`, borderRadius: 4, padding: '17px 18px' }}>
+        <div style={{ fontSize: 15, fontWeight: 700, color: C.ink, marginBottom: 7, lineHeight: 1.6 }}>{VALUE.honest.title}</div>
+        <p style={{ fontSize: 13.5, lineHeight: 1.95, color: C.body, margin: 0 }}>{VALUE.honest.body}</p>
       </div>
     </Reveal>
   );
