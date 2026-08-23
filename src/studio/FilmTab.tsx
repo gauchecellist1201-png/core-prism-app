@@ -11,6 +11,7 @@ import { STUDIO, CONTACT } from './plans';
 import {
   FILM, FILM_PLANS, MONTHLY_LEAD, MONTHLY_PLANS, MONTHLY_TERMS, MONTHLY_SPEC,
   PLAN_LADDER, PRICE_NOTE, PRICE_WHY, VALUE, monthlySavings,
+  PRICING_MODES, PRICING_LEAD, planMatrix, type PricingMode, type FilmPlan,
   FILM_WORKS, FILM_PROCESS, PROCESS_STATEMENT, REVISION, TERMS, AI_TERMS,
   FILM_FAQ, FILM_CTA, INQUIRY_FIELDS,
 } from './film';
@@ -23,10 +24,18 @@ const track = (event: string, props?: Record<string, unknown>) => logEvent(event
 // (実測: ヒーローから 10,700px 下の相談欄へ smooth 指定 → scrollY が 0 のまま)。
 // index.css に html { scroll-behavior: smooth } があるため 'auto' も smooth に化ける。
 // 距離が離れている時は 'instant' を明示して即時ジャンプさせる。
+// 固定ヘッダーのぶんだけ手前で止める。高さを決め打ちにすると、ヘッダーが実測115pxなのに
+// 80px しか避けず、着地点が毎回35px ヘッダーの下に潜る (目次の「料金」も同じ症状だった)。
+// タブ行の折り返しで高さが変わるので、押した時点で測る。
+const headerOffset = () => {
+  const r = document.querySelector('header')?.getBoundingClientRect();
+  return r && r.height > 0 ? r.height + 12 : 92;
+};
+
 const scrollToId = (id: string) => {
   const el = document.getElementById(id);
   if (!el) return;
-  const top = el.getBoundingClientRect().top + window.scrollY - 80;
+  const top = Math.max(0, el.getBoundingClientRect().top + window.scrollY - headerOffset());
   const far = Math.abs(top - window.scrollY) > 2000;
   const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
   window.scrollTo({ top, behavior: far || reduced ? 'instant' : 'smooth' });
@@ -173,14 +182,112 @@ export default function FilmTab() {
           padding: 9px 0; border-bottom: 1px solid ${C.line}; align-items: start; }
         .fm-spec-key { font-size: 11.5px; font-weight: 600; letter-spacing: 0.06em; color: ${C.mute}; line-height: 1.7; }
         .fm-spec-val { font-size: 13px; line-height: 1.75; color: ${C.ink}; font-weight: 600; }
-        /* 「この価格になる理由」。金額の隣で読ませたいので、カード内で色を変えて浮かせる */
-        .fm-why { margin-top: 14px; padding: 13px 14px; border-radius: 4px;
+        /* 「この価格になる理由」。金額の隣で読ませたいので、カード内で色を変えて浮かせる。
+           ValueTable の .fm-why (3つの理由カード) とは別物。同じ名前にすると
+           後から書いたほうが両方に当たるので、名前を分けておく */
+        .fm-priceway { margin-top: 14px; padding: 13px 14px; border-radius: 4px;
           background: ${C.alt}; border: 1px solid ${C.goldLine}; }
-        .fm-why-key { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; color: ${C.goldText}; margin-bottom: 7px; }
-        .fm-why-body { font-size: 12.5px; line-height: 1.95; color: ${C.body}; margin: 0; }
+        .fm-priceway-key { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; color: ${C.goldText}; margin-bottom: 7px; }
+        .fm-priceway-body { font-size: 12.5px; line-height: 1.95; color: ${C.body}; margin: 0; }
         /* 月額に切り替えた場合の差額。3列 (単発合計 / 月額 / 差額) */
         .fm-save { display: grid; gap: 10px; }
         @media (min-width: 700px) { .fm-save { grid-template-columns: repeat(3, 1fr); } }
+
+        /* ── 料金セクション ─────────────────────────────────
+           3プランを並べて比べる章なので、ここだけ本文幅 (760px) より広く取る。
+           ただし広げすぎると1行が60字を超えて日本語が読みにくくなるので 900px で止め、
+           長い散文には .fm-prose で別途上限を掛ける */
+        @media (min-width: 900px) { #film-pricing .st-inner { max-width: 900px; } }
+        .fm-prose { max-width: 720px; }
+
+        /* 発注の形を選ぶスイッチ。ラベルに価格帯そのものを載せる
+           (「単発 / 月額」だけでは、押すまで値段が分からず選ぶ理由にならない) */
+        .fm-mode { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .fm-mode-btn { display: block; width: 100%; box-sizing: border-box; text-align: left; cursor: pointer;
+          font-family: ${SANS}; padding: 14px 15px; border-radius: 12px; background: #FFFFFF;
+          border: 1px solid ${C.line}; transition: border-color 140ms ease, background 140ms ease; }
+        .fm-mode-btn:hover { border-color: ${C.gold}; }
+        .fm-mode-btn[data-on="true"] { border: 1.5px solid ${C.gold}; background: #FBF8F2; }
+        .fm-mode-label { display: block; font-size: 13.5px; font-weight: 700; color: ${C.ink}; line-height: 1.5; }
+        .fm-mode-hint { display: block; font-family: ${SERIF}; font-size: 17px; font-weight: 700;
+          color: ${C.goldText}; line-height: 1.4; margin-top: 5px; letter-spacing: 0.01em; }
+
+        /* 早見カード。1枚で1画面を使い切らないよう、金額・向く相手・作れるものだけに絞る。
+           仕様の全項目は下の比較表で見せる */
+        .fm-pick { display: grid; grid-template-columns: 1fr; gap: 12px; }
+        @media (min-width: 760px) { .fm-pick { grid-template-columns: repeat(3, 1fr); align-items: stretch; } }
+        .fm-pick-card { display: flex; flex-direction: column; height: 100%; box-sizing: border-box;
+          background: #FFFFFF; border: 1px solid ${C.line}; border-radius: 14px; padding: 20px 18px; }
+        .fm-pick-card[data-featured="true"] { border: 1.5px solid ${C.gold}; box-shadow: 0 14px 34px -22px rgba(17,24,39,0.34); }
+        /* バッジの有無で見出しの高さがずれると、3枚の金額が一直線に並ばない。
+           バッジが無い列にも同じ高さの行を確保する */
+        /* バッジ列だけ見出しが下がると3枚の金額が揃わない。min-height では揃わなかった
+           (inline-flex のバッジが行ボックスを作り、ディセンダ分だけ 24px→26.75px に伸びる)。
+           flex にして行ボックスごと消し、高さを固定する */
+        .fm-pick-badgerow { display: flex; align-items: center; height: 26px; margin-bottom: 10px; }
+        /* 縦積みになる幅では3枚が横に並ばないので、揃える相手がいない。
+           バッジの無いカードで32px を空けておく意味がなくなるため畳む */
+        @media (max-width: 759px) { .fm-pick-badgerow:empty { display: none; } }
+        .fm-pick-badge { display: inline-flex; align-items: center; padding: 4px 10px;
+          border-radius: 999px; background: ${C.gold}; color: #FFFFFF; font-size: 10.5px; font-weight: 700;
+          letter-spacing: 0.14em; }
+        /* TRIAL / STANDARD は欧文なので字間を開けたほうが締まるが、
+           同じ字間を「月4本」に掛けると分かち書きに見えて読みにくい */
+        .fm-pick-name { font-family: ${SERIF}; font-size: 18px; font-weight: 700; letter-spacing: 0.1em; color: ${C.ink}; }
+        .fm-pick-name[data-ja="true"] { letter-spacing: 0.02em; font-size: 19px; }
+        .fm-pick-unit { font-size: 12px; color: ${C.mute}; margin-top: 3px; letter-spacing: 0.02em; }
+        .fm-pick-price { font-family: ${SERIF}; font-size: clamp(28px, 7vw, 34px); font-weight: 700;
+          color: ${C.ink}; line-height: 1.25; letter-spacing: 0.01em; margin-top: 10px; }
+        .fm-pick-tax { font-size: 11.5px; color: ${C.mute}; margin-top: 4px; letter-spacing: 0.02em; }
+        .fm-pick-fit { font-size: 12.5px; line-height: 1.8; color: ${C.goldText}; font-weight: 600;
+          margin: 13px 0 0; padding-top: 13px; border-top: 1px solid ${C.line}; }
+        .fm-pick-body { font-size: 12.5px; line-height: 1.85; color: ${C.body}; margin: 9px 0 0; }
+        .fm-pick-uses { list-style: none; padding: 0; margin: 11px 0 0; display: grid; gap: 6px; }
+        .fm-pick-use { display: flex; gap: 7px; font-size: 12.5px; line-height: 1.65; color: ${C.body}; }
+        /* CTA を3枚の同じ高さに揃える。上の文章量が違っても、押す場所は一直線に並ぶ */
+        .fm-pick-foot { margin-top: auto; padding-top: 16px; }
+        /* 既定の左右30pxのままだと、279px幅のカードで「要件を伝えて見積りを取る」が
+           2行に折れて、そのカードだけボタンが21px上にずれる。全幅ボタンに30pxは要らない */
+        .fm-pick-foot .st-btn { padding-left: 14px; padding-right: 14px; }
+        .fm-pick-more { display: flex; align-items: center; justify-content: center; min-height: 44px;
+          font-size: 12.5px; color: ${C.mute}; background: none; border: none; cursor: pointer;
+          font-family: ${SANS}; width: 100%; }
+        .fm-pick-more:hover { color: ${C.ink}; }
+
+        /* 何が違うかの比較表。375px では4列が入らないので横スクロールにし、
+           項目名の列だけを左に貼り付けて、どの行を見ているか分からなくならないようにする */
+        .fm-mx-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: thin;
+          border: 1px solid ${C.line}; border-radius: 12px; background: #FFFFFF; }
+        /* 項目列142px + プラン列148px×3 = 586px。min-width をそれ未満にすると
+           狭い画面で列が縮められ、指定した最小幅が効かなくなる */
+        .fm-mx { border-collapse: separate; border-spacing: 0; width: 100%; min-width: 600px; }
+        .fm-mx th, .fm-mx td { text-align: left; vertical-align: top; padding: 12px 14px;
+          border-bottom: 1px solid ${C.line}; font-weight: 400; }
+        .fm-mx tr:last-child th, .fm-mx tr:last-child td { border-bottom: none; }
+        /* 「広告への二次利用」が2行に折れない幅。狭い画面では下で 92px に詰める */
+        .fm-mx-corner, .fm-mx-key { position: sticky; left: 0; z-index: 2; background: ${C.alt};
+          border-right: 1px solid ${C.line}; width: 142px; min-width: 142px;
+          font-size: 11.5px; font-weight: 600; letter-spacing: 0.04em; color: ${C.mute}; line-height: 1.7; }
+        .fm-mx-head { background: ${C.alt}; }
+        .fm-mx-plan { min-width: 148px; }
+        .fm-mx-plan-name { font-family: ${SERIF}; font-size: 14px; font-weight: 700; letter-spacing: 0.08em; color: ${C.ink}; }
+        .fm-mx-plan-price { font-family: ${SERIF}; font-size: 17px; font-weight: 700; color: ${C.ink}; margin-top: 3px; }
+        .fm-mx-plan-unit { font-size: 11px; color: ${C.mute}; margin-top: 2px; }
+        .fm-mx td { font-size: 13px; line-height: 1.75; color: ${C.ink}; }
+        .fm-mx-col-featured { background: rgba(168,130,60,0.06); }
+        .fm-mx tr[data-em="1"] td { font-weight: 700; }
+        .fm-mx-note { font-size: 11.5px; color: ${C.mute}; margin: 0 2px 8px; line-height: 1.8;
+          display: flex; align-items: center; gap: 6px; }
+        /* 横スクロールが要るのは列が入りきらない幅だけ。入る幅では案内自体を消す */
+        @media (min-width: 760px) { .fm-mx-scrollhint { display: none; } }
+        /* 狭い画面では1セルが2〜3行に折れて表が2画面ぶんに伸びる。
+           行間と余白を詰めて、指1本で端から端まで見渡せる高さに寄せる */
+        @media (max-width: 759px) {
+          .fm-mx th, .fm-mx td { padding: 10px 12px; }
+          .fm-mx td { font-size: 12.5px; line-height: 1.6; }
+          .fm-mx-corner, .fm-mx-key { width: 92px; min-width: 92px; font-size: 11px; line-height: 1.55; }
+          .fm-mx-plan { min-width: 142px; }
+        }
         /* ヒーロー = 縦型の映像そのもの。文字は一切かぶせず、映像の下に置く
            (2026-08-22 オーナー指示「映像をドーンと出し、文字はその下」)。
            素材は 1080x1920 の縦型。切り抜くと画の大半が捨てられるので、
@@ -505,7 +612,7 @@ function ValueTable() {
         <h3 className="st-serif" style={{ fontSize: 'clamp(20px, 4.6vw, 24px)', fontWeight: 700, color: C.ink, margin: 0, lineHeight: 1.6, whiteSpace: 'pre-line' }}>
           {VALUE.title}
         </h3>
-        <p style={{ fontSize: 14, lineHeight: 2, color: C.body, margin: '12px 0 0' }}>{VALUE.lead}</p>
+        <p className="fm-prose" style={{ fontSize: 14, lineHeight: 2, color: C.body, margin: '12px 0 0' }}>{VALUE.lead}</p>
       </div>
 
       <div className="fm-cmp">
@@ -532,7 +639,7 @@ function ValueTable() {
           </Fragment>
         ))}
       </div>
-      <p style={{ fontSize: 12.5, lineHeight: 1.9, color: C.mute, margin: '12px 2px 0' }}>{VALUE.tableNote}</p>
+      <p className="fm-prose" style={{ fontSize: 12.5, lineHeight: 1.9, color: C.mute, margin: '12px 2px 0' }}>{VALUE.tableNote}</p>
 
       <div style={{ marginTop: 34 }}>
         <h4 className="st-serif" style={{ fontSize: 17, fontWeight: 700, color: C.ink, margin: '0 0 14px', lineHeight: 1.6 }}>
@@ -770,187 +877,348 @@ function FilmCheckoutButton({ plan, mode, label }: { plan: string; mode: 'paymen
 
 // ============================================================
 // 料金
+//
+// 2026-08-23 全面改編 (オーナー指示「値段が分かりやすいものを一番上に」)。
+// 旧構成は TRIAL の詳細カード (仕様8行 + 価格の理由 + 含む/含まない) がいきなり先頭にあり、
+// スマホでは1枚で1画面を使い切るため、3つの金額を並べて比べる画面が最後まで現れなかった。
+// 新構成: 発注の形を選ぶ → 3つの金額 → 何が違うか (比較表) → 詳細 (折りたたみ) → 相場との差。
+// 詳細を消したのではなく、買う判断に要る順に並べ直して、要る人だけが開く形にしている。
 // ============================================================
-function Pricing() {
+
+// ---- 発注の形を選ぶスイッチ ----
+function ModeSwitch({ mode, onPick }: { mode: PricingMode; onPick: (m: PricingMode) => void }) {
   return (
-    <div>
-      <Band pad="56px 0" id="film-pricing">
-        <Reveal><H2 en="Pricing" sub="1本ごとの制作と、毎月継続する制作の2通りからお選びいただけます。">料金</H2></Reveal>
+    <div className="fm-mode">
+      {PRICING_MODES.map(m => (
+        <button key={m.id} type="button" className="fm-mode-btn" data-on={mode === m.id}
+          aria-pressed={mode === m.id} onClick={() => onPick(m.id)}>
+          <span className="fm-mode-label">{m.label}</span>
+          <span className="fm-mode-hint">{m.hint}</span>
+        </button>
+      ))}
+    </div>
+  );
+}
 
-        {/* 価格差の理由を、カードを読む前に一度渡す。
-            ¥49,800 → ¥128,000 → ¥298,000 は 2.5倍ずつ上がるので、
-            「何が違うのか」を先に言わないとカードを3枚読んでも差が分からない。 */}
-        <Reveal>
-          <div className="st-card" style={{ background: '#FFFFFF', marginBottom: 18 }}>
-            <h3 className="st-serif" style={{ fontSize: 19, fontWeight: 700, color: C.ink, margin: 0, lineHeight: 1.6 }}>
-              {PLAN_LADDER.title}
-            </h3>
-            <p style={{ fontSize: 13.5, lineHeight: 2, color: C.body, margin: '10px 0 0' }}>{PLAN_LADDER.body}</p>
+// ---- 早見カード (単発)。金額・向く相手・作れるものだけに絞る。仕様の全項目は下の比較表 ----
+function PlanPickCards({ onDetail }: { onDetail: (id: string) => void }) {
+  return (
+    <div className="fm-pick">
+      {FILM_PLANS.map(p => (
+        <div key={p.id} className="fm-pick-card" data-featured={p.featured ? 'true' : undefined}>
+          <div className="fm-pick-badgerow">
+            {p.featured && <span className="fm-pick-badge">おすすめ</span>}
           </div>
-        </Reveal>
-
-        <div style={{ display: 'grid', gap: 14 }}>
-          {FILM_PLANS.map((p, i) => (
-            <Reveal key={p.id} delay={i * 50}>
-              <div className={`st-card${p.featured ? ' st-card-featured' : ''}`}>
-                {p.featured && <div className="st-label" style={{ fontSize: 10.5, marginBottom: 10 }}>Recommended — 標準プラン</div>}
-                <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
-                  <div className="st-serif" style={{ fontSize: 20, fontWeight: 700, letterSpacing: '0.1em', color: C.ink }}>{p.name}</div>
-                  <div className="st-serif" style={{ fontSize: 19, fontWeight: 700, color: C.ink }}>
-                    {p.price}<span style={{ fontSize: 12.5, color: C.mute, fontWeight: 400, marginLeft: 6 }}>/ {p.unit}</span>
-                  </div>
-                </div>
-                <div style={{ fontSize: 12, color: C.mute, marginTop: 6, letterSpacing: '0.02em' }}>{p.terms}</div>
-                <div style={{ fontSize: 12, color: C.goldText, marginTop: 4, fontWeight: 600, letterSpacing: '0.02em' }}>{p.delivery}</div>
-                <div style={{ fontSize: 14, fontWeight: 600, color: C.ink, margin: '10px 0 6px', lineHeight: 1.8 }}>{p.lead}</div>
-                {/* どの会社向けかを1行で。プラン選択を読む人に丸投げしない */}
-                <div style={{ fontSize: 12.5, color: C.goldText, lineHeight: 1.8, marginBottom: 12 }}>{p.fit}</div>
-
-                {/* 仕様。プラン間の差は、言葉より数字で並べたほうが早い */}
-                <div className="fm-spec">
-                  {p.spec.map(s => (
-                    <div key={s.label} className="fm-spec-row">
-                      <div className="fm-spec-key">{s.label}</div>
-                      <div className="fm-spec-val">{s.value}</div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* この価格になる理由。書かないと 2.5倍の差が値付けの気分に見える */}
-                <div className="fm-why">
-                  <div className="fm-why-key">この価格になる理由</div>
-                  <p className="fm-why-body">{p.why}</p>
-                </div>
-
-                <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: 6, borderTop: `1px solid ${C.line}`, paddingTop: 14 }}>
-                  {p.includes.map(x => (
-                    <li key={x} style={{ display: 'flex', gap: 8, fontSize: 13.5, lineHeight: 1.7, color: C.body }}><IconCheck />{x}</li>
-                  ))}
-                </ul>
-                {/* 含まれないもの。書かない見積りは必ず後で揉める。書くこと自体が信頼になる */}
-                <div style={{ marginTop: 14, paddingTop: 13, borderTop: `1px solid ${C.line}` }}>
-                  <div style={{ fontSize: 11.5, fontWeight: 600, letterSpacing: '0.1em', color: C.mute, marginBottom: 8 }}>含まれないもの</div>
-                  <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: 5 }}>
-                    {p.excludes.map(x => (
-                      <li key={x} style={{ display: 'flex', gap: 8, fontSize: 12.5, lineHeight: 1.7, color: C.mute }}>
-                        <span aria-hidden style={{ flexShrink: 0, marginTop: 1 }}>—</span>{x}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                <div style={{ marginTop: 16 }}>
-                  {p.checkout ? (
-                    <>
-                      <FilmCheckoutButton plan={p.id} mode="payment" label={p.cta} />
-                      {/* 決済ボタンの控え。実測19pxだったので、44pxの当たりを確保する */}
-                      <a href={CONTACT.lineUrl} target="_blank" rel="noopener noreferrer"
-                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 44, textAlign: 'center', fontSize: 12.5, color: C.mute, marginTop: 4 }}
-                        onClick={() => track('studio_film_pricing_cta', { plan: p.id, to: 'line' })}>
-                        発注前に要件を相談する
-                      </a>
-                    </>
-                  ) : (
-                    <a className="st-btn st-btn-primary" style={{ width: '100%', boxSizing: 'border-box' }}
-                      href={CONTACT.lineUrl} target="_blank" rel="noopener noreferrer"
-                      onClick={() => track('studio_film_pricing_cta', { plan: p.id, to: 'line' })}>
-                      <IconChat /> {p.cta}
-                    </a>
-                  )}
-                </div>
-              </div>
-            </Reveal>
-          ))}
-        </div>
-        <p style={{ fontSize: 12.5, lineHeight: 1.9, color: C.mute, margin: '16px 2px 0' }}>
-          <span style={{ color: C.ink, fontWeight: 600 }}>制作費は何で変わりますか？ — </span>{PRICE_WHY}
-        </p>
-
-        {/* 月額 */}
-        <Reveal>
-          <div style={{ marginTop: 40 }}>
-            <div className="st-label" style={{ marginBottom: 10 }}>{MONTHLY_LEAD.en}</div>
-            <h3 className="st-serif" style={{ fontSize: 21, fontWeight: 700, color: C.ink, margin: 0, lineHeight: 1.6 }}>{MONTHLY_LEAD.title}</h3>
-            <p style={{ fontSize: 14, lineHeight: 2, color: C.body, margin: '10px 0 20px' }}>{MONTHLY_LEAD.body}</p>
+          <div className="fm-pick-name">{p.name}</div>
+          <div className="fm-pick-unit">{p.unit}</div>
+          <div className="fm-pick-price">{p.price}</div>
+          <div className="fm-pick-tax">税込 ／ 初稿まで {p.delivery}</div>
+          <p className="fm-pick-fit">{p.fit}</p>
+          {/* 「何ができるか」を仕様より先に置く。尺とカット数だけでは用途が想像できない */}
+          <ul className="fm-pick-uses">
+            {p.useCases.map(u => <li key={u} className="fm-pick-use"><IconCheck />{u}</li>)}
+          </ul>
+          <div className="fm-pick-foot">
+            {p.checkout ? (
+              <FilmCheckoutButton plan={p.id} mode="payment" label={p.cta} />
+            ) : (
+              <a className="st-btn st-btn-primary" style={{ width: '100%', boxSizing: 'border-box' }}
+                href={CONTACT.lineUrl} target="_blank" rel="noopener noreferrer"
+                onClick={() => track('studio_film_pricing_cta', { plan: p.id, to: 'line' })}>
+                <IconChat /> {p.cta}
+              </a>
+            )}
+            <button type="button" className="fm-pick-more" onClick={() => onDetail(p.id)}>
+              含まれるもの・価格の理由を見る
+            </button>
           </div>
-        </Reveal>
-        <div className="fm-grid3">
-          {MONTHLY_PLANS.map((m, i) => (
-            <Reveal key={m.id} delay={i * 50}>
-              <div className={`st-card${m.featured ? ' st-card-featured' : ''}`} style={{ height: '100%', boxSizing: 'border-box' }}>
-                <div className="st-label" style={{ fontSize: 10.5, marginBottom: 10 }}>{m.volume}</div>
-                <div className="st-serif" style={{ fontSize: 21, fontWeight: 700, color: C.ink }}>
-                  {m.price}<span style={{ fontSize: 12.5, color: C.mute, fontWeight: 400, marginLeft: 6 }}>/ 月</span>
-                </div>
-                <div style={{ fontSize: 12, color: C.mute, marginTop: 4 }}>{m.unitPrice}</div>
-                <p style={{ fontSize: 13, lineHeight: 1.9, color: C.body, margin: '10px 0 0 0' }}>{m.body}</p>
-                <div style={{ marginTop: 14 }}>
-                  <FilmCheckoutButton plan={m.id} mode="subscription" label="この本数で契約する" />
-                </div>
-              </div>
-            </Reveal>
-          ))}
         </div>
-        {/* 月額の1本あたり (¥45,667〜57,000) は単発 STANDARD (¥128,000) の半額以下に見えるため、
-            仕様と「なぜ安いのか」を必ずここに置く。書かないと単発の価格が嘘に見える。 */}
-        <Reveal>
-          <div className="st-card" style={{ marginTop: 18, background: '#FFFFFF' }}>
-            <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.12em', color: C.mute, marginBottom: 10 }}>{MONTHLY_SPEC.title}</div>
-            <div className="fm-spec" style={{ marginTop: 0 }}>
-              {MONTHLY_SPEC.rows.map(s => (
-                <div key={s.label} className="fm-spec-row">
-                  <div className="fm-spec-key">{s.label}</div>
-                  <div className="fm-spec-val">{s.value}</div>
-                </div>
+      ))}
+    </div>
+  );
+}
+
+// ---- 早見カード (月額)。違うのは本数だけなので、1本あたりの金額を主役にする ----
+function MonthlyPickCards() {
+  return (
+    <div className="fm-pick">
+      {MONTHLY_PLANS.map(m => (
+        <div key={m.id} className="fm-pick-card" data-featured={m.featured ? 'true' : undefined}>
+          <div className="fm-pick-badgerow">
+            {m.featured && <span className="fm-pick-badge">おすすめ</span>}
+          </div>
+          {/* '4 VIDEOS' をそのまま出すと本数が一瞬で読めない。count から日本語を組む */}
+          <div className="fm-pick-name" data-ja="true">月{m.count}本</div>
+          <div className="fm-pick-unit">1本 20〜30秒</div>
+          <div className="fm-pick-price">{m.price}</div>
+          <div className="fm-pick-tax">税込 ／ 月々のお支払い</div>
+          <p className="fm-pick-fit">{m.unitPrice}</p>
+          <p className="fm-pick-body">{m.body}</p>
+          <div className="fm-pick-foot">
+            <FilmCheckoutButton plan={m.id} mode="subscription" label="この本数で契約する" />
+            <a href={CONTACT.lineUrl} target="_blank" rel="noopener noreferrer" className="fm-pick-more"
+              style={{ textDecoration: 'none' }}
+              onClick={() => track('studio_film_pricing_cta', { plan: m.id, to: 'line' })}>
+              本数を相談してから決める
+            </a>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ---- 何が違うかの比較表。行は film.ts の仕様から組む (手書きの表は必ず古くなる) ----
+function PlanMatrix() {
+  const rows = useMemo(() => planMatrix(), []);
+  return (
+    <>
+      {/* 案内は表より先に出す。表を読み始めてから下で気づいても遅い */}
+      <p className="fm-mx-note fm-mx-scrollhint">
+        <span aria-hidden>↔</span>表は横にスクロールすると、3つのプランを並べて比べられます。
+      </p>
+      <div className="fm-mx-wrap">
+        <table className="fm-mx">
+          <thead>
+            <tr className="fm-mx-head">
+              <th scope="col" className="fm-mx-corner">項目</th>
+              {FILM_PLANS.map(p => (
+                <th key={p.id} scope="col" className={`fm-mx-plan${p.featured ? ' fm-mx-col-featured' : ''}`}>
+                  <div className="fm-mx-plan-name">{p.name}</div>
+                  <div className="fm-mx-plan-price">{p.price}</div>
+                  <div className="fm-mx-plan-unit">{p.unit}</div>
+                </th>
               ))}
-            </div>
-            <div className="fm-why">
-              <div className="fm-why-key">1本あたりが単発より安い理由</div>
-              <p className="fm-why-body">{MONTHLY_SPEC.why}</p>
-            </div>
-            <div style={{ marginTop: 14, paddingTop: 13, borderTop: `1px solid ${C.line}` }}>
-              <div style={{ fontSize: 11.5, fontWeight: 600, letterSpacing: '0.1em', color: C.mute, marginBottom: 8 }}>含まれないもの</div>
-              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: 5 }}>
-                {MONTHLY_SPEC.excludes.map(x => (
-                  <li key={x} style={{ display: 'flex', gap: 8, fontSize: 12.5, lineHeight: 1.7, color: C.mute }}>
-                    <span aria-hidden style={{ flexShrink: 0, marginTop: 1 }}>—</span>{x}
-                  </li>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map(r => (
+              <tr key={r.label} data-em={r.emphasis ? '1' : undefined}>
+                <th scope="row" className="fm-mx-key">{r.label}</th>
+                {r.values.map((v, i) => (
+                  <td key={FILM_PLANS[i].id} className={FILM_PLANS[i].featured ? 'fm-mx-col-featured' : undefined}>{v}</td>
                 ))}
-              </ul>
-            </div>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
+  );
+}
+
+// ---- プランの詳細 (既定は閉じる)。買う判断の直前に22行の仕様を壁として置かない ----
+function PlanDetail({ p, open, onToggle }: { p: FilmPlan; open: boolean; onToggle: () => void }) {
+  return (
+    <div id={`film-plan-${p.id}`}
+      style={{ border: `1px solid ${C.line}`, borderRadius: 12, background: '#FFFFFF', overflow: 'hidden', scrollMarginTop: 96 }}>
+      <button type="button" aria-expanded={open} onClick={onToggle}
+        style={{
+          width: '100%', minHeight: 56, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          gap: 12, padding: '15px 17px', background: 'none', border: 'none', cursor: 'pointer',
+          textAlign: 'left', fontFamily: SANS,
+        }}>
+        <span>
+          <span className="st-serif" style={{ display: 'block', fontSize: 14.5, fontWeight: 700, color: C.ink, letterSpacing: '0.08em' }}>
+            {p.name} <span style={{ letterSpacing: 'normal', color: C.mute, fontWeight: 400, fontSize: 12.5 }}>{p.price} ／ {p.unit}</span>
+          </span>
+          <span style={{ display: 'block', fontSize: 12, color: C.mute, lineHeight: 1.7, marginTop: 4 }}>{p.lead}</span>
+        </span>
+        <span aria-hidden style={{ color: C.goldText, fontSize: 20, lineHeight: 1, flexShrink: 0 }}>{open ? '−' : '+'}</span>
+      </button>
+      {open && (
+        <div style={{ padding: '18px 17px 20px', borderTop: `1px solid ${C.line}` }}>
+          {/* この価格になる理由。書かないと 2.5倍の差が値付けの気分に見える */}
+          <div className="fm-priceway" style={{ marginTop: 0 }}>
+            <div className="fm-priceway-key">この価格になる理由</div>
+            <p className="fm-priceway-body">{p.why}</p>
           </div>
-        </Reveal>
 
-        <MonthlySavingsTable />
+          <div style={{ fontSize: 11.5, fontWeight: 600, letterSpacing: '0.1em', color: C.mute, margin: '18px 0 8px' }}>含まれるもの</div>
+          <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: 6 }}>
+            {p.includes.map(x => (
+              <li key={x} style={{ display: 'flex', gap: 8, fontSize: 13.5, lineHeight: 1.7, color: C.body }}><IconCheck />{x}</li>
+            ))}
+          </ul>
 
-        <Reveal>
-          <div className="st-card" style={{ marginTop: 18, background: '#FFFFFF' }}>
-            <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.12em', color: C.mute, marginBottom: 10 }}>継続プランの条件</div>
-            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: 6 }}>
-              {MONTHLY_TERMS.map(t => (
-                <li key={t} style={{ display: 'flex', gap: 8, fontSize: 13.5, lineHeight: 1.7, color: C.body }}><IconCheck />{t}</li>
+          {/* 含まれないもの。書かない見積りは必ず後で揉める。書くこと自体が信頼になる */}
+          <div style={{ marginTop: 16, paddingTop: 14, borderTop: `1px solid ${C.line}` }}>
+            <div style={{ fontSize: 11.5, fontWeight: 600, letterSpacing: '0.1em', color: C.mute, marginBottom: 8 }}>含まれないもの</div>
+            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: 5 }}>
+              {p.excludes.map(x => (
+                <li key={x} style={{ display: 'flex', gap: 8, fontSize: 12.5, lineHeight: 1.7, color: C.mute }}>
+                  <span aria-hidden style={{ flexShrink: 0, marginTop: 1 }}>—</span>{x}
+                </li>
               ))}
             </ul>
-            <p style={{ fontSize: 12.5, lineHeight: 1.9, color: C.mute, margin: '12px 0 0' }}>
-              合わないと感じた月に止められます。続ける理由が毎月あることを、私たちの側の条件にしています。
-            </p>
           </div>
-        </Reveal>
 
-        {/* 2026-08-23 オーナー指示で料金の下へ移動。価格を見た後に相場と並べたほうが、
-            「この金額は高いのか」の判断がその場で終わる */}
-        <div style={{ marginTop: 44 }}>
-          <ValueTable />
+          <div style={{ marginTop: 18 }}>
+            {p.checkout ? (
+              <>
+                <FilmCheckoutButton plan={p.id} mode="payment" label={p.cta} />
+                {/* 決済ボタンの控え。実測19pxだったので、44pxの当たりを確保する */}
+                <a href={CONTACT.lineUrl} target="_blank" rel="noopener noreferrer"
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 44, textAlign: 'center', fontSize: 12.5, color: C.mute, marginTop: 4 }}
+                  onClick={() => track('studio_film_pricing_cta', { plan: p.id, to: 'line' })}>
+                  発注前に要件を相談する
+                </a>
+              </>
+            ) : (
+              <a className="st-btn st-btn-primary" style={{ width: '100%', boxSizing: 'border-box' }}
+                href={CONTACT.lineUrl} target="_blank" rel="noopener noreferrer"
+                onClick={() => track('studio_film_pricing_cta', { plan: p.id, to: 'line' })}>
+                <IconChat /> {p.cta}
+              </a>
+            )}
+          </div>
         </div>
-
-        <div style={{ marginTop: 28, textAlign: 'center' }}>
-          <a className="st-btn st-btn-ghost" href={CONTACT.lineUrl} target="_blank" rel="noopener noreferrer"
-            onClick={() => track('studio_film_pricing_cta', { plan: 'monthly', to: 'line' })}>
-            <IconChat /> 本数を相談してから決める
-          </a>
-          <Note>{PRICE_NOTE}</Note>
-        </div>
-      </Band>
+      )}
     </div>
+  );
+}
+
+function Pricing() {
+  const [mode, setMode] = useState<PricingMode>('once');
+  const [openPlan, setOpenPlan] = useState<string | null>(null);
+
+  const pickMode = (m: PricingMode) => {
+    if (m === mode) return;
+    setMode(m);
+    track('studio_film_pricing_mode', { mode: m });
+  };
+
+  // 開くだけだと、画面のどこが変わったのか分からないまま置き去りになる。
+  // 開いた先まで運ぶ。描画が終わってからでないと行き先の座標が取れないので1拍待つ
+  // (rAF は画面が隠れている間は呼ばれないため setTimeout を使う)。
+  const openDetail = (id: string) => {
+    setOpenPlan(id);
+    track('studio_film_plan_detail', { plan: id });
+    window.setTimeout(() => scrollToId(`film-plan-${id}`), 0);
+  };
+
+  return (
+    <Band pad="56px 0" id="film-pricing">
+      <Reveal>
+        <H2 en="Pricing" sub="発注の形をお選びください。金額・納期・含まれるものを、この章にすべて記載しています。">料金</H2>
+      </Reveal>
+
+      {/* 1. 発注の形。価格帯をスイッチのラベルに載せ、押す前に相場感を渡す */}
+      <Reveal>
+        <ModeSwitch mode={mode} onPick={pickMode} />
+        <p className="fm-prose" style={{ fontSize: 13, lineHeight: 1.95, color: C.body, margin: '14px 2px 0' }}>
+          {PRICING_LEAD[mode]}
+        </p>
+      </Reveal>
+
+      {/* 2. 3つの金額。ここまでを1画面目に収める */}
+      <div style={{ marginTop: 20 }}>
+        {mode === 'once' ? <PlanPickCards onDetail={openDetail} /> : <MonthlyPickCards />}
+      </div>
+
+      {mode === 'once' ? (
+        <>
+          {/* 3. 何が違うのか。3枚のカードを読み比べさせず、1つの表で差だけを見せる */}
+          <Reveal>
+            <div style={{ marginTop: 40 }}>
+              <h3 className="st-serif" style={{ fontSize: 19, fontWeight: 700, color: C.ink, margin: 0, lineHeight: 1.6 }}>
+                {PLAN_LADDER.title}
+              </h3>
+              <p className="fm-prose" style={{ fontSize: 13.5, lineHeight: 1.95, color: C.body, margin: '10px 0 16px' }}>
+                {PLAN_LADDER.body}
+              </p>
+              <PlanMatrix />
+              <p className="fm-prose" style={{ fontSize: 12.5, lineHeight: 1.9, color: C.mute, margin: '14px 2px 0' }}>
+                <span style={{ color: C.ink, fontWeight: 600 }}>制作費は何で決まりますか？ — </span>{PRICE_WHY}
+              </p>
+            </div>
+          </Reveal>
+
+          {/* 4. 詳細。要る人だけが開く */}
+          <Reveal>
+            <div style={{ marginTop: 36 }}>
+              <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.12em', color: C.mute, marginBottom: 12 }}>
+                プランごとの詳細
+              </div>
+              <div style={{ display: 'grid', gap: 10 }}>
+                {FILM_PLANS.map(p => (
+                  <PlanDetail key={p.id} p={p} open={openPlan === p.id}
+                    onToggle={() => setOpenPlan(openPlan === p.id ? null : p.id)} />
+                ))}
+              </div>
+            </div>
+          </Reveal>
+        </>
+      ) : (
+        <>
+          {/* 月額。1本あたりが単発の半額以下に見えるので、仕様と理由を必ずここに置く */}
+          <Reveal>
+            <div style={{ marginTop: 40 }}>
+              <div className="st-label" style={{ marginBottom: 10 }}>{MONTHLY_LEAD.en}</div>
+              <h3 className="st-serif" style={{ fontSize: 19, fontWeight: 700, color: C.ink, margin: 0, lineHeight: 1.6 }}>{MONTHLY_LEAD.title}</h3>
+              <p className="fm-prose" style={{ fontSize: 13.5, lineHeight: 1.95, color: C.body, margin: '10px 0 0' }}>{MONTHLY_LEAD.body}</p>
+            </div>
+          </Reveal>
+
+          <Reveal>
+            <div className="st-card" style={{ marginTop: 18, background: '#FFFFFF' }}>
+              <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.12em', color: C.mute, marginBottom: 10 }}>{MONTHLY_SPEC.title}</div>
+              <div className="fm-spec" style={{ marginTop: 0 }}>
+                {MONTHLY_SPEC.rows.map(s => (
+                  <div key={s.label} className="fm-spec-row">
+                    <div className="fm-spec-key">{s.label}</div>
+                    <div className="fm-spec-val">{s.value}</div>
+                  </div>
+                ))}
+              </div>
+              <div className="fm-priceway">
+                <div className="fm-priceway-key">1本あたりが単発より安い理由</div>
+                <p className="fm-priceway-body">{MONTHLY_SPEC.why}</p>
+              </div>
+              <div style={{ marginTop: 14, paddingTop: 13, borderTop: `1px solid ${C.line}` }}>
+                <div style={{ fontSize: 11.5, fontWeight: 600, letterSpacing: '0.1em', color: C.mute, marginBottom: 8 }}>含まれないもの</div>
+                <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: 5 }}>
+                  {MONTHLY_SPEC.excludes.map(x => (
+                    <li key={x} style={{ display: 'flex', gap: 8, fontSize: 12.5, lineHeight: 1.7, color: C.mute }}>
+                      <span aria-hidden style={{ flexShrink: 0, marginTop: 1 }}>—</span>{x}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </Reveal>
+
+          <MonthlySavingsTable />
+
+          <Reveal>
+            <div className="st-card" style={{ marginTop: 18, background: '#FFFFFF' }}>
+              <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.12em', color: C.mute, marginBottom: 10 }}>継続プランの条件</div>
+              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: 6 }}>
+                {MONTHLY_TERMS.map(t => (
+                  <li key={t} style={{ display: 'flex', gap: 8, fontSize: 13.5, lineHeight: 1.7, color: C.body }}><IconCheck />{t}</li>
+                ))}
+              </ul>
+              <p style={{ fontSize: 12.5, lineHeight: 1.9, color: C.mute, margin: '12px 0 0' }}>
+                合わないと感じた月で停止できます。続ける理由が毎月あることを、私たちの側の条件にしています。
+              </p>
+            </div>
+          </Reveal>
+        </>
+      )}
+
+      {/* 5. 相場との差。自社の金額を見た後に並べたほうが、高いのかどうかの判断がその場で終わる */}
+      <div style={{ marginTop: 48 }}>
+        <ValueTable />
+      </div>
+
+      <div style={{ marginTop: 28, textAlign: 'center' }}>
+        <a className="st-btn st-btn-ghost" href={CONTACT.lineUrl} target="_blank" rel="noopener noreferrer"
+          onClick={() => track('studio_film_pricing_cta', { plan: mode, to: 'line' })}>
+          <IconChat /> どれを選ぶか相談する
+        </a>
+        <Note>{PRICE_NOTE}</Note>
+      </div>
+    </Band>
   );
 }
 
