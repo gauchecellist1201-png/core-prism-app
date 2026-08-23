@@ -26,7 +26,7 @@ import {
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { REFERRAL_BONUS_DAYS, TRIAL_BASE_DAYS, TRIAL_WITH_REFERRAL_DAYS, getPendingReferralInviter, getPendingReferralMessage } from '../lib/referral';
+import { REFERRAL_BONUS_DAYS, TRIAL_BASE_DAYS, TRIAL_WITH_REFERRAL_DAYS, getPendingReferral, getPendingReferralInviter, getPendingReferralMessage } from '../lib/referral';
 import { seedDemoData, setDemoActive } from '../lib/onboarding';
 import { whiteSafeGradient } from '../lib/accentFace';
 
@@ -272,7 +272,10 @@ export default function LandingPage({ onEnterApp }: Props) {
   const [pendingInviter, setPendingInviter] = useState<string>('');
   const [pendingMsg, setPendingMsg] = useState<string>('');
   useEffect(() => {
-    try { setPendingRef(sessionStorage.getItem('pending_ref')); } catch { /* */ }
+    // sessionStorage を直接読むと、リンクを踏んだ日にそのまま登録しなかった人
+    // (LINE のアプリ内ブラウザで開いて閉じた人) の招待バナーが翌日から消えていた。
+    // getPendingReferral() は 30 日ぶんの控えから復元する。
+    setPendingRef(getPendingReferral());
     setPendingInviter(getPendingReferralInviter());
     setPendingMsg(getPendingReferralMessage());
   }, []);
