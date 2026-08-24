@@ -7,13 +7,13 @@
 import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { C, D, SERIF, SANS } from './theme';
 import { Band, H2, Note, IconCheck, IconChat, IconCopy } from './ui';
-import { STUDIO, CONTACT } from './plans';
+import { STUDIO, CONTACT, COMPANY } from './plans';
 import {
   FILM, FILM_PLANS, MONTHLY_LEAD, MONTHLY_PLANS, MONTHLY_TERMS, MONTHLY_SPEC,
   PLAN_LADDER, PRICE_NOTE, PRICE_WHY, VALUE, monthlySavings, yen,
   TRIAL_OFFER, CAMPAIGN, isCampaignLive, offPercent,
   PRICING_MODES, PRICING_LEAD, planMatrix, type PricingMode, type FilmPlan,
-  FILM_WORKS, FILM_PROCESS, PROCESS_STATEMENT, REVISION, TERMS, AI_TERMS,
+  FILM_WORKS, FILM_PROCESS, PROCESS_STATEMENT, START_STEPS, REVISION, TERMS, AI_TERMS,
   FILM_FAQ, FILM_CTA, INQUIRY_FIELDS, EVENT_BRANDING,
 } from './film';
 import { logEvent } from '../lib/onboardingAnalytics';
@@ -366,6 +366,7 @@ export default function FilmTab() {
       <FilmHero />
       <ProcessTrust />
       <SectionNav />
+      <StartSteps />
       <Pricing />
       <FilmWorks />
       <Terms />
@@ -558,6 +559,7 @@ function FilmHero() {
 // 章の目次 — 20画面近い1枚ものを、必要な章から読めるようにする
 // ============================================================
 const NAV_ITEMS: Array<{ id: string; label: string }> = [
+  { id: 'film-start', label: 'はじめかた' },
   { id: 'film-pricing', label: '料金' },
   { id: 'film-works', label: '制作実績' },
   { id: 'film-terms', label: 'お取引の条件' },
@@ -579,6 +581,40 @@ function SectionNav() {
   );
 }
 
+// ============================================================
+// はじめかた — 価格の直前に置く3ステップ (2026-08-24 新設)。
+// 「値段は分かったが、連絡してから何が起きるか分からない」という離脱要因を埋める。
+// FILM_PROCESS (受注後に当社が行う6工程) とは別物 — これは発注を検討する側の3ステップ。
+// .fm-why / .fm-grid3 は ValueTable の「差が生まれる理由」と同じ白カード意匠を流用し、
+// このページに新しい見た目を増やさない。
+// ============================================================
+function StartSteps() {
+  return (
+    <Band pad="48px 0" id="film-start">
+      <Reveal>
+        <div className="st-label" style={{ marginBottom: 12 }}>How to Start</div>
+        <h2 className="st-serif" style={{ fontSize: 'clamp(20px, 5vw, 26px)', fontWeight: 700, color: C.ink, margin: 0, lineHeight: 1.6 }}>
+          はじめかた — 3ステップです。
+        </h2>
+        <p style={{ fontSize: 13.5, lineHeight: 1.95, color: C.body, margin: '10px 0 0', maxWidth: 620 }}>
+          お見積りのご提示までは無料です。ご連絡からご発注までに、費用が発生することはありません。
+        </p>
+      </Reveal>
+      <Reveal delay={60}>
+        <div className="fm-grid3" style={{ marginTop: 20 }}>
+          {START_STEPS.map(s => (
+            <div key={s.no} className="fm-why">
+              <div className="fm-why-no">{s.no}</div>
+              <div className="fm-why-title">{s.title}</div>
+              <p className="fm-why-body">{s.body}</p>
+              <p style={{ fontSize: 12, fontWeight: 700, color: C.goldText, margin: '10px 0 0', letterSpacing: '0.02em' }}>{s.time}</p>
+            </div>
+          ))}
+        </div>
+      </Reveal>
+    </Band>
+  );
+}
 
 // ============================================================
 // 「誰が作るか」— 価格表の直前に置く工程開示 (2026-08-22 新設)。
@@ -612,6 +648,18 @@ function ProcessTrust() {
           {/* TRIALは「03 書く」にあたる台本・絵コンテを含まないため、標準工程である旨を明記する
               (Codexレビュー指摘: 断りなく並べるとTRIAL購入者が台本込みと誤解する) */}
           <p style={{ fontSize: 11, lineHeight: 1.85, color: D.mute, margin: '10px 0 0' }}>{PROCESS_STATEMENT.note}</p>
+        </Reveal>
+        {/* 誰が窓口を持つか、実名で名乗る。AI動画という業態では「結局だれが責任を持つのか」が
+            発注側の最大の不安点になる。会社案内タブに埋もれさせず、この工程開示の直後に置く。
+            (2026-08-24新設: 名前・肩書き・連絡先はすべて plans.ts COMPANY / STUDIO の実データ) */}
+        <Reveal delay={100}>
+          <div style={{ marginTop: 20, paddingTop: 18, borderTop: `1px solid ${D.line}`, display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '5px 16px' }}>
+            <span className="st-serif" style={{ fontSize: 14.5, fontWeight: 700, color: D.ink }}>{COMPANY.repName}</span>
+            <span style={{ fontSize: 12, color: D.mute }}>{COMPANY.repTitle} — 企画からご発注後の窓口まで担当します</span>
+            <a href={`mailto:${STUDIO.email}`} style={{ fontSize: 12, color: D.mute, textDecoration: 'underline', textUnderlineOffset: 2, minHeight: 44, display: 'inline-flex', alignItems: 'center' }}>
+              {STUDIO.email}
+            </a>
+          </div>
         </Reveal>
       </div>
     </section>
