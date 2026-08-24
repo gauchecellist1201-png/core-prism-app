@@ -157,9 +157,9 @@ export type FilmWork = {
 export const FILM_WORKS: FilmWork[] = [
   {
     id: 'work-event-branding-01',
-    client: '井出直毅（CORE Studio 代表）',
+    client: 'GAUCHE（チェリスト）',
     category: 'EVENT BRANDING',
-    purpose: 'ライブの本番前から、会場の規模・照明・来場者の熱量までを見せる「event branding」映像の制作例。イベントの告知・集客の材料として、開催前に完成イメージを用意できることを示すデモンストレーションです。',
+    purpose: 'イベントの本番前から、会場の規模・照明・来場者の熱量までを見せる「event branding」映像の制作例。ライブ・展示会・発表会・周年イベントなど、開催して初めて伝わる当日の空気を、告知・集客の材料として開催前に用意できることを示すデモンストレーションです。',
     poster: '/studio/film/event-artist-live.jpg',
     videoUrl: '/studio/film/event-artist-live.mp4',
   },
@@ -180,29 +180,15 @@ export const FILM_WORKS: FilmWork[] = [
     videoUrl: '/studio/film/jrc.mp4',
     url: 'https://www.official-jrc.com',
   },
+  // 2026-08-24: SHORT DRAMA / BRAND FILM / SOCIAL の3枚は同一シリーズの別カットで、
+  // 並べると同じ内容が3件あるように見えるため「GAUCHE のショートドラマ」1件に統合した。
   {
     id: 'work-short-drama-01',
-    client: '井出直毅（CORE Studio 代表）',
+    client: 'GAUCHE（チェリスト）',
     category: 'SHORT DRAMA',
-    purpose: '経営者本人を主人公にした、連続もの形式のブランディング企画。',
+    purpose: 'チェリスト GAUCHE 本人を主人公にした、連続もの形式のショートドラマ。舞台裏・本番・日常を1つの物語としてつなぎ、TikTok / Reels で継続的に発信するブランディング企画です。',
     poster: '/studio/film/short-drama.jpg',
     videoUrl: '/studio/film/short-drama.mp4',
-  },
-  {
-    id: 'work-brand-film-01',
-    client: '井出直毅（CORE Studio 代表）',
-    category: 'BRAND FILM',
-    purpose: '事業の思想を映像の温度で伝えるブランドフィルム。',
-    poster: '/studio/film/brand-film.jpg',
-    videoUrl: '/studio/film/brand-film.mp4',
-  },
-  {
-    id: 'work-social-01',
-    client: '井出直毅（CORE Studio 代表）',
-    category: 'SOCIAL',
-    purpose: 'TikTok / Reels 向けの継続発信用ソーシャルクリエイティブ。',
-    poster: '/studio/film/social-backstage.jpg',
-    videoUrl: '/studio/film/social-backstage.mp4',
   },
 ];
 
