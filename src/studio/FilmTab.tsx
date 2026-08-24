@@ -14,7 +14,7 @@ import {
   TRIAL_OFFER, CAMPAIGN, isCampaignLive, offPercent,
   PRICING_MODES, PRICING_LEAD, planMatrix, type PricingMode, type FilmPlan,
   FILM_WORKS, FILM_PROCESS, PROCESS_STATEMENT, REVISION, TERMS, AI_TERMS,
-  FILM_FAQ, FILM_CTA, INQUIRY_FIELDS,
+  FILM_FAQ, FILM_CTA, INQUIRY_FIELDS, EVENT_BRANDING,
 } from './film';
 import { logEvent } from '../lib/onboardingAnalytics';
 
@@ -1350,11 +1350,26 @@ function WorkCard({ w }: { w: (typeof FILM_WORKS)[number] }) {
 }
 
 // 9:16 の縦型を1列で積むとスマホで3本 = 約2,300px を占めるため、ショーケースと同じ横スクロールに揃える。
+// イベントブランディングの説明。作品自体が証拠なので、主張は1段落だけに留める
+// (VALUE.honest と同じ「金の左罫線」の型を流用し、新しい装飾を増やさない)。
+function EventBrandingNote() {
+  return (
+    <Reveal>
+      <div style={{ background: C.bg, borderLeft: `3px solid ${C.gold}`, borderRadius: 4, padding: '17px 18px', marginBottom: 22 }}>
+        <div className="st-label" style={{ fontSize: 10, marginBottom: 7, color: C.goldText }}>{EVENT_BRANDING.en}</div>
+        <div style={{ fontSize: 15, fontWeight: 700, color: C.ink, marginBottom: 7, lineHeight: 1.6 }}>{EVENT_BRANDING.title}</div>
+        <p style={{ fontSize: 13.5, lineHeight: 1.95, color: C.body, margin: 0 }}>{EVENT_BRANDING.body}</p>
+      </div>
+    </Reveal>
+  );
+}
+
 function FilmWorks() {
   return (
     <section id="film-works" style={{ background: C.alt, padding: '56px 0', scrollMarginTop: 96 }}>
       <div className="st-inner">
         <Reveal><H2 en="Works" sub="実際に納品した映像です。掲載は貴社の許可をいただいたもののみで、非公開のご希望があれば一切掲載しません。">制作実績</H2></Reveal>
+        <EventBrandingNote />
       </div>
       <Reveal delay={60}>
         <div className="fm-scroller">

@@ -121,7 +121,19 @@ export const offerPercent = offPercent(TRIAL_OFFER.listPriceYen, TRIAL_OFFER.off
 //   実映像が用意でき次第 videoUrl / poster を足すだけで再生に切り替わる。
 //   videoUrl も poster も無い間は、タイトルフレーム表示になる (壊れたリンクを作らない)。
 // ------------------------------------------------------------
-export type StudioProjectCategory = 'SHORT DRAMA' | 'BRAND FILM' | 'PRODUCT' | 'ARTIST' | 'SOCIAL';
+export type StudioProjectCategory = 'SHORT DRAMA' | 'BRAND FILM' | 'PRODUCT' | 'ARTIST' | 'SOCIAL' | 'EVENT BRANDING';
+
+// ------------------------------------------------------------
+// イベントブランディング — 「本番の前に、完成イメージを見せる」という制作カテゴリの説明。
+//   制作実績セクションの先頭、EVENT BRANDING の作品の直前にだけ表示する短い説明文。
+//   他のセクション (Showcase/Bridge等) と違い、既に実例が1本あるので情緒的な主張はせず、
+//   「開催前に何が渡せるか」を1段落で言い切るだけに留める。
+// ------------------------------------------------------------
+export const EVENT_BRANDING = {
+  en: 'Event Branding',
+  title: '本番の前に、当日の熱量を見せる。',
+  body: 'ライブ・展示会・発表会は、開催して初めて空気が伝わります。当社はその「本番でしか見せられない景色」を、告知・集客用の映像として開催前に先につくります。会場の規模、照明、来場者の熱量までを映像で見せることが、来場を決める一押しになります。',
+} as const;
 
 // ------------------------------------------------------------
 // 制作実績 (/studio/film の「制作実績」セクションで使用)
@@ -143,6 +155,14 @@ export type FilmWork = {
 };
 
 export const FILM_WORKS: FilmWork[] = [
+  {
+    id: 'work-event-branding-01',
+    client: '井出直毅（CORE Studio 代表）',
+    category: 'EVENT BRANDING',
+    purpose: 'ライブの本番前から、会場の規模・照明・来場者の熱量までを見せる「event branding」映像の制作例。イベントの告知・集客の材料として、開催前に完成イメージを用意できることを示すデモンストレーションです。',
+    poster: '/studio/film/event-artist-live.jpg',
+    videoUrl: '/studio/film/event-artist-live.mp4',
+  },
   {
     id: 'work-asahikawa-villa-01',
     client: '株式会社グローバルジョイントコミットメント',
