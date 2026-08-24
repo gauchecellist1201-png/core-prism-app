@@ -663,6 +663,23 @@ export default function MasterEntry() {
           >
             💳 Stripe 接続診断
           </a>
+          <a
+            href="/master/company-setup"
+            style={{
+              flex: 1,
+              padding: '10px 0',
+              borderRadius: 10,
+              background: 'rgba(216,168,59,0.14)',
+              border: '1px solid rgba(216,168,59,0.4)',
+              color: '#f0d9a3',
+              fontSize: 12,
+              fontWeight: 600,
+              textAlign: 'center',
+              textDecoration: 'none',
+            }}
+          >
+            🏛 株式会社CORE 設立
+          </a>
         </div>
 
         <p

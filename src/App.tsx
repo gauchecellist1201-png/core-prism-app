@@ -52,6 +52,7 @@ const WebVitals = lazy(() => import('./master/WebVitals'));
 const AuditLog = lazy(() => import('./master/AuditLog'));
 const CashflowForecast = lazy(() => import('./master/CashflowForecast'));
 const SocialShares = lazy(() => import('./master/SocialShares'));
+const CompanySetupPage = lazy(() => import('./master/companySetup/CompanySetupPage'));
 const ContactPage = lazy(() => import('./components/ContactPage'));
 const TrustPage = lazy(() => import('./components/TrustPage'));
 const StatusPage = lazy(() => import('./components/StatusPage'));
@@ -234,6 +235,13 @@ function isAuditLogPath(): boolean {
   if (typeof window === 'undefined') return false;
   const p = window.location.pathname;
   return p === '/master/audit-log' || p === '/audit-log';
+}
+
+/** /master/company-setup — 株式会社CORE 法人設立トラッカー (オーナー専用) */
+function isCompanySetupPath(): boolean {
+  if (typeof window === 'undefined') return false;
+  const p = window.location.pathname;
+  return p === '/master/company-setup' || p === '/company-setup';
 }
 
 function isCashflowPath(): boolean {
@@ -552,6 +560,11 @@ function AppRoutes() {
   // /master/audit-log — 認証履歴 (DDDDDD 2026-06-04)
   if (isAuditLogPath()) {
     return <Suspense fallback={<RouteFallback />}><AuditLog /></Suspense>;
+  }
+
+  // /master/company-setup — 株式会社CORE 法人設立トラッカー (オーナー専用)
+  if (isCompanySetupPath()) {
+    return <Suspense fallback={<RouteFallback />}><CompanySetupPage /></Suspense>;
   }
 
   // /master/cashflow-forecast — 資金繰り 60 日 (EEEEEE 2026-06-04)
