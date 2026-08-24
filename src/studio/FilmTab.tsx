@@ -10,7 +10,8 @@ import { Band, H2, Note, IconCheck, IconChat, IconCopy } from './ui';
 import { STUDIO, CONTACT } from './plans';
 import {
   FILM, FILM_PLANS, MONTHLY_LEAD, MONTHLY_PLANS, MONTHLY_TERMS, MONTHLY_SPEC,
-  PLAN_LADDER, PRICE_NOTE, PRICE_WHY, VALUE, monthlySavings,
+  PLAN_LADDER, PRICE_NOTE, PRICE_WHY, VALUE, monthlySavings, yen,
+  TRIAL_OFFER, offerDiffYen, offerPercent,
   PRICING_MODES, PRICING_LEAD, planMatrix, type PricingMode, type FilmPlan,
   FILM_WORKS, FILM_PROCESS, PROCESS_STATEMENT, REVISION, TERMS, AI_TERMS,
   FILM_FAQ, FILM_CTA, INQUIRY_FIELDS,
@@ -231,6 +232,25 @@ export default function FilmTab() {
         .fm-pick-badge { display: inline-flex; align-items: center; padding: 4px 10px;
           border-radius: 999px; background: ${C.gold}; color: #FFFFFF; font-size: 10.5px; font-weight: 700;
           letter-spacing: 0.14em; }
+        /* 初回限定のバッジは「おすすめ」(金)と役割が違う。同じ金にすると
+           3枚のうち2枚が金のバッジになり、どちらが推奨なのか分からなくなる。
+           限定は主張ではなく条件なので、地の色を濃紺にして静かに置く */
+        .fm-pick-badge[data-offer="true"] { background: ${C.ink}; }
+        /* 通常価格 → 初回価格。取り消し線の金額と割引額を1行に置く。
+           「50%OFF」のような丸めた数字は書かない (¥89,800→¥49,800 は 44%) */
+        .fm-pick-was { display: flex; align-items: baseline; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+        .fm-pick-was-price { font-size: 13.5px; color: ${C.mute}; text-decoration: line-through;
+          text-decoration-thickness: 1px; }
+        .fm-pick-was-off { font-size: 11px; font-weight: 700; letter-spacing: 0.06em; color: ${C.goldText};
+          border: 1px solid ${C.gold}; border-radius: 4px; padding: 2px 6px; }
+        /* 取り消し線の行が入る列だけ金額が下がると3枚の金額が揃わないので、
+           その行があるカードは price の上余白を詰めて相殺する */
+        .fm-pick-was + .fm-pick-price { margin-top: 4px; }
+        .fm-pick-offnote { font-size: 11.5px; line-height: 1.7; color: ${C.mute}; margin-top: 6px; }
+        /* 月額カードの「1本ずつなら」比較。お得感はここで数字だけで出す */
+        .fm-pick-save { font-size: 12px; line-height: 1.7; color: ${C.goldText}; font-weight: 600;
+          background: rgba(168,130,60,0.08); border-radius: 8px; padding: 8px 10px; margin-top: 10px; }
+        .fm-pick-save s { color: ${C.mute}; font-weight: 400; text-decoration-thickness: 1px; }
         /* TRIAL / STANDARD は欧文なので字間を開けたほうが締まるが、
            同じ字間を「月4本」に掛けると分かち書きに見えて読みにくい */
         .fm-pick-name { font-family: ${SERIF}; font-size: 18px; font-weight: 700; letter-spacing: 0.1em; color: ${C.ink}; }
@@ -680,9 +700,13 @@ function MonthlySavingsTable() {
                 <div style={{ fontSize: 12, fontWeight: 700, color: C.ink, minWidth: 62 }}>{m.volume}</div>
                 <div style={{ fontSize: 12, color: C.mute }}>{VALUE.monthly.colOneOff} <b style={{ color: C.ink }}>¥{s.oneOffTotal.toLocaleString('ja-JP')}</b></div>
                 <div style={{ fontSize: 12, color: C.mute }}>{VALUE.monthly.colMonthly} <b style={{ color: C.ink }}>{m.price}</b></div>
-                {/* 「%お得」は規格の異なる比較を値引きに見せるため表示しない (Codexレビュー指摘)。
-                    総額差のみを参考として示す。 */}
-                <div style={{ fontSize: 12, color: C.goldText, fontWeight: 700 }}>{VALUE.monthly.colDiff} ¥{s.diff.toLocaleString('ja-JP')}</div>
+                {/* 2026-08-24: 比較の基準を 20秒1本の通常価格 ¥89,800 に変えたため、
+                    「規格の異なる比較を値引きに見せている」という旧指摘には当たらなくなった
+                    (月額の1本は20〜30秒で、単発20秒より仕様は上。差は過大ではなく控えめ)。
+                    ゆえに割合も出す。percent は切り捨て済み。 */}
+                <div style={{ fontSize: 12, color: C.goldText, fontWeight: 700 }}>
+                  {VALUE.monthly.colDiff} ¥{s.diff.toLocaleString('ja-JP')}（{s.percent}%）
+                </div>
               </div>
             );
           })}
@@ -908,11 +932,21 @@ function PlanPickCards({ onDetail }: { onDetail: (id: string) => void }) {
         <div key={p.id} className="fm-pick-card" data-featured={p.featured ? 'true' : undefined}>
           <div className="fm-pick-badgerow">
             {p.featured && <span className="fm-pick-badge">おすすめ</span>}
+            {p.listPrice && <span className="fm-pick-badge" data-offer="true">{TRIAL_OFFER.badge}</span>}
           </div>
           <div className="fm-pick-name">{p.name}</div>
           <div className="fm-pick-unit">{p.unit}</div>
+          {/* 通常価格を先に見せてから、初回価格を主役の大きさで出す。
+              取り消し線だけを置いて割引額を書かないと、いくら安いのかを読む人に計算させることになる */}
+          {p.listPrice && (
+            <div className="fm-pick-was">
+              <span className="fm-pick-was-price">通常 {p.listPrice}</span>
+              <span className="fm-pick-was-off">{offerPercent}%OFF ／ {yen(offerDiffYen)} 引き</span>
+            </div>
+          )}
           <div className="fm-pick-price">{p.price}</div>
           <div className="fm-pick-tax">税込 ／ 初稿まで {p.delivery}</div>
+          {p.offerNote && <div className="fm-pick-offnote">{p.offerNote}</div>}
           <p className="fm-pick-fit">{p.fit}</p>
           {/* 「何ができるか」を仕様より先に置く。尺とカット数だけでは用途が想像できない */}
           <ul className="fm-pick-uses">
@@ -953,6 +987,12 @@ function MonthlyPickCards() {
           <div className="fm-pick-price">{m.price}</div>
           <div className="fm-pick-tax">税込 ／ 月々のお支払い</div>
           <p className="fm-pick-fit">{m.unitPrice}</p>
+          {/* 「1本ずつ頼んだほうが安いのでは」という疑いは、月額の金額を見た瞬間に生まれる。
+              疑いが生まれる場所と同じ場所で、20秒1本の通常価格 × 本数と並べて否定する */}
+          <div className="fm-pick-save">
+            1本ずつなら <s>{yen(monthlySavings(m).oneOffTotal)}</s>（20秒 ¥89,800 × {m.count}本）
+            <br />このプランなら {yen(monthlySavings(m).diff)} 分が浮きます
+          </div>
           <p className="fm-pick-body">{m.body}</p>
           <div className="fm-pick-foot">
             <FilmCheckoutButton plan={m.id} mode="subscription" label="この本数で契約する" />
@@ -986,7 +1026,10 @@ function PlanMatrix() {
                 <th key={p.id} scope="col" className={`fm-mx-plan${p.featured ? ' fm-mx-col-featured' : ''}`}>
                   <div className="fm-mx-plan-name">{p.name}</div>
                   <div className="fm-mx-plan-price">{p.price}</div>
-                  <div className="fm-mx-plan-unit">{p.unit}</div>
+                  <div className="fm-mx-plan-unit">
+                    {p.unit}
+                    {p.listPrice && <><br />通常 {p.listPrice}／初回限定</>}
+                  </div>
                 </th>
               ))}
             </tr>
@@ -1020,7 +1063,9 @@ function PlanDetail({ p, open, onToggle }: { p: FilmPlan; open: boolean; onToggl
         }}>
         <span>
           <span className="st-serif" style={{ display: 'block', fontSize: 14.5, fontWeight: 700, color: C.ink, letterSpacing: '0.08em' }}>
-            {p.name} <span style={{ letterSpacing: 'normal', color: C.mute, fontWeight: 400, fontSize: 12.5 }}>{p.price} ／ {p.unit}</span>
+            {p.name} <span style={{ letterSpacing: 'normal', color: C.mute, fontWeight: 400, fontSize: 12.5 }}>
+              {p.listPrice && <s style={{ marginRight: 5 }}>{p.listPrice}</s>}{p.price} ／ {p.unit}
+            </span>
           </span>
           <span style={{ display: 'block', fontSize: 12, color: C.mute, lineHeight: 1.7, marginTop: 4 }}>{p.lead}</span>
         </span>
@@ -1115,6 +1160,22 @@ function Pricing() {
       <div style={{ marginTop: 20 }}>
         {mode === 'once' ? <PlanPickCards onDetail={openDetail} /> : <MonthlyPickCards />}
       </div>
+
+      {/* 初回価格の根拠と枠。安さの理由を書かずに割引だけを出すと、品質への不信にしかならない。
+          「残り◯枠」のような検証できないカウンターは置かず、守れる条件だけを静かに書く */}
+      {mode === 'once' && (
+        <Reveal>
+          <div className="st-card" style={{ marginTop: 14, background: '#FFFFFF' }}>
+            <div style={{ fontSize: 12.5, fontWeight: 700, color: C.ink, marginBottom: 6 }}>
+              なぜ初回だけ ¥49,800 なのか
+            </div>
+            <p style={{ fontSize: 12.5, lineHeight: 1.9, color: C.body, margin: 0 }}>{TRIAL_OFFER.why}</p>
+            <p style={{ fontSize: 12, lineHeight: 1.85, color: C.mute, margin: '8px 0 0' }}>
+              {TRIAL_OFFER.limit}。{TRIAL_OFFER.quota}
+            </p>
+          </div>
+        </Reveal>
+      )}
 
       {mode === 'once' ? (
         <>
