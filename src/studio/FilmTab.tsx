@@ -11,7 +11,7 @@ import { STUDIO, CONTACT } from './plans';
 import {
   FILM, FILM_PLANS, MONTHLY_LEAD, MONTHLY_PLANS, MONTHLY_TERMS, MONTHLY_SPEC,
   PLAN_LADDER, PRICE_NOTE, PRICE_WHY, VALUE, monthlySavings, yen,
-  TRIAL_OFFER, offerDiffYen, offerPercent,
+  TRIAL_OFFER, CAMPAIGN, isCampaignLive, offPercent,
   PRICING_MODES, PRICING_LEAD, planMatrix, type PricingMode, type FilmPlan,
   FILM_WORKS, FILM_PROCESS, PROCESS_STATEMENT, REVISION, TERMS, AI_TERMS,
   FILM_FAQ, FILM_CTA, INQUIRY_FIELDS,
@@ -926,27 +926,40 @@ function ModeSwitch({ mode, onPick }: { mode: PricingMode; onPick: (m: PricingMo
 
 // ---- 早見カード (単発)。金額・向く相手・作れるものだけに絞る。仕様の全項目は下の比較表 ----
 function PlanPickCards({ onDetail }: { onDetail: (id: string) => void }) {
+  // 期限を過ぎたら、割引の表示ごと消す。期限切れの「33%OFF」が残るのが一番まずい。
+  // TRIAL は日付ではなく「初めてのお取引」という条件つきなので、期限とは無関係に出し続ける。
+  const live = isCampaignLive();
   return (
     <div className="fm-pick">
-      {FILM_PLANS.map(p => (
+      {FILM_PLANS.map(p => {
+        const isTrial = p.id === 'trial';
+        const showOffer = !!p.listPriceYen && (isTrial || live);
+        const off = p.listPriceYen ? offPercent(p.listPriceYen, p.priceYen) : 0;
+        return (
         <div key={p.id} className="fm-pick-card" data-featured={p.featured ? 'true' : undefined}>
           <div className="fm-pick-badgerow">
             {p.featured && <span className="fm-pick-badge">おすすめ</span>}
-            {p.listPrice && <span className="fm-pick-badge" data-offer="true">{TRIAL_OFFER.badge}</span>}
+            {showOffer && (
+              <span className="fm-pick-badge" data-offer="true">
+                {isTrial ? TRIAL_OFFER.badge : CAMPAIGN.badge}
+              </span>
+            )}
           </div>
           <div className="fm-pick-name">{p.name}</div>
           <div className="fm-pick-unit">{p.unit}</div>
-          {/* 通常価格を先に見せてから、初回価格を主役の大きさで出す。
+          {/* 通常価格を先に見せてから、実際にお支払いいただく額を主役の大きさで出す。
               取り消し線だけを置いて割引額を書かないと、いくら安いのかを読む人に計算させることになる */}
-          {p.listPrice && (
+          {showOffer && (
             <div className="fm-pick-was">
               <span className="fm-pick-was-price">通常 {p.listPrice}</span>
-              <span className="fm-pick-was-off">{offerPercent}%OFF ／ {yen(offerDiffYen)} 引き</span>
+              <span className="fm-pick-was-off">
+                {off}%OFF ／ {yen((p.listPriceYen ?? 0) - p.priceYen)} 引き
+              </span>
             </div>
           )}
           <div className="fm-pick-price">{p.price}</div>
           <div className="fm-pick-tax">税込 ／ 初稿まで {p.delivery}</div>
-          {p.offerNote && <div className="fm-pick-offnote">{p.offerNote}</div>}
+          {showOffer && p.offerNote && <div className="fm-pick-offnote">{p.offerNote}</div>}
           <p className="fm-pick-fit">{p.fit}</p>
           {/* 「何ができるか」を仕様より先に置く。尺とカット数だけでは用途が想像できない */}
           <ul className="fm-pick-uses">
@@ -963,11 +976,12 @@ function PlanPickCards({ onDetail }: { onDetail: (id: string) => void }) {
               </a>
             )}
             <button type="button" className="fm-pick-more" onClick={() => onDetail(p.id)}>
-              含まれるもの・価格の理由を見る
+              含まれるものを見る
             </button>
           </div>
         </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
@@ -1028,7 +1042,9 @@ function PlanMatrix() {
                   <div className="fm-mx-plan-price">{p.price}</div>
                   <div className="fm-mx-plan-unit">
                     {p.unit}
-                    {p.listPrice && <><br />通常 {p.listPrice}／初回限定</>}
+                    {p.listPrice && (p.id === 'trial' || isCampaignLive()) && (
+                      <><br />通常 {p.listPrice}／{p.id === 'trial' ? TRIAL_OFFER.badge : CAMPAIGN.badge}</>
+                    )}
                   </div>
                 </th>
               ))}
@@ -1064,7 +1080,7 @@ function PlanDetail({ p, open, onToggle }: { p: FilmPlan; open: boolean; onToggl
         <span>
           <span className="st-serif" style={{ display: 'block', fontSize: 14.5, fontWeight: 700, color: C.ink, letterSpacing: '0.08em' }}>
             {p.name} <span style={{ letterSpacing: 'normal', color: C.mute, fontWeight: 400, fontSize: 12.5 }}>
-              {p.listPrice && <s style={{ marginRight: 5 }}>{p.listPrice}</s>}{p.price} ／ {p.unit}
+              {p.listPrice && (p.id === 'trial' || isCampaignLive()) && <s style={{ marginRight: 5 }}>{p.listPrice}</s>}{p.price} ／ {p.unit}
             </span>
           </span>
           <span style={{ display: 'block', fontSize: 12, color: C.mute, lineHeight: 1.7, marginTop: 4 }}>{p.lead}</span>
@@ -1073,13 +1089,9 @@ function PlanDetail({ p, open, onToggle }: { p: FilmPlan; open: boolean; onToggl
       </button>
       {open && (
         <div style={{ padding: '18px 17px 20px', borderTop: `1px solid ${C.line}` }}>
-          {/* この価格になる理由。書かないと 2.5倍の差が値付けの気分に見える */}
-          <div className="fm-priceway" style={{ marginTop: 0 }}>
-            <div className="fm-priceway-key">この価格になる理由</div>
-            <p className="fm-priceway-body">{p.why}</p>
-          </div>
-
-          <div style={{ fontSize: 11.5, fontWeight: 600, letterSpacing: '0.1em', color: C.mute, margin: '18px 0 8px' }}>含まれるもの</div>
+          {/* 2026-08-24: ボタンの文言を「含まれるものを見る」に変えたので、
+              開いた先も含まれるものから始める。価格の理由は読みたい人が最後に読む位置へ移した */}
+          <div style={{ fontSize: 11.5, fontWeight: 600, letterSpacing: '0.1em', color: C.mute, margin: '0 0 8px' }}>含まれるもの</div>
           <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: 6 }}>
             {p.includes.map(x => (
               <li key={x} style={{ display: 'flex', gap: 8, fontSize: 13.5, lineHeight: 1.7, color: C.body }}><IconCheck />{x}</li>
@@ -1096,6 +1108,12 @@ function PlanDetail({ p, open, onToggle }: { p: FilmPlan; open: boolean; onToggl
                 </li>
               ))}
             </ul>
+          </div>
+
+          {/* 価格の理由。書かないと、金額の差が値付けの気分に見える */}
+          <div className="fm-priceway">
+            <div className="fm-priceway-key">この価格になる理由</div>
+            <p className="fm-priceway-body">{p.why}</p>
           </div>
 
           <div style={{ marginTop: 18 }}>
@@ -1167,12 +1185,21 @@ function Pricing() {
         <Reveal>
           <div className="st-card" style={{ marginTop: 14, background: '#FFFFFF' }}>
             <div style={{ fontSize: 12.5, fontWeight: 700, color: C.ink, marginBottom: 6 }}>
-              なぜ初回だけ ¥49,800 なのか
+              いまの価格について
             </div>
-            <p style={{ fontSize: 12.5, lineHeight: 1.9, color: C.body, margin: 0 }}>{TRIAL_OFFER.why}</p>
-            <p style={{ fontSize: 12, lineHeight: 1.85, color: C.mute, margin: '8px 0 0' }}>
+            <p style={{ fontSize: 12.5, lineHeight: 1.9, color: C.body, margin: 0 }}>
+              <b style={{ color: C.ink }}>TRIAL（20秒）</b> — {TRIAL_OFFER.why}
+            </p>
+            <p style={{ fontSize: 12, lineHeight: 1.85, color: C.mute, margin: '6px 0 0' }}>
               {TRIAL_OFFER.limit}。{TRIAL_OFFER.quota}
             </p>
+            {isCampaignLive() && (
+              <p style={{ fontSize: 12.5, lineHeight: 1.9, color: C.body, margin: '12px 0 0', paddingTop: 12, borderTop: `1px solid ${C.line}` }}>
+                <b style={{ color: C.ink }}>STANDARD・PREMIUM</b> — 開設にあたり、{CAMPAIGN.untilLabel} のご発注分までを現行価格でお引き受けしています。
+                {CAMPAIGN.nextLabel} 以降は、STANDARD ¥192,000・PREMIUM ¥385,000 に改定します。
+                <span style={{ color: C.mute }}>（すでにご発注いただいた制作は、改定後も当初の金額のまま進めます）</span>
+              </p>
+            )}
           </div>
         </Reveal>
       )}
