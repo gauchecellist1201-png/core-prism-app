@@ -19,7 +19,11 @@ export const FILM = {
   // (2026-08-21: 「情報が多すぎて縦に長く煩雑」というオーナー指摘を受けて短縮)
   heroSub: '企画・脚本・ディレクション・仕上げまで、当社が一貫して制作します。',
   heroCta: 'LINEで相談・お見積りを依頼する',
-  heroCtaSub: '料金と条件を見る',
+  heroCtaSub: '料金プランを見る',
+  /** 2026-08-27 追加。1画面目で「結局この会社に何を頼めるのか」を答える。
+      映像は品質を示すが用途は示さないため、用途の名前だけを短く並べる。
+      詳細は下の FILM_MENU (作れるもの) に置き、ここでは名前だけに留める。 */
+  heroUses: ['ショートドラマ', 'ブランドフィルム', '商品・サービス紹介', 'SNSの継続発信', '採用・会社紹介', 'イベント告知'],
   /** ヒーロー直下の数字。すべて当ページ内で検証できる事実のみを置く (推定値・水増し禁止) */
   proof: [
     // 2026-08-24: 旧「¥49,800 / 単発1本（20秒）の制作費」は、¥49,800 を通常価格として読ませていた。
@@ -120,16 +124,93 @@ export const offerPercent = offPercent(TRIAL_OFFER.listPriceYen, TRIAL_OFFER.off
 export type StudioProjectCategory = 'SHORT DRAMA' | 'BRAND FILM' | 'PRODUCT' | 'ARTIST' | 'SOCIAL' | 'EVENT BRANDING';
 
 // ------------------------------------------------------------
-// イベントブランディング — 「本番の前に、完成イメージを見せる」という制作カテゴリの説明。
-//   制作実績セクションの先頭、EVENT BRANDING の作品の直前にだけ表示する短い説明文。
-//   他のセクション (Showcase/Bridge等) と違い、既に実例が1本あるので情緒的な主張はせず、
-//   「開催前に何が渡せるか」を1段落で言い切るだけに留める。
+// 作れるもの (WHAT WE MAKE) — 2026-08-27 新設。
+//
+// 直したかった問題:
+//   ヒーローの映像は「品質」を示すが「用途」を示さない。オーナー指摘
+//   「文字が多すぎて、結局何ができるのかまだ不明瞭」の正体はこれで、
+//   長い散文を読み切らないと発注できる形式が分からない状態だった。
+//   よって用途の名前・1行・目安価格だけの一覧を、ヒーローの直後に置く。
+//
+// 書かないと決めたこと:
+//   ここに映像は貼らない。public/studio/film/ にある brand-film / artist /
+//   social-backstage は「実写映像の参考例」(旧 studioProjects の isReal:true)
+//   であって当社のAI制作物ではない。用途の見本として並べると
+//   「撮影をせずに」という主張と食い違うため、実映像は制作実績 (FILM_WORKS =
+//   すべて当社制作) のセクションだけで見せる。
+//
+// 金額を手打ちしない:
+//   目安価格は basis から FILM_PLANS / MONTHLY_PLANS を引いて組む。
+//   手打ちにすると価格改定のたびにここだけ旧価格が残る。
 // ------------------------------------------------------------
-export const EVENT_BRANDING = {
-  en: 'Event Branding',
-  title: '本番の前に、当日の熱量を見せる。',
-  body: 'ライブ・展示会・発表会は、開催して初めて空気が伝わります。当社はその「本番でしか見せられない景色」を、告知・集客用の映像として開催前に先につくります。会場の規模、照明、来場者の熱量までを映像で見せることが、来場を決める一押しになります。',
+export type FilmMenuBasis =
+  | { kind: 'once'; plan: FilmPlan['id'] }
+  | { kind: 'monthly' };
+
+export type FilmMenuItem = {
+  id: string;
+  en: string;
+  title: string;
+  /** 1行。2行に折り返す長さを書かない (一覧の走査速度が落ちる) */
+  body: string;
+  basis: FilmMenuBasis;
+};
+
+export const MENU_LEAD = {
+  en: 'What We Make',
+  title: '作れるもの',
+  sub: '発注の多い順に6つ挙げます。どれも企画から仕上げまで当社が一貫して制作します。',
 } as const;
+
+export const FILM_MENU: FilmMenuItem[] = [
+  {
+    id: 'short-drama', en: 'Short Drama', title: 'ショートドラマ',
+    body: '人物を主役にした連続もの。続きが見たくなる形で毎月積み上げます。',
+    basis: { kind: 'monthly' },
+  },
+  {
+    id: 'brand-film', en: 'Brand Film', title: 'ブランドフィルム',
+    body: '会社・商品の思想を1本に。展示会や商談で流す顔になる映像です。',
+    basis: { kind: 'once', plan: 'premium' },
+  },
+  {
+    id: 'product', en: 'Product', title: '商品・サービス紹介',
+    body: '見せ場だけを20〜40秒に。そのまま広告に出せる形で納品します。',
+    basis: { kind: 'once', plan: 'trial' },
+  },
+  {
+    id: 'social', en: 'Social', title: 'SNSの継続発信',
+    body: 'TikTok / Reels / Shorts の縦型を毎月4〜12本。発信を止めません。',
+    basis: { kind: 'monthly' },
+  },
+  {
+    id: 'recruit', en: 'Recruiting', title: '採用・会社紹介',
+    body: '働く場所と人の空気を、応募前の候補者に先に届けます。',
+    basis: { kind: 'once', plan: 'standard' },
+  },
+  {
+    id: 'event', en: 'Event Branding', title: 'イベント告知',
+    body: '開催前に当日の熱量を見せる。会場の規模も照明も先につくります。',
+    basis: { kind: 'once', plan: 'standard' },
+  },
+];
+
+/** 目安価格のラベル。FILM_PLANS / MONTHLY_PLANS の実データから組む (手打ち禁止)。
+ *
+ *  TRIAL だけ通常価格 (¥89,800) を出す:
+ *    ¥49,800 は「初めてのお取引に限り1社1本」という条件つきの価格で、2本目以降は適用されない。
+ *    用途の一覧に条件なしで ¥49,800 と書くと、その用途の平常価格として読まれてしまう
+ *    (同じ誤読が原因で 2026-08-24 にヒーローの数字も 通常/初回 の併記に直している)。
+ *    STANDARD / PREMIUM の割引は期間限定でどなたにも適用されるため、現行価格をそのまま出す。 */
+export function menuPriceLabel(basis: FilmMenuBasis): string {
+  if (basis.kind === 'monthly') {
+    return `月 ${yen(Math.min(...MONTHLY_PLANS.map(m => m.priceYen)))} 〜`;
+  }
+  const plan = FILM_PLANS.find(p => p.id === basis.plan);
+  if (!plan) return '';
+  const shown = plan.id === 'trial' ? (plan.listPrice ?? plan.price) : plan.price;
+  return `${shown} 〜`;
+}
 
 // ------------------------------------------------------------
 // 制作実績 (/studio/film の「制作実績」セクションで使用)
@@ -155,7 +236,7 @@ export const FILM_WORKS: FilmWork[] = [
     id: 'work-event-branding-01',
     client: 'GAUCHE（チェリスト）',
     category: 'EVENT BRANDING',
-    purpose: 'イベントの本番前から、会場の規模・照明・来場者の熱量までを見せる「event branding」映像の制作例。ライブ・展示会・発表会・周年イベントなど、開催して初めて伝わる当日の空気を、告知・集客の材料として開催前に用意できることを示すデモンストレーションです。',
+    purpose: '開催前に当日の熱量を見せる告知映像。会場の規模・照明・来場者の空気までを、本番を待たずに集客の材料にできます。',
     poster: '/studio/film/event-artist-live.jpg',
     videoUrl: '/studio/film/event-artist-live.mp4',
   },
@@ -182,7 +263,7 @@ export const FILM_WORKS: FilmWork[] = [
     id: 'work-short-drama-01',
     client: 'GAUCHE（チェリスト）',
     category: 'SHORT DRAMA',
-    purpose: 'チェリスト GAUCHE 本人を主人公にした、連続もの形式のショートドラマ。舞台裏・本番・日常を1つの物語としてつなぎ、TikTok / Reels で継続的に発信するブランディング企画です。',
+    purpose: 'チェリスト本人を主人公にした連続もののショートドラマ。舞台裏・本番・日常を1つの物語としてつなぎ、TikTok / Reels で継続発信しています。',
     poster: '/studio/film/short-drama.jpg',
     videoUrl: '/studio/film/short-drama.mp4',
   },
@@ -208,11 +289,13 @@ export const FILM_PROCESS: FilmStep[] = [
 
 export const PROCESS_STATEMENT = {
   title: 'プロンプトを渡して終わる会社ではありません。',
-  body: '生成の技術そのものは、いずれ誰でも使えるようになります。私たちが担うのは、何を語るかを決め、完成した映像として世に出るところまで責任を持つことです。企画・脚本・ディレクション・仕上げまで、当社が一貫して手を動かします。',
+  // 2026-08-27 短縮。3文で言っていた内容を1文に畳んだ (主張は変えていない)。
+  body: '生成の技術はいずれ誰でも使えるようになります。当社が担うのは、何を語るかを決め、世に出せる1本に仕上げるところまでです。',
   // 2026-08-22 Codexレビュー指摘で追加: 下の6ステップは標準工程であり、
   // TRIAL (料金セクション参照) は「03 書く」にあたる台本・絵コンテを含まない。
   // 断りなく並べると、TRIALの購入者が台本まで含まれると誤解する。
-  note: '下記はSTANDARD以上・月額プランの標準工程です。TRIAL（初回1本限り）は構成のみで、台本・絵コンテの作成は含みません。',
+  // 表示位置は6ステップの「下」なので、指す方向は上。「下記」のままだと存在しない先を指す
+  note: '上記はSTANDARD以上・月額プランの標準工程です。TRIAL（初回1本限り）は構成のみで、台本・絵コンテの作成は含みません。',
 } as const;
 
 // ------------------------------------------------------------
@@ -411,10 +494,18 @@ export type PricingMode = 'once' | 'monthly';
 export type PricingModeDef = {
   id: PricingMode;
   label: string;
+  /** 選ぶ前に形式そのものを言い切る短いバッジ (「サブスク」の存在に気づかせる) */
+  badge: string;
   /** スイッチ上に出す価格帯。手打ちにすると値上げのたびにスイッチだけ旧価格が残るので、
       実データの最小値から組む (PRICING_MODES は MONTHLY_PLANS の定義後に置いてある) */
   hint: string;
+  /** hint の直下。1本あたりの実額など、金額の読み方を1行で補う */
+  unit: string;
   note: string;
+  /** 押す前に分かるべき条件を3つだけ。表を開かないと分からない状態にしない */
+  points: string[];
+  /** カード下部のボタン文言 */
+  cta: string;
 };
 
 export const PRICING_LEAD = {
@@ -503,14 +594,22 @@ export const PRICING_MODES: PricingModeDef[] = [
   {
     id: 'once',
     label: '1本ずつ発注する',
+    badge: '都度払い',
     hint: `${cheapest(FILM_PLANS.map(p => p.priceYen))} 〜`,
+    unit: '初回1本20秒 ／ 通常 ¥89,800',
     note: `初回1本は ¥49,800（通常 ¥89,800）。継続の義務はありません。`,
+    points: ['20秒 / 40秒 / 60秒 の3プラン', '継続の義務はありません', '初稿まで約1週間'],
+    cta: '単発プランを見る',
   },
   {
     id: 'monthly',
     label: '毎月つづける',
+    badge: '月額サブスクリプション',
     hint: `月 ${cheapest(MONTHLY_PLANS.map(p => p.priceYen))} 〜`,
+    unit: '1本あたり ¥45,667〜57,000',
     note: `月4〜12本。1本あたり ¥45,667〜57,000 まで下がります。`,
+    points: ['月4本 / 8本 / 12本', '初期費用0円・最低契約期間なし', '修正無制限・広告への二次利用込み'],
+    cta: '月額プランを見る',
   },
 ];
 
@@ -558,7 +657,9 @@ export type MarketRow = { group: string; item: string; market: string; core: str
 export const VALUE = {
   en: 'Cost Structure',
   title: '安いのではなく、\n費用の掛かる場所が違う。',
-  lead: '国内の映像制作費は、その多くが撮影当日に紐づく費用です。ロケ、機材、スタッフ、出演者、天候による撮り直し。当社はこの工程を持たないため、同じ予算で本数と作り直しの回数を増やせます。',
+  // 2026-08-27 短縮。撮影当日の費用という論点は下の表と理由カードで繰り返されるので、
+  // ここは表への導入1文だけに絞る。
+  lead: '国内の映像制作費は、その多くが撮影当日に紐づきます。当社はその工程を持ちません。',
 
   /** 相場との対比。左列は特定他社の価格ではなく、公開情報にもとづく一般的な目安 */
   tableHead: { item: '項目', market: '一般的な相場（実写）', core: 'CORE Studio' },
@@ -575,21 +676,23 @@ export const VALUE = {
 
   /** 安い理由。ここを書かないと、価格は不信の材料にしかならない */
   reasonsTitle: 'この差が生まれる理由',
+  // 2026-08-27 各60字前後に短縮。理由そのものは残す (安さの理由を書かないと品質への不信になる)。
+  // 削ったのは、表と重複していた具体例の列挙だけ。
   reasons: [
     {
       no: '01',
-      title: '撮影当日の固定費が発生しません',
-      body: 'ロケ地の手配、機材、スタッフ、出演者、天候による撮り直し。一般的な映像制作費の大半はここに掛かります。当社の制作にはこの工程がありません。',
+      title: '撮影当日の固定費がありません',
+      body: 'ロケ・機材・スタッフ・出演者・撮り直し。一般的な制作費の大半はここに掛かります。',
     },
     {
       no: '02',
       title: '分業をしません',
-      body: '企画・脚本・ディレクション・編集を、同じ担当が最後まで通します。会社間の伝言と待ち時間が発生しない分、費用と期間が短くなります。',
+      body: '企画から編集まで同じ担当が通します。会社間の伝言と待ち時間が費用に乗りません。',
     },
     {
       no: '03',
-      title: '浮いた分は、企画と仕上げに戻しています',
-      body: '生成そのものは短時間で終わります。しかし何を語るかを決める工程と、最後まで見られる状態に整える工程は削っていません。当社が時間を掛けているのはこの2つです。',
+      title: '浮いた分は企画と仕上げに戻します',
+      body: '生成は短時間で終わります。時間を掛けているのは、何を語るかと、最後の仕上げです。',
     },
   ],
 
@@ -607,7 +710,9 @@ export const VALUE = {
   //       過大ではなく、むしろ控えめな数字になる。ゆえに割合も出してよい。
   monthly: {
     title: '1本ずつ発注するより、毎月のほうが必ず安くなります。',
-    body: '20秒1本を単発でご発注いただくと通常 ¥89,800 です。月額プランの1本は20〜30秒・5〜8カットで、修正無制限・広告への二次利用・9:16 / 1:1 / 16:9 の書き出しまで含みます。仕様を落として安くしているのではなく、同じ設計を毎月使い回せる分だけ1本の原価が下がっています。',
+    // 2026-08-27 短縮。仕様の内訳は直上の MONTHLY_SPEC の表に同じものが載っているため、
+    // ここは比較の前提 (基準額と、仕様を落としていないこと) だけを残す。
+    body: '基準は20秒1本の通常価格 ¥89,800 です。月額の1本は20〜30秒で、修正無制限・広告への二次利用まで含みます。仕様を落として安くしているのではありません。',
     note: '初期費用0円・最低契約期間なしのため、成果が合わないと判断された月で停止できます。1本ずつのご発注を続けるより高くなることはありません。',
     colOneOff: '1本ずつ（20秒 ¥89,800）で同じ本数',
     colMonthly: '月額プラン',
