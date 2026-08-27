@@ -7,9 +7,9 @@
 > 出典: Later も Buffer も、投稿が出なかった原因の**最頻**が「**自動投稿ではなく“通知投稿”で予約していて、通知が来たあと最後まで終わらせなかった**」こと。Later は「予約が出なかった時」のページを用意し、**接続切れ／通知投稿を終えていない／Instagram の1日50件上限**のように**原因を種類で言う**（[Later: Troubleshooting Failed Posts](https://help.later.com/hc/en-us/articles/360060833574-Troubleshooting-Failed-Posts) ・[Buffer: Instagram が自動で送られない理由](https://support.buffer.com/article/659-why-arent-my-instagram-posts-sending-automatically)）。
 > 現状確認（`~/core-prism-app/src/iris` を実読）: 予約は **`usePostQueue.ts` の localStorage だけ**（`:4` に「端末内のみ。サーバーには送らない」と明記）。状態が `scheduled → ready` に変わるのは**画面を開いている間のタイマー**（`:120-128`）。**投稿を送り出すコードは1行も無い**（実際の操作は「Instagram で開く」＋本文コピー＋自分で「投稿済にする」＝`markPosted`）。
 
-- ⬜ **【嘘の取り消し・最優先】空っぽの予約画面に書いてある「自動で送り出します」を消す**
-  - 何が起きているか: `src/iris/IrisPostQueueView.tsx:291` の空状態に `hint="一度入れた予約は時刻が近づくと自動で Instagram へ送り出します"` と書いてある。**実装は存在しない**（送信APIも cron も無い／`usePostQueue` は localStorage のみ）。同じ画面の上の説明は正しく「Instagram を開くだけで投稿」と書いており、**1画面の中で食い違っている**。これを信じた人は**予約を入れて放置し、1本も出ない**。しかも端末内保存なので、別の端末では予約そのものが存在しない。
-  - どこにどう: hint を実物どおりに書き直す（例:「時刻になると、この画面でお知らせします。**Instagram を開く**を押すと本文がコピーされるので、貼り付けて投稿してください」）。**同時に、この端末の中だけの予約であること**を1行添える（`usePostQueue.ts:4` の事実）。※Threads/X には本当に自動投稿がある（`components/ThreadsPostPanel.tsx` / `AutoPostStudio.tsx`）ので、**Instagram もそうだと読める言い方にしない**。
+- ✅ **【嘘の取り消し・最優先】空っぽの予約画面に書いてある「自動で送り出します」を消す**
+  - 何が起きていたか: `src/iris/IrisPostQueueView.tsx:291` の空状態に `hint="一度入れた予約は時刻が近づくと自動で Instagram へ送り出します"` と書いてあった。**実装は存在しない**（送信APIも cron も無い／`usePostQueue` は localStorage のみ）。同じ画面の上の説明は正しく「Instagram を開くだけで投稿」と書いており、**1画面の中で食い違っていた**。これを信じた人は**予約を入れて放置し、1本も出ない**。しかも端末内保存なので、別の端末では予約そのものが存在しない。
+  - どこにどう: `src/iris/IrisPostQueueView.tsx:291` の hint を「時刻が近づくとこの画面でお知らせします。「Instagram で開く」を押すと本文が自動でコピーされるので、貼り付けてご自身で投稿してください（自動送信ではありません・予約はこの端末内のみに保存されます）」に修正（文言のみ・機能追加ゼロ）。
   - 判定: 「予約したのに出ていない投稿（`ready` のまま24時間以上）」の件数を Before/After。**機能追加ゼロ・文言のみ**。
 
 - ⬜ **「出しましたか？」を、時刻を過ぎた予約に1度だけ訊く（Later/Buffer の通知投稿の締めくくりを移植）**
@@ -45,7 +45,7 @@
 
 ## 別件で見つけた赤（Iris とは無関係・未着手）
 
-- ⚠️ **`src/data/appleHealthImport.ts`（Prism「カラダ」の Apple ヘルスケア取り込み）の vitest 3件が赤**。`appleHealthImport.test.ts` の自己完結型 Record・metadata つき Record・その混在のいずれでも **`days.length` が 0**（＝標準的な書き出しファイルを渡しても1日ぶんも読めない）。今回の変更より**前から**赤で、`a4f39e3` 時点の worktree でも再現。取り込んだつもりで何も入らない＝ユーザーには気づけない種類。
+- ✅ **`src/data/appleHealthImport.ts`（Prism「カラダ」の Apple ヘルスケア取り込み）の vitest 3件の赤は解消済み**。`23716b6`（2026-08-14）で取り込み窓の起点を「書き出しの中でいちばん新しい日」へ直したことで修正済み。2026-08-27 に `npx vitest run src/data/__tests__/appleHealthImport.test.ts` を再実行し **8件全て green** で確認。
 
 ## 主ボタンの文字が面の側で読めるようになった（2026-08-09 深夜・本番済 ba74471）
 
@@ -89,9 +89,8 @@
   - なぜ大事: 機能の不足ではなく **一番押してほしいボタンが読みにくい**という、売り物の手触りそのものの不具合。
     しかも「自分のペルソナ色では起きない」ので、オーナーにも当人にも気づけない種類の壊れ方だった。
 
-- ⚠️ **別件（この作業では触っていない）**: `src/data/__tests__/appleHealthImport.test.ts` の **3件が HEAD の時点で既に落ちている**
-  （`a4f39e3` でも同じく失敗を実測）。カラダ画面の Apple Health 取り込みが **0日** を返している疑い＝
-  「取り込んだのに何も増えない」になっている可能性がある。要調査。
+- ✅ **別件（この作業では触っていない）**: `src/data/__tests__/appleHealthImport.test.ts` の 3件の赤は
+  `23716b6`（2026-08-14）で修正済み。2026-08-27 に再実行し **8件全て green** を確認。
 
 ## Iris コラボ画面の「作り話」根治（2026-08-08 深夜・本番済 45443b4 / 83e6dcc）
 

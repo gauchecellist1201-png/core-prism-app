@@ -288,7 +288,7 @@ export default function IrisPostQueueView({ bg, queue }: Props) {
               ここに「いつ・どこに出すか」が時系列で並びます。
             </>
           }
-          hint="一度入れた予約は時刻が近づくと自動で Instagram へ送り出します"
+          hint="時刻が近づくとこの画面でお知らせします。「Instagram で開く」を押すと本文が自動でコピーされるので、貼り付けてご自身で投稿してください（自動送信ではありません・予約はこの端末内のみに保存されます）"
         />
       ) : view === 'grid' ? (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
