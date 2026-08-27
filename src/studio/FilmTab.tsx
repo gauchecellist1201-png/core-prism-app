@@ -14,7 +14,8 @@ import {
   TRIAL_OFFER, CAMPAIGN, isCampaignLive, offPercent,
   PRICING_MODES, PRICING_LEAD, planMatrix, type PricingMode, type FilmPlan,
   FILM_WORKS, FILM_PROCESS, PROCESS_STATEMENT, START_STEPS, REVISION, TERMS, AI_TERMS,
-  FILM_FAQ, FILM_CTA, INQUIRY_FIELDS, FILM_MENU, MENU_LEAD, menuPriceLabel,
+  FILM_FAQ, FILM_CTA, INQUIRY_FIELDS, FILM_MENU, MENU_LEAD,
+  menuPriceParts, menuSpecLabel, menuTarget,
 } from './film';
 import { logEvent } from '../lib/onboardingAnalytics';
 
@@ -50,10 +51,21 @@ export default function FilmTab() {
   // 目次の「月額プラン」から飛んだのに単発のカードが出ている、という食い違いを作らないため、
   // 状態は Pricing ではなくページ側で持つ。
   const [pricingMode, setPricingMode] = useState<PricingMode>('once');
+  // 早見表の行から「そのプランの内訳」を直接開くため、開くプランもページ側で持つ。
+  // 押した行と関係のないプランが開いていると、運ばれた先で読む場所を探し直すことになる。
+  const [openPlan, setOpenPlan] = useState<string | null>(null);
+
   const showPricing = (m: PricingMode) => {
     setPricingMode(m);
     // 状態を反映した後の座標でないと着地点がずれる (rAF は非表示タブで呼ばれないため setTimeout)
     window.setTimeout(() => scrollToId('film-pricing'), 0);
+  };
+
+  // 早見表の行 → 該当プランの内訳。単発は詳細を開いてそこまで運び、月額は料金表の頭へ。
+  const showPlan = (m: PricingMode, plan?: string) => {
+    setPricingMode(m);
+    setOpenPlan(plan ?? null);
+    window.setTimeout(() => scrollToId(plan ? `film-plan-${plan}` : 'film-pricing'), 0);
   };
 
   return (
@@ -85,6 +97,11 @@ export default function FilmTab() {
           border: 1px solid ${D.goldLine}; color: ${D.gold}; font-size: 12.5px; letter-spacing: 0.06em; }
         .fm-btn-light { background: #06C755; color: ${C.ink}; border: 1px solid #06C755; }
         .fm-btn-light:hover { opacity: 0.86; }
+        /* ヒーローの主ボタン = 料金表へ。LINE(緑)と並べても役割が混ざらない色にする。
+           2026-08-27: 1画面目で最初に押させたいのは相談ではなく金額の確認なので、
+           こちらを主(塗り)、LINEを副(枠線)に入れ替えた */
+        .fm-btn-gold { background: ${D.gold}; color: #17130A; border: 1px solid ${D.gold}; font-weight: 700; }
+        .fm-btn-gold:hover { opacity: 0.88; }
         .fm-btn-outline { background: transparent; color: #FFFFFF; border: 1px solid rgba(255,255,255,0.5); font-weight: 600; }
         .fm-btn-outline:hover { border-color: ${D.gold}; }
         .fm-rule { border: none; border-top: 1px solid ${C.line}; margin: 0; }
@@ -186,10 +203,14 @@ export default function FilmTab() {
         .fm-process-row { display: flex; gap: 8px; overflow-x: auto; -webkit-overflow-scrolling: touch;
           scrollbar-width: none; padding-bottom: 2px; }
         .fm-process-row::-webkit-scrollbar { display: none; }
+        /* 2026-08-27: 暗部 (ヒーロー直下) から明部 (制作と発注の流れ) へ移したので、
+           線と文字を白地の配色に差し替える。暗部の配色のままだと、
+           #F7F7F5 の上で薄い灰色の枠に薄い灰色の文字になり、実測コントラストが落ちる */
         .fm-process-step { flex: 0 0 auto; display: flex; align-items: center; gap: 8px;
-          padding: 9px 13px; border-radius: 999px; border: 1px solid ${D.line}; white-space: nowrap; }
-        .fm-process-no { font-size: 10.5px; font-weight: 700; color: ${D.gold}; letter-spacing: 0.04em; }
-        .fm-process-title { font-size: 12px; color: ${D.body}; letter-spacing: 0.02em; }
+          padding: 9px 13px; border-radius: 999px; border: 1px solid ${C.line};
+          background: #FFFFFF; white-space: nowrap; }
+        .fm-process-no { font-size: 10.5px; font-weight: 700; color: ${C.goldText}; letter-spacing: 0.04em; }
+        .fm-process-title { font-size: 12px; color: ${C.ink}; letter-spacing: 0.02em; }
         /* プランの仕様。左に項目・右に中身。375pxでは項目名が折り返すと読めなくなるので
            左は固定幅にし、長い値だけを折り返させる */
         .fm-spec { display: grid; gap: 0; border-top: 1px solid ${C.line}; margin-top: 12px; }
@@ -290,7 +311,8 @@ export default function FilmTab() {
            同じ字間を「月4本」に掛けると分かち書きに見えて読みにくい */
         .fm-pick-name { font-family: ${SERIF}; font-size: 18px; font-weight: 700; letter-spacing: 0.1em; color: ${C.ink}; }
         .fm-pick-name[data-ja="true"] { letter-spacing: 0.02em; font-size: 19px; }
-        .fm-pick-unit { font-size: 12px; color: ${C.mute}; margin-top: 3px; letter-spacing: 0.02em; }
+        /* プラン名 (TRIAL 等) は符丁としてだけ残すので、欧文の字間を開けて小さく置く */
+        .fm-pick-unit { font-size: 11px; color: ${C.mute}; margin-top: 4px; letter-spacing: 0.14em; font-weight: 600; }
         .fm-pick-price { font-family: ${SERIF}; font-size: clamp(28px, 7vw, 34px); font-weight: 700;
           color: ${C.ink}; line-height: 1.25; letter-spacing: 0.01em; margin-top: 10px; }
         .fm-pick-tax { font-size: 11.5px; color: ${C.mute}; margin-top: 4px; letter-spacing: 0.02em; }
@@ -325,7 +347,8 @@ export default function FilmTab() {
           font-size: 11.5px; font-weight: 600; letter-spacing: 0.04em; color: ${C.mute}; line-height: 1.7; }
         .fm-mx-head { background: ${C.alt}; }
         .fm-mx-plan { min-width: 148px; }
-        .fm-mx-plan-name { font-family: ${SERIF}; font-size: 14px; font-weight: 700; letter-spacing: 0.08em; color: ${C.ink}; }
+        /* 列見出しは「20秒 1本」。和文なので字間は詰める (欧文用の 0.08em は分かち書きに見える) */
+        .fm-mx-plan-name { font-family: ${SERIF}; font-size: 14.5px; font-weight: 700; letter-spacing: 0.02em; color: ${C.ink}; }
         .fm-mx-plan-price { font-family: ${SERIF}; font-size: 17px; font-weight: 700; color: ${C.ink}; margin-top: 3px; }
         .fm-mx-plan-unit { font-size: 11px; color: ${C.mute}; margin-top: 2px; }
         .fm-mx td { font-size: 13px; line-height: 1.75; color: ${C.ink}; }
@@ -350,14 +373,18 @@ export default function FilmTab() {
            1画面目からはみ出すぶんは、常時出ている固定下部CTAで受ける。 */
         .fm-hero { position: relative; width: 100%; background: #000;
           display: flex; justify-content: center; overflow: hidden; }
-        /* 2026-08-27: 375x812 実測で ヘッダー115px + 9:16の映像667px = 782px となり、
-           固定下部CTA(68px)に隠れて見出しが1画面目に1文字も入っていなかった。
-           「結局何ができるのか分からない」の第一の原因がこれ。
-           映像は主役のまま、上下だけを僅かに切って見出しと用途の行を覗かせる。
-           上限だけを掛けると画面の短い端末 (iPhone SE 667px) で切り取りが強くなりすぎるため、
-           58vh を下限にして「映像が主役」を保つ。 */
+        /* 2026-08-27 第2版 — 1画面目に「見出し + 金額」を入れる。
+           第1版 (100dvh - 292px) では 375x812 実測で映像が520pxになり、
+           ヘッダー115px と 固定下部CTA 68px を差し引いた残り109pxに
+           見出し1行しか入らなかった (2行目が固定CTAに切られていた)。
+           必要な高さの内訳 (375x812 実測): 上余白20 + ラベル28 + 見出し2行78 + 金額バー96 = 222px。
+           金額バーが96pxあるのは、条件つきの金額 (「20秒1本（初めてのお取引は ¥49,800）」) を
+           略さず2行で書いているため。ここを1行に削ると初回価格の条件が落ちるので削らない。
+           ヘッダー115 + 固定CTA68 と合わせて 420px を空ければ、条件の行まで1画面目に収まる。
+           画面の短い端末 (iPhone SE 667px) では引き算だけだと切り取りが強くなりすぎるので、
+           44vh を下限にして「映像が主役」を保つ (SEでは見出しまでが1画面目)。 */
         .fm-hero-frame { position: relative; z-index: 2; width: 100%; aspect-ratio: 9 / 16;
-          max-height: max(58vh, calc(100dvh - 292px)); overflow: hidden; background: #000; }
+          max-height: max(44vh, calc(100dvh - 420px)); overflow: hidden; background: #000; }
         /* 広い画面 — 縦型を横に引き伸ばす/切り抜くと必ず崩れるので、
            画そのものは縦型のまま中央に立て、両脇の余白は同じ画をぼかして敷く。
            黒い空き地にするより「その映像の中に居る」画面になる。 */
@@ -380,10 +407,10 @@ export default function FilmTab() {
           border: 1px solid rgba(255,255,255,0.5); background: rgba(11,11,12,0.55);
           backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
           color: #FFFFFF; display: flex; align-items: center; justify-content: center; }
-        .fm-hero-label { margin: 0 0 12px; }
-        .fm-hero-h1 { font-size: clamp(27px, 7.4vw, 44px); font-weight: 700; line-height: 1.45;
+        .fm-hero-label { margin: 0 0 8px; }
+        .fm-hero-h1 { font-size: clamp(27px, 7.4vw, 44px); font-weight: 700; line-height: 1.4;
           letter-spacing: 0.02em; margin: 0; color: #FFFFFF; }
-        .fm-hero-sub { font-size: 13.5px; line-height: 1.95; color: ${D.body}; margin: 12px 0 0; max-width: 560px; }
+        .fm-hero-sub { font-size: 13.5px; line-height: 1.95; color: ${D.body}; margin: 18px 0 0; max-width: 560px; }
         /* 音の切り替え。映像の上、右上の角 (顔にかぶらない位置) */
         .fm-hero-sound { position: absolute; top: 14px; right: 16px; min-height: 44px; padding: 10px 16px;
           border-radius: 999px; cursor: pointer; border: 1px solid rgba(255,255,255,0.34);
@@ -391,30 +418,59 @@ export default function FilmTab() {
           color: #FFFFFF; font-family: ${SANS}; font-size: 12px; letter-spacing: 0.04em; }
         .fm-hero-sound:hover { border-color: ${D.gold}; color: ${D.gold}; }
         .fm-hero-note { font-size: 12px; color: ${D.mute}; letter-spacing: 0.02em; margin: 16px 0 0; line-height: 1.8; }
-        /* ヒーロー見出し直下の用途の行。「何を頼めるのか」を映像の直後に名前で置く。
-           押せる見た目にしない (下の一覧まで運ぶだけの案内なので、装飾は控えめに) */
-        .fm-uses { display: flex; flex-wrap: wrap; gap: 6px 7px; margin: 14px 0 0; padding: 0; list-style: none; }
-        .fm-uses li { font-size: 11.5px; letter-spacing: 0.02em; color: ${D.body};
-          border: 1px solid ${D.line}; border-radius: 999px; padding: 5px 11px; line-height: 1.5; }
+        /* ヒーローの金額。2つを横に並べる (縦に積むとCTAが1画面目から押し出される) */
+        .fm-heroprice { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: ${D.line};
+          border: 1px solid ${D.line}; border-radius: 12px; overflow: hidden; margin-top: 14px; }
+        .fm-heroprice-item { background: ${D.bg}; padding: 13px 14px 12px; }
+        .fm-heroprice-value { font-size: 21px; font-weight: 700; color: ${D.gold}; line-height: 1.3; letter-spacing: 0.01em; }
+        .fm-heroprice-label { font-size: 11px; color: ${D.mute}; line-height: 1.65; margin-top: 5px; letter-spacing: 0.02em; }
 
-        /* 作れるもの。用途名・1行・目安価格だけの一覧。
-           2列 (375pxでも1枚が読める最小) → 広い画面で3列。散文は置かない */
-        .fm-menu { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        @media (min-width: 760px) { .fm-menu { grid-template-columns: repeat(3, 1fr); gap: 12px; } }
-        .fm-menu-card { display: flex; flex-direction: column; height: 100%; box-sizing: border-box;
-          background: ${D.raise}; border: 1px solid ${D.line}; border-radius: 12px; padding: 15px 14px 14px; }
-        .fm-menu-en { font-family: ${SANS}; font-size: 9.5px; font-weight: 600; letter-spacing: 0.2em;
-          text-transform: uppercase; color: ${D.gold}; }
-        .fm-menu-title { font-family: ${SERIF}; font-size: 15px; font-weight: 700; color: ${D.ink};
-          line-height: 1.5; margin-top: 7px; letter-spacing: 0.02em; }
-        .fm-menu-body { font-size: 12px; line-height: 1.8; color: ${D.body}; margin: 7px 0 0; }
-        .fm-menu-from { margin-top: auto; padding-top: 12px; font-size: 12.5px; font-weight: 700;
-          color: ${D.gold}; letter-spacing: 0.01em; }
-        .fm-menu-from span { font-size: 10.5px; font-weight: 400; color: ${D.mute}; margin-right: 5px; letter-spacing: 0.06em; }
-        /* 375px では2つを横に並べると1つ155px しかなく「1本ずつの料金を見る」が3行に折れる。
-           狭い画面では縦に積み、640px から横並びにする */
-        .fm-menu-cta { display: grid; grid-template-columns: 1fr; gap: 10px; margin-top: 18px; }
-        @media (min-width: 640px) { .fm-menu-cta { grid-template-columns: auto auto; justify-content: start; } }
+        /* ── 料金早見表 ─────────────────────────────────
+           1行 = 1つの用途。左に「何が届くか」、右に「いくらか」。
+           金額を右端で縦一列に揃えることが、この表の唯一の目的。
+           カードの2列グリッドに戻してはいけない (金額の高さがカードごとにずれて比較できなくなる)。 */
+        .fm-pm { display: grid; gap: 0; border: 1px solid ${D.line}; border-radius: 14px;
+          overflow: hidden; background: ${D.raise}; }
+        .fm-pm-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+          width: 100%; box-sizing: border-box; text-align: left; cursor: pointer; font-family: ${SANS};
+          background: transparent; border: none; border-top: 1px solid ${D.line}; padding: 15px 15px 14px;
+          transition: background 140ms ease; }
+        .fm-pm-row:first-child { border-top: none; }
+        .fm-pm-row:hover { background: rgba(255,255,255,0.035); }
+        .fm-pm-main { display: block; flex: 1 1 auto; min-width: 0; }
+        .fm-pm-title { display: block; font-family: ${SERIF}; font-size: 16px; font-weight: 700;
+          color: ${D.ink}; line-height: 1.45; letter-spacing: 0.02em; }
+        .fm-pm-spec { display: block; font-size: 11.5px; color: ${D.gold}; line-height: 1.6;
+          margin-top: 4px; letter-spacing: 0.02em; }
+        .fm-pm-body { display: block; font-size: 12px; color: ${D.body}; line-height: 1.75; margin-top: 6px; }
+        /* 金額の列。375px で最長の「月 ¥228,000〜」(実測112px) が折り返さない幅を固定で確保する。
+           auto にすると左の説明文が長い行だけ金額が2行に折れ、桁が揃わなくなる。
+           揃わない金額は比べられない = この表の目的そのものが壊れる */
+        .fm-pm-price { flex: 0 0 auto; width: 130px; text-align: right; }
+        .fm-pm-price-main { display: block; font-size: 18px; font-weight: 700; color: ${D.ink};
+          line-height: 1.3; letter-spacing: 0.01em; white-space: nowrap; }
+        .fm-pm-price-sub { display: block; font-size: 10.5px; color: ${D.mute}; line-height: 1.55; margin-top: 4px; }
+        .fm-pm-more { display: inline-flex; align-items: center; gap: 3px; margin-top: 8px;
+          font-size: 10.5px; color: ${D.gold}; letter-spacing: 0.03em; }
+        @media (min-width: 700px) {
+          .fm-pm-row { align-items: center; padding: 18px 20px; }
+          .fm-pm-title { font-size: 17px; }
+          .fm-pm-price { width: 190px; }
+          .fm-pm-price-main { font-size: 22px; }
+        }
+        .fm-pm-note { font-size: 11.5px; line-height: 1.85; color: ${D.mute}; margin: 12px 2px 0; }
+
+        /* 全プラン共通の条件。項目名と値の2段を1組にして、375pxで2列 = 3行に収める */
+        .fm-common { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 14px; margin-top: 22px;
+          padding-top: 20px; border-top: 1px solid ${D.line}; }
+        @media (min-width: 700px) { .fm-common { grid-template-columns: repeat(3, 1fr); gap: 16px 20px; } }
+        /* 見出しは列をまたいで1行使う。無いと、表の注記の続きに見えて
+           「これは全プラン共通の話だ」が伝わらない */
+        .fm-common-head { grid-column: 1 / -1; font-size: 11px; font-weight: 700; letter-spacing: 0.1em;
+          color: ${D.gold}; line-height: 1.5; margin-bottom: 2px; }
+        .fm-common-label { font-size: 10.5px; color: ${D.mute}; letter-spacing: 0.06em; line-height: 1.5; }
+        .fm-common-value { display: flex; align-items: flex-start; gap: 5px; font-size: 12.5px; font-weight: 700;
+          color: ${D.ink}; line-height: 1.55; margin-top: 4px; }
 
         .fm-sticky-cta { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; display: none;
           padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); background: rgba(11,11,12,0.92);
@@ -422,20 +478,24 @@ export default function FilmTab() {
         @media (max-width: 767px) { .fm-sticky-cta { display: block; } .fm-sticky-pad { height: 68px; } }
       `}</style>
 
-      {/* 章の並び (2026-08-27 再編)。
-          オーナー指摘は2つ — (1) 文字が多く、結局何ができるのか不明瞭 (2) 月額サブスクが分からない。
-          (1) は「作れるもの」を映像の直後に置いて用途の名前で先に答える。
-          (2) は料金セクションの入口で単発と月額の条件を常に並べて出す (旧版は小さなスイッチの奥にあった)。
-          並びは 何が作れるか → 本当に作れるのか(実績) → 誰が作るか(工程) → いくらか(料金) →
-          どう頼むか(はじめかた) → 条件・FAQ → 相談。
-          2026-08-21 に撤去した情緒章 (Showcase/Bridge/WhyCore/Comparison/Philosophy 等) は撤去のまま。 */}
-      <FilmHero onSeePricing={() => showPricing('once')} />
+      {/* 章の並び (2026-08-27 第2版)。
+          オーナー指摘「まだ分かりにくい。特にiPhoneで、どんなものがいくらで作れるのかを」。
+
+          第1版は「作れるもの(用途)」と「料金(尺別3プラン)」を別々の章に置いていたため、
+          「採用動画はいくらか」に答えるには2章を突き合わせる必要があった。
+          第2版では 用途・仕様・金額を1行にした料金早見表を映像の直後に置き、
+          その1章だけで「何が、いくらで」が完結するようにしている。
+
+          並びは 実物(映像) → 何がいくらか(早見表) → 目次 → 本当に作れるのか(実績) →
+          金額の内訳(料金) → 誰がどう作り、どう頼むか(制作と発注の流れ) → 条件・FAQ → 相談。
+          目次を早見表の後ろに置いてあるのは、目次が先にあると
+          いちばん見せたい早見表が1スクロール遠のくため。 */}
+      <FilmHero />
+      <PriceMenu onPick={showPlan} />
       <SectionNav onPricing={showPricing} />
-      <WhatWeMake onPricing={showPricing} />
       <FilmWorks />
-      <ProcessTrust />
-      <Pricing mode={pricingMode} onMode={setPricingMode} />
-      <StartSteps />
+      <Pricing mode={pricingMode} onMode={setPricingMode} openPlan={openPlan} onOpenPlan={setOpenPlan} />
+      <HowWeWork />
       <Terms />
       <Faq />
       <div className="fm-sticky-pad" />
@@ -526,7 +586,7 @@ function MobileStickyCta() {
 // 自動再生は端末側の事情 (低電力モード/データセーバー/背面タブ) で普通に拒否される。
 // その時に何も起きない静止画で終わらせないため、停止中は必ず再生ボタンを出す。
 // ============================================================
-function FilmHero({ onSeePricing }: { onSeePricing: () => void }) {
+function FilmHero() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [muted, setMuted] = useState(true);
   const [paused, setPaused] = useState(false);
@@ -580,47 +640,37 @@ function FilmHero({ onSeePricing }: { onSeePricing: () => void }) {
         </div>
       </div>
 
-      <div className="st-inner" style={{ paddingTop: 30 }}>
+      {/* 2026-08-27 第2版 — 映像の下は「見出し・金額・押す場所」の3つだけにした。
+          旧版はここに 用途チップ6個 + 数字4つ + 条件5つ が続いて 574px あり、
+          ヒーローだけで2画面 (1,594px) を使っていた。用途と金額は直後の早見表で
+          セットにして出すほうが速いので、ここでは重複させない。 */}
+      <div className="st-inner" style={{ paddingTop: 20 }}>
         <div className="st-label fm-hero-label" style={{ color: D.gold }}>{FILM.label}</div>
         <h1 className="st-serif fm-hero-h1" style={{ whiteSpace: 'pre-line' }}>{FILM.hero}</h1>
-        <p className="fm-hero-sub">{FILM.heroSub}</p>
-        {/* 用途の名前を見出しの直後に置く。映像は品質を示すが、頼める形式までは示さない */}
-        <ul className="fm-uses">
-          {FILM.heroUses.map(u => <li key={u}>{u}</li>)}
-        </ul>
-        <p className="fm-hero-note">この映像はすべてAIで制作しました。撮影はしていません。</p>
 
-        <div style={{ display: 'flex', gap: 12, marginTop: 20, flexWrap: 'wrap' }}>
-          <a className="st-btn fm-btn-light" href={CONTACT.lineUrl} target="_blank" rel="noopener noreferrer"
+        {/* 金額は見出しの直後。間に1文でも挟むと 375x812 で固定CTAの下に落ちる。
+            「いくらから頼めるのか」が分からないまま2画面スクロールさせない */}
+        <div className="fm-heroprice">
+          {FILM.heroPrice.map(p => (
+            <div key={p.label} className="fm-heroprice-item">
+              <div className="st-serif fm-heroprice-value">{p.value}</div>
+              <div className="fm-heroprice-label">{p.label}</div>
+            </div>
+          ))}
+        </div>
+
+        <div style={{ display: 'flex', gap: 10, marginTop: 18, flexWrap: 'wrap' }}>
+          <button className="st-btn fm-btn-gold" onClick={() => { track('studio_film_hero_cta', { to: 'menu' }); scrollToId('film-menu'); }}>
+            {FILM.heroCtaSub}
+          </button>
+          <a className="st-btn fm-btn-outline" href={CONTACT.lineUrl} target="_blank" rel="noopener noreferrer"
             onClick={() => track('studio_film_hero_cta', { to: 'line' })}>
             <IconChat /> {FILM.heroCta}
           </a>
-          <button className="st-btn fm-btn-outline" onClick={() => { track('studio_film_hero_cta', { to: 'pricing' }); onSeePricing(); }}>
-            {FILM.heroCtaSub}
-          </button>
         </div>
 
-        <Reveal>
-          {/* 確かめられる数字だけ。ページ内で裏が取れないものは置かない */}
-          <div className="fm-proof" style={{ marginTop: 26 }}>
-            {FILM.proof.map(p => (
-              <div key={p.label} className="fm-proof-item">
-                <div className="st-serif fm-proof-value">{p.value}</div>
-                <div className="fm-proof-label">{p.label}</div>
-              </div>
-            ))}
-          </div>
-
-          <div style={{ marginTop: 22, paddingTop: 18, borderTop: `1px solid ${D.line}` }}>
-            <div style={{ display: 'flex', gap: '8px 18px', flexWrap: 'wrap' }}>
-              {FILM.heroTrust.map(t => (
-                <span key={t} style={{ fontSize: 11.5, color: D.mute, display: 'inline-flex', alignItems: 'center', gap: 6, letterSpacing: '0.02em' }}>
-                  <IconCheck color={D.goldLine} />{t}
-                </span>
-              ))}
-            </div>
-          </div>
-        </Reveal>
+        <p className="fm-hero-sub">{FILM.heroSub}</p>
+        <p className="fm-hero-note">この映像はすべてAIで制作しました。撮影はしていません。</p>
       </div>
     </section>
   );
@@ -632,11 +682,11 @@ function FilmHero({ onSeePricing }: { onSeePricing: () => void }) {
 // mode を持つ項目は、飛ぶ前に料金セクションの表示を切り替える。
 // 「月額プラン」を押したのに単発のカードが出ている、という食い違いを作らない。
 const NAV_ITEMS: Array<{ id: string; label: string; mode?: PricingMode }> = [
-  { id: 'film-menu', label: '作れるもの' },
+  { id: 'film-menu', label: '料金早見表' },
   { id: 'film-works', label: '制作実績' },
-  { id: 'film-pricing', label: '料金（1本ずつ）', mode: 'once' },
+  { id: 'film-pricing', label: '1本ずつの料金', mode: 'once' },
   { id: 'film-pricing', label: '月額プラン', mode: 'monthly' },
-  { id: 'film-start', label: 'はじめかた' },
+  { id: 'film-start', label: '制作と発注の流れ' },
   { id: 'film-terms', label: 'お取引の条件' },
   { id: 'film-faq', label: 'よくある質問' },
 ];
@@ -661,13 +711,25 @@ function SectionNav({ onPricing }: { onPricing: (m: PricingMode) => void }) {
 }
 
 // ============================================================
-// 作れるもの — 2026-08-27 新設。
-// オーナー指摘「文字が多すぎて、結局何ができるのかまだ不明瞭」への直接の答え。
-// 用途の名前・1行・目安価格だけを6枚並べる。ここに映像は貼らない
-// (理由は film.ts の FILM_MENU のコメント: 手持ちの参考映像には実写素材が混ざっており、
-//  「撮影をしない」という主張と食い違うため。実映像は制作実績だけで見せる)。
+// 料金早見表 — 2026-08-27 第2版。このページの中心。
+//
+// オーナー指摘「まだ分かりにくい。特にiPhoneで、どんなものがいくらで作れるのかを」。
+//
+// 直したかった構造上の問題:
+//   「用途」(作れるもの = 日本語の6枚カード) と「金額」(TRIAL/STANDARD/PREMIUM = 尺の3プラン) が
+//   別々の章・別々の軸に分かれていた。読む人は用途を読んでから 2,300px 下の料金表まで運ばれ、
+//   そこで初めて英語のプラン名と尺だけの表に出会う。つまり「採用動画はいくらか」に答えるには、
+//   2つの章を頭の中で突き合わせる作業が要った。
+//   → 用途・仕様・金額を1行にまとめ、1つの表にする。6行を上から下へ1度読めば答えが出る。
+//
+// 6枚のカード(2列グリッド)をやめて表にした理由:
+//   カードだと金額がカードごとに違う高さに出るため、375px では6つの金額が縦に揃わない。
+//   揃わない金額は比べられない。表にすると金額が右端で1列に揃い、走査が1回で終わる。
+//
+// ここに映像は貼らない (film.ts の FILM_MENU のコメント参照。手持ちの参考映像には
+// 実写素材が混ざっており「撮影をしない」という主張と食い違う。実映像は制作実績だけで見せる)。
 // ============================================================
-function WhatWeMake({ onPricing }: { onPricing: (m: PricingMode) => void }) {
+function PriceMenu({ onPick }: { onPick: (mode: PricingMode, plan?: string) => void }) {
   return (
     <section id="film-menu" style={{ background: D.bg, padding: '4px 0 48px', scrollMarginTop: 96 }}>
       <div className="st-inner">
@@ -678,28 +740,49 @@ function WhatWeMake({ onPricing }: { onPricing: (m: PricingMode) => void }) {
           </h2>
           <p style={{ fontSize: 13, lineHeight: 1.95, color: D.body, margin: '10px 0 0', maxWidth: 620 }}>{MENU_LEAD.sub}</p>
         </Reveal>
+
         <Reveal delay={60}>
-          <div className="fm-menu" style={{ marginTop: 20 }}>
-            {FILM_MENU.map(m => (
-              <div key={m.id} className="fm-menu-card">
-                <div className="fm-menu-en">{m.en}</div>
-                <div className="fm-menu-title">{m.title}</div>
-                <p className="fm-menu-body">{m.body}</p>
-                <div className="fm-menu-from"><span>目安</span>{menuPriceLabel(m.basis)}</div>
+          <div className="fm-pm" style={{ marginTop: 18 }}>
+            {FILM_MENU.map(m => {
+              const price = menuPriceParts(m.basis);
+              const target = menuTarget(m.basis);
+              return (
+                // 行そのものを押せるようにする。金額の隣に「詳しく」のリンクを置くと、
+                // 375px では金額が押しづらい幅に痩せる。行全体が当たり判定なら指で外さない。
+                <button key={m.id} type="button" className="fm-pm-row"
+                  onClick={() => { track('studio_film_menu_row', { id: m.id, mode: target.mode }); onPick(target.mode, target.plan); }}>
+                  <span className="fm-pm-main">
+                    <span className="fm-pm-title">{m.title}</span>
+                    <span className="fm-pm-spec">{menuSpecLabel(m.basis)}</span>
+                    <span className="fm-pm-body">{m.body}</span>
+                  </span>
+                  <span className="fm-pm-price">
+                    <span className="st-serif fm-pm-price-main">{price.main}</span>
+                    {price.sub && <span className="fm-pm-price-sub">{price.sub}</span>}
+                    <span className="fm-pm-more" aria-hidden>
+                      内訳を見る
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6" /></svg>
+                    </span>
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+          <p className="fm-pm-note">{MENU_LEAD.note}</p>
+        </Reveal>
+
+        {/* 表の直下に「どの金額にも共通してついてくるもの」を1度だけ置く。
+            各行に同じ注記を6回書くと表が読めなくなり、章を分けると金額から離れて読まれない。 */}
+        <Reveal delay={100}>
+          <div className="fm-common">
+            <div className="fm-common-head">どの金額にも共通して含まれます</div>
+            {FILM.common.map(c => (
+              <div key={c.label} className="fm-common-item">
+                <div className="fm-common-label">{c.label}</div>
+                <div className="fm-common-value"><IconCheck color={D.gold} />{c.value}</div>
               </div>
             ))}
-          </div>
-          {/* 一覧を見た直後が、いちばん金額を知りたい瞬間。
-              ここで単発と月額の入口を並べて出しておかないと、月額は料金の章まで気づかれない */}
-          <div className="fm-menu-cta">
-            <button type="button" className="st-btn fm-btn-outline"
-              onClick={() => { track('studio_film_menu_cta', { mode: 'once' }); onPricing('once'); }}>
-              1本ずつの料金を見る
-            </button>
-            <button type="button" className="st-btn fm-btn-outline"
-              onClick={() => { track('studio_film_menu_cta', { mode: 'monthly' }); onPricing('monthly'); }}>
-              月額プランを見る
-            </button>
           </div>
         </Reveal>
       </div>
@@ -708,26 +791,30 @@ function WhatWeMake({ onPricing }: { onPricing: (m: PricingMode) => void }) {
 }
 
 // ============================================================
-// はじめかた — 価格の直前に置く3ステップ (2026-08-24 新設)。
-// 「値段は分かったが、連絡してから何が起きるか分からない」という離脱要因を埋める。
-// FILM_PROCESS (受注後に当社が行う6工程) とは別物 — これは発注を検討する側の3ステップ。
-// .fm-why / .fm-grid3 は ValueTable の「差が生まれる理由」と同じ白カード意匠を流用し、
-// このページに新しい見た目を増やさない。
+// 制作と発注の流れ — 2026-08-27 第2版で「はじめかた(3ステップ)」と
+// 「誰が作るか(制作6工程 + 窓口の実名)」を1章に統合した。
+//
+// 統合した理由:
+//   分かれていた頃は、料金の前に工程6ステップ(917px)、料金の後にはじめかた3ステップ(814px)
+//   と、同じ「頼んだら何が起きるか」の話が料金を挟んで2ヶ所に散っていた。
+//   iPhone では合計2.1画面ぶんあり、しかもどちらも読み終わってから
+//   「で、結局どっちの手順の話だったか」が残らない。
+//   発注側の3ステップ → 受注後の当社6工程 → 窓口の実名、の順に1本の線として並べる。
 // ============================================================
-function StartSteps() {
+function HowWeWork() {
   return (
-    // 2026-08-27: 料金 (白) の直後に移したので、地色を #F7F7F5 に変えて章の切れ目を出す。
-    // 白が2章続くと、料金の続きに見えて「はじめかた」という別の話だと分からない。
     <Band alt pad="48px 0" id="film-start">
       <Reveal>
-        <div className="st-label" style={{ marginBottom: 12 }}>How to Start</div>
+        <div className="st-label" style={{ marginBottom: 12 }}>How It Works</div>
         <h2 className="st-serif" style={{ fontSize: 'clamp(20px, 5vw, 26px)', fontWeight: 700, color: C.ink, margin: 0, lineHeight: 1.6 }}>
-          はじめかた — 3ステップです。
+          ご相談から納品までの流れ
         </h2>
         <p style={{ fontSize: 13.5, lineHeight: 1.95, color: C.body, margin: '10px 0 0', maxWidth: 620 }}>
           お見積りのご提示までは無料です。ご連絡からご発注までに、費用が発生することはありません。
         </p>
       </Reveal>
+
+      {/* 1. 発注を検討する側の3ステップ */}
       <Reveal delay={60}>
         <div className="fm-grid3" style={{ marginTop: 20 }}>
           {START_STEPS.map(s => (
@@ -740,34 +827,17 @@ function StartSteps() {
           ))}
         </div>
       </Reveal>
-    </Band>
-  );
-}
 
-// ============================================================
-// 「誰が作るか」— 価格表の直前に置く工程開示 (2026-08-22 新設)。
-//
-// 競合調査 (AI25.studio「AI is the tool. Craft is the foundation.」/
-// Synthesia導入事例の実績数字/動画幹事の工程別内訳) の共通点は、値段を見せる前に
-// 「誰が・どう品質を管理して作るか」を開示していること。映像そのものは結果を見せるが、
-// 過程は見せない。ここでその過程だけを短く補う (工程の詳細は書かず宣言 + 6ステップの見出しのみ)。
-// ============================================================
-function ProcessTrust() {
-  return (
-    // 2026-08-27: ヒーロー直下から制作実績 (明るい地) の直後へ移したので、上の余白を自分で持つ。
-    // 元は前の章 (ヒーロー) の paddingBottom に乗っていた。
-    <section style={{ background: D.bg, padding: '52px 0 44px' }}>
-      <div className="st-inner">
-        <Reveal>
-          <p className="st-serif" style={{ fontSize: 'clamp(19px, 4.6vw, 24px)', fontWeight: 700, lineHeight: 1.7, color: D.ink, margin: 0 }}>
+      {/* 2. ご発注後に当社が踏む6工程。宣言 + 見出しだけに留める (詳細は書くと映像と重複する) */}
+      <Reveal delay={100}>
+        <div style={{ marginTop: 28, paddingTop: 24, borderTop: `1px solid ${C.line}` }}>
+          <p className="st-serif" style={{ fontSize: 'clamp(17px, 4.2vw, 21px)', fontWeight: 700, lineHeight: 1.65, color: C.ink, margin: 0 }}>
             {PROCESS_STATEMENT.title}
           </p>
-          <p style={{ fontSize: 13, lineHeight: 2, color: D.body, margin: '12px 0 0', maxWidth: 620 }}>
+          <p className="fm-prose" style={{ fontSize: 13, lineHeight: 1.95, color: C.body, margin: '10px 0 0' }}>
             {PROCESS_STATEMENT.body}
           </p>
-        </Reveal>
-        <Reveal delay={60}>
-          <div className="fm-process-row" style={{ marginTop: 22 }}>
+          <div className="fm-process-row" style={{ marginTop: 18 }}>
             {FILM_PROCESS.map(s => (
               <div key={s.no} className="fm-process-step">
                 <span className="fm-process-no">{s.no}</span>
@@ -777,22 +847,22 @@ function ProcessTrust() {
           </div>
           {/* TRIALは「03 書く」にあたる台本・絵コンテを含まないため、標準工程である旨を明記する
               (Codexレビュー指摘: 断りなく並べるとTRIAL購入者が台本込みと誤解する) */}
-          <p style={{ fontSize: 11, lineHeight: 1.85, color: D.mute, margin: '10px 0 0' }}>{PROCESS_STATEMENT.note}</p>
-        </Reveal>
-        {/* 誰が窓口を持つか、実名で名乗る。AI動画という業態では「結局だれが責任を持つのか」が
-            発注側の最大の不安点になる。会社案内タブに埋もれさせず、この工程開示の直後に置く。
-            (2026-08-24新設: 名前・肩書き・連絡先はすべて plans.ts COMPANY / STUDIO の実データ) */}
-        <Reveal delay={100}>
-          <div style={{ marginTop: 20, paddingTop: 18, borderTop: `1px solid ${D.line}`, display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '5px 16px' }}>
-            <span className="st-serif" style={{ fontSize: 14.5, fontWeight: 700, color: D.ink }}>{COMPANY.repName}</span>
-            <span style={{ fontSize: 12, color: D.mute }}>{COMPANY.repTitle} — 企画からご発注後の窓口まで担当します</span>
-            <a href={`mailto:${STUDIO.email}`} style={{ fontSize: 12, color: D.mute, textDecoration: 'underline', textUnderlineOffset: 2, minHeight: 44, display: 'inline-flex', alignItems: 'center' }}>
-              {STUDIO.email}
-            </a>
-          </div>
-        </Reveal>
-      </div>
-    </section>
+          <p style={{ fontSize: 11, lineHeight: 1.85, color: C.mute, margin: '10px 0 0' }}>{PROCESS_STATEMENT.note}</p>
+        </div>
+      </Reveal>
+
+      {/* 3. 誰が窓口を持つか、実名で名乗る。AI動画という業態では「結局だれが責任を持つのか」が
+          発注側の最大の不安点になる。会社案内タブに埋もれさせず、流れの最後に置く。 */}
+      <Reveal delay={140}>
+        <div style={{ marginTop: 20, paddingTop: 18, borderTop: `1px solid ${C.line}`, display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '5px 16px' }}>
+          <span className="st-serif" style={{ fontSize: 14.5, fontWeight: 700, color: C.ink }}>{COMPANY.repName}</span>
+          <span style={{ fontSize: 12, color: C.mute }}>{COMPANY.repTitle} — 企画からご発注後の窓口まで担当します</span>
+          <a href={`mailto:${STUDIO.email}`} style={{ fontSize: 12, color: C.mute, textDecoration: 'underline', textUnderlineOffset: 2, minHeight: 44, display: 'inline-flex', alignItems: 'center' }}>
+            {STUDIO.email}
+          </a>
+        </div>
+      </Reveal>
+    </Band>
   );
 }
 
@@ -1142,8 +1212,11 @@ function PlanPickCards({ onDetail }: { onDetail: (id: string) => void }) {
               </span>
             )}
           </div>
-          <div className="fm-pick-name">{p.name}</div>
-          <div className="fm-pick-unit">{p.unit}</div>
+          {/* 2026-08-27 第2版: 見出しを英語のプラン名から「20秒 1本」に入れ替えた。
+              初めて見る人にとって TRIAL / STANDARD / PREMIUM は何が届くかを1文字も語らない。
+              プラン名は問い合わせ時の符丁として要るので、小さく残す */}
+          <div className="fm-pick-name" data-ja="true">{p.unit}</div>
+          <div className="fm-pick-unit">{p.name}</div>
           {/* 通常価格を先に見せてから、実際にお支払いいただく額を主役の大きさで出す。
               取り消し線だけを置いて割引額を書かないと、いくら安いのかを読む人に計算させることになる */}
           {showOffer && (
@@ -1235,10 +1308,10 @@ function PlanMatrix() {
               <th scope="col" className="fm-mx-corner">項目</th>
               {FILM_PLANS.map(p => (
                 <th key={p.id} scope="col" className={`fm-mx-plan${p.featured ? ' fm-mx-col-featured' : ''}`}>
-                  <div className="fm-mx-plan-name">{p.name}</div>
+                  <div className="fm-mx-plan-name">{p.unit}</div>
                   <div className="fm-mx-plan-price">{p.price}</div>
                   <div className="fm-mx-plan-unit">
-                    {p.unit}
+                    {p.name}
                     {p.listPrice && (p.id === 'trial' || isCampaignLive()) && (
                       <><br />通常 {p.listPrice}／{p.id === 'trial' ? TRIAL_OFFER.badge : CAMPAIGN.badge}</>
                     )}
@@ -1275,9 +1348,9 @@ function PlanDetail({ p, open, onToggle }: { p: FilmPlan; open: boolean; onToggl
           textAlign: 'left', fontFamily: SANS,
         }}>
         <span>
-          <span className="st-serif" style={{ display: 'block', fontSize: 14.5, fontWeight: 700, color: C.ink, letterSpacing: '0.08em' }}>
-            {p.name} <span style={{ letterSpacing: 'normal', color: C.mute, fontWeight: 400, fontSize: 12.5 }}>
-              {p.listPrice && (p.id === 'trial' || isCampaignLive()) && <s style={{ marginRight: 5 }}>{p.listPrice}</s>}{p.price} ／ {p.unit}
+          <span className="st-serif" style={{ display: 'block', fontSize: 14.5, fontWeight: 700, color: C.ink, letterSpacing: '0.02em' }}>
+            {p.unit} <span style={{ letterSpacing: 'normal', color: C.mute, fontWeight: 400, fontSize: 12.5 }}>
+              {p.listPrice && (p.id === 'trial' || isCampaignLive()) && <s style={{ marginRight: 5 }}>{p.listPrice}</s>}{p.price} ／ {p.name}
             </span>
           </span>
           <span style={{ display: 'block', fontSize: 12, color: C.mute, lineHeight: 1.7, marginTop: 4 }}>{p.lead}</span>
@@ -1338,8 +1411,13 @@ function PlanDetail({ p, open, onToggle }: { p: FilmPlan; open: boolean; onToggl
   );
 }
 
-function Pricing({ mode, onMode }: { mode: PricingMode; onMode: (m: PricingMode) => void }) {
-  const [openPlan, setOpenPlan] = useState<string | null>(null);
+// openPlan はページ側が持つ。料金早見表の行から「そのプランの内訳」を直接開くため、
+// この章の内部状態にしておくと外から開けない。
+function Pricing({ mode, onMode, openPlan, onOpenPlan }: {
+  mode: PricingMode; onMode: (m: PricingMode) => void;
+  openPlan: string | null; onOpenPlan: (id: string | null) => void;
+}) {
+  const setOpenPlan = onOpenPlan;
 
   const pickMode = (m: PricingMode) => {
     if (m === mode) return;
@@ -1502,9 +1580,14 @@ function Pricing({ mode, onMode }: { mode: PricingMode; onMode: (m: PricingMode)
       )}
       </div>
 
-      {/* 5. 相場との差。自社の金額を見た後に並べたほうが、高いのかどうかの判断がその場で終わる */}
-      <div style={{ marginTop: 48 }}>
-        <ValueTable />
+      {/* 5. 相場との差。2026-08-27 第2版で折りたたみに変えた。
+          自社の金額を見た後に置く順番は正しかったが、常時開いていると
+          375px で 1,800px (2.2画面) の読み物が金額とCTAの間に挟まる。
+          「高いのか安いのか」を確かめたい人だけが開けばよい。見出しで中身が分かるようにしておく。 */}
+      <div style={{ marginTop: 36 }}>
+        <Disclosure title="相場と比べていくらか" note="一般的な実写制作との費用の違いと、その差が生まれる理由。">
+          <ValueTable />
+        </Disclosure>
       </div>
 
       <div style={{ marginTop: 28, textAlign: 'center' }}>

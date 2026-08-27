@@ -19,25 +19,31 @@ export const FILM = {
   // (2026-08-21: 「情報が多すぎて縦に長く煩雑」というオーナー指摘を受けて短縮)
   heroSub: '企画・脚本・ディレクション・仕上げまで、当社が一貫して制作します。',
   heroCta: 'LINEで相談・お見積りを依頼する',
-  heroCtaSub: '料金プランを見る',
-  /** 2026-08-27 追加。1画面目で「結局この会社に何を頼めるのか」を答える。
-      映像は品質を示すが用途は示さないため、用途の名前だけを短く並べる。
-      詳細は下の FILM_MENU (作れるもの) に置き、ここでは名前だけに留める。 */
-  heroUses: ['ショートドラマ', 'ブランドフィルム', '商品・サービス紹介', 'SNSの継続発信', '採用・会社紹介', 'イベント告知'],
-  /** ヒーロー直下の数字。すべて当ページ内で検証できる事実のみを置く (推定値・水増し禁止) */
-  proof: [
-    // 2026-08-24: 旧「¥49,800 / 単発1本（20秒）の制作費」は、¥49,800 を通常価格として読ませていた。
-    // 読む人はこれを基準に月額(月4本 ¥228,000)を見るため「1本ずつ頼むほうが安い」という
-    // 誤った結論に着く。通常価格と初回価格を同じ行に置き、初回限定であることを先に伝える。
-    { value: '¥49,800', label: '初回1本（20秒）／ 通常 ¥89,800' },
-    { value: '1週間', label: '初稿まで（全プラン共通）' },
-    { value: '0円', label: '撮影費・出演費・ロケ費' },
-    { value: '無制限', label: '修正回数（STANDARD以上）' },
+  heroCtaSub: '料金表を見る',
+  /** 2026-08-27 第2版。1画面目に「いくらから・どれくらいで届くか」を数字で置く。
+      旧版はここに用途の名前を6つ並べていたが、直後の料金早見表と完全に重複していた
+      (名前だけ見ても金額が分からないので、結局スクロールさせるだけの行になっていた)。
+      用途は早見表で金額とセットにして出す。ここは金額の入口だけを1行で示す。
+      ※ ¥49,800 は初回限定価格なので、条件を必ず同じ行に書く (単独で出すと平常価格に読まれる)。 */
+  heroPrice: [
+    { value: '¥89,800', label: '20秒1本（初めてのお取引は ¥49,800）' },
+    { value: '約1週間', label: '初稿のお渡しまで' },
   ],
-  /** 法人が発注前に確認する事項の要約。詳細は「お取引の条件」へ。 */
-  // 「広告二次利用込み」を無条件で書くと、TRIAL (広告利用は別途ご相談) と食い違う。
-  // ヒーローだけを読んで ¥49,800 を決済した人が広告に使えない、という事故になるため必ず条件を添える。
-  heroTrust: ['納品物の権利は貴社へ', '広告への二次利用込み（STANDARD以上）', 'NDA・請求書払いに対応', '最低契約期間なし', '初期費用0円'],
+  /** 全プラン共通の条件。2026-08-27 第2版で、旧 proof (4つの数字) と
+      旧 heroTrust (5つの短文) を1つに統合した。
+      分かれていた頃は、ヒーローに「0円」「無制限」という数字だけが出て、
+      その数字が何のどの条件なのかは16px下の別ブロックにある、という読み方を強いていた。
+      料金早見表の直下に「どの金額にも共通してついてくるもの」として1度だけ置く。
+      ※「広告への二次利用」は TRIAL だと別途相談なので、条件を必ず書く。
+        条件を落として書くと、¥49,800 を決済した方が広告に使えないという事故になる。 */
+  common: [
+    { label: '撮影費・出演費・ロケ費', value: '0円' },
+    { label: '初期費用', value: '0円' },
+    { label: '修正', value: '無制限（STANDARD以上）' },
+    { label: '納品物の権利', value: '貴社へ譲渡' },
+    { label: '広告への二次利用', value: '込み（STANDARD以上）' },
+    { label: '最低契約期間', value: 'なし（月額プラン）' },
+  ],
 } as const;
 
 // ------------------------------------------------------------
@@ -86,6 +92,9 @@ export const CAMPAIGN = {
   until: '2026-10-31',
   untilLabel: '2026年10月31日',
   nextLabel: '2026年11月1日',
+  /** 料金早見表の金額の下に置く短縮形。130px の列に1行で収まる長さでないと、
+      2行に折れて金額の桁が縦に揃わなくなる */
+  nextShort: '11/1',
 } as const;
 
 /** 期限内かどうか。過ぎていたら割引の表示自体を消す (期限切れの「◯%OFF」を残さない) */
@@ -157,31 +166,21 @@ export type FilmMenuItem = {
 };
 
 export const MENU_LEAD = {
-  en: 'What We Make',
-  title: '作れるもの',
-  sub: '発注の多い順に6つ挙げます。どれも企画から仕上げまで当社が一貫して制作します。',
+  en: 'Price Menu',
+  title: '何が、いくらで作れるか。',
+  sub: '当社にご依頼の多い6つです。金額はすべて税込で、初稿のお渡しまではどれも約1週間です。',
+  /** 表の下に置く共通条件。各行に同じ注記を6回書くと、行が読めなくなる */
+  note: '撮影費・出演費・ロケ費・機材費はかかりません。金額は目安で、確定金額はヒアリングの上でお見積りとしてご提示します。',
 } as const;
 
+// 並びは金額の安い順 (単発4件 → 月額2件)。
+// 2026-08-27 第2版で「発注の多い順」から変更した。金額を縦一列に並べて比べる表になったため、
+// 金額が行き来する並びだと、表として読めない (安い順なら1回の走査で予算に合う行が見つかる)。
 export const FILM_MENU: FilmMenuItem[] = [
   {
-    id: 'short-drama', en: 'Short Drama', title: 'ショートドラマ',
-    body: '人物を主役にした連続もの。続きが見たくなる形で毎月積み上げます。',
-    basis: { kind: 'monthly' },
-  },
-  {
-    id: 'brand-film', en: 'Brand Film', title: 'ブランドフィルム',
-    body: '会社・商品の思想を1本に。展示会や商談で流す顔になる映像です。',
-    basis: { kind: 'once', plan: 'premium' },
-  },
-  {
     id: 'product', en: 'Product', title: '商品・サービス紹介',
-    body: '見せ場だけを20〜40秒に。そのまま広告に出せる形で納品します。',
+    body: '見せ場だけを20秒に。そのまま広告に出せる形で納品します。',
     basis: { kind: 'once', plan: 'trial' },
-  },
-  {
-    id: 'social', en: 'Social', title: 'SNSの継続発信',
-    body: 'TikTok / Reels / Shorts の縦型を毎月4〜12本。発信を止めません。',
-    basis: { kind: 'monthly' },
   },
   {
     id: 'recruit', en: 'Recruiting', title: '採用・会社紹介',
@@ -190,26 +189,76 @@ export const FILM_MENU: FilmMenuItem[] = [
   },
   {
     id: 'event', en: 'Event Branding', title: 'イベント告知',
-    body: '開催前に当日の熱量を見せる。会場の規模も照明も先につくります。',
+    body: '開催前に、当日の熱量を先に見せる告知映像です。',
     basis: { kind: 'once', plan: 'standard' },
+  },
+  {
+    id: 'brand-film', en: 'Brand Film', title: 'ブランドフィルム',
+    body: '会社・商品の思想を1本に。商談や展示会で流す顔になります。',
+    basis: { kind: 'once', plan: 'premium' },
+  },
+  {
+    id: 'social', en: 'Social', title: 'SNSの継続発信',
+    body: 'TikTok・Reels・Shorts 用の縦型を、毎月まとめて。',
+    basis: { kind: 'monthly' },
+  },
+  {
+    id: 'short-drama', en: 'Short Drama', title: 'ショートドラマ',
+    body: '人物を主役にした連続もの。毎月1話ずつ積み上げます。',
+    basis: { kind: 'monthly' },
   },
 ];
 
-/** 目安価格のラベル。FILM_PLANS / MONTHLY_PLANS の実データから組む (手打ち禁止)。
+/** 早見表の右列。金額はすべて FILM_PLANS / MONTHLY_PLANS の実データから組む (手打ち禁止)。
+ *  金額(主)と、その下の条件1行(副)に分ける。
  *
- *  TRIAL だけ通常価格 (¥89,800) を出す:
- *    ¥49,800 は「初めてのお取引に限り1社1本」という条件つきの価格で、2本目以降は適用されない。
- *    用途の一覧に条件なしで ¥49,800 と書くと、その用途の平常価格として読まれてしまう
- *    (同じ誤読が原因で 2026-08-24 にヒーローの数字も 通常/初回 の併記に直している)。
- *    STANDARD / PREMIUM の割引は期間限定でどなたにも適用されるため、現行価格をそのまま出す。 */
-export function menuPriceLabel(basis: FilmMenuBasis): string {
+ *  分ける理由: 1つの文字列に「¥89,800（初回 ¥49,800）」と詰めると、375px では
+ *  金額が折り返して2行になり、6行の表で金額の桁が縦に揃わなくなる。揃わない金額は比べられない。
+ *
+ *  sub に書くのは「その金額に付く条件」だけ。値引きの宣伝文は書かない。 */
+export function menuPriceParts(basis: FilmMenuBasis): { main: string; sub: string } {
   if (basis.kind === 'monthly') {
-    return `月 ${yen(Math.min(...MONTHLY_PLANS.map(m => m.priceYen)))} 〜`;
+    const min = Math.min(...MONTHLY_PLANS.map(m => m.priceYen));
+    const unit = Math.min(...MONTHLY_PLANS.map(m => Math.round(m.priceYen / m.count)));
+    // 「月 ¥228,000〜」で13文字ぶん。空白を入れると 375px の金額列からはみ出す
+    return { main: `月 ${yen(min)}〜`, sub: `1本あたり ${yen(unit)}〜` };
+  }
+  const plan = FILM_PLANS.find(p => p.id === basis.plan);
+  if (!plan) return { main: '', sub: '' };
+  // TRIAL は通常価格を主役にし、初回価格は条件つきで副に置く。
+  // (¥49,800 を主役にすると、2本目以降も同額で頼めると読まれる)
+  if (plan.id === 'trial') {
+    return { main: plan.listPrice ?? plan.price, sub: `初めてのお取引は ${plan.price}` };
+  }
+  // STANDARD / PREMIUM は期間限定だがどなたにも適用されるので、現行価格が主役。
+  // 期限を過ぎたら isCampaignLive() が false になり、副の行ごと消える。
+  //
+  // 「通常 ¥192,000」とは書かない:
+  //   ¥192,000 は過去に売った価格ではなく、期限後に適用する価格 (値上げ予告) である。
+  //   実績のない金額を「通常価格」として打ち消すと二重価格表示にあたるおそれがあるため、
+  //   必ず未来形で「11/1から ¥192,000」と書く (この方針は CAMPAIGN のコメントが正本)。
+  return {
+    main: plan.price,
+    sub: isCampaignLive() && plan.listPrice ? `${CAMPAIGN.nextShort}から ${plan.listPrice}` : '',
+  };
+}
+
+/** 早見表の左列2行目 — 実際に何が届くのか。
+ *  尺・カット数は FILM_PLANS の spec から引く (手打ちにすると仕様変更で必ず食い違う)。 */
+export function menuSpecLabel(basis: FilmMenuBasis): string {
+  if (basis.kind === 'monthly') {
+    const counts = MONTHLY_PLANS.map(m => m.count);
+    return `20〜30秒 × 月${Math.min(...counts)}〜${Math.max(...counts)}本`;
   }
   const plan = FILM_PLANS.find(p => p.id === basis.plan);
   if (!plan) return '';
-  const shown = plan.id === 'trial' ? (plan.listPrice ?? plan.price) : plan.price;
-  return `${shown} 〜`;
+  const get = (label: string) => plan.spec.find(s => s.label === label)?.value ?? '';
+  return [get('尺'), get('カット数')].filter(Boolean).join('・');
+}
+
+/** 早見表の行を押した先。単発は該当プランの詳細、月額は月額の料金表へ。 */
+export function menuTarget(basis: FilmMenuBasis): { mode: PricingMode; plan?: FilmPlan['id'] } {
+  return basis.kind === 'monthly' ? { mode: 'monthly' } : { mode: 'once', plan: basis.plan };
 }
 
 // ------------------------------------------------------------
