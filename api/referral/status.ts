@@ -7,10 +7,15 @@
 // 200 { ok: true, referred_count: number, bonus_days: number }
 // 400 { ok: false, message: string }
 //
-// Supabase の referral_redemptions テーブルを referral_code で数える。
-// Supabase 未設定 / テーブル無し / 不通 でも referred_count: 0 で
-// フェイルオープン (UX を止めない・嘘の数字も出さない)。
+// 数える場所は 2 つ:
+//   1. Upstash Redis の集合 ref:redeemed:<CODE> (本番で実際に効いている)
+//   2. Supabase referral_redemptions (env が設定されていれば併用)
+// 多い方を採用する (移行期に片方だけへ書かれた分を取りこぼさないため)。
+// どちらも読めない時は referred_count: 0 でフェイルオープン
+// (UX を止めない・嘘の数字も出さない)。
 // ============================================================
+
+import { countRedemptions } from '../_lib/referralStore';
 
 export const config = { runtime: 'edge' };
 
@@ -63,6 +68,14 @@ export default async function handler(req: Request) {
   const supaKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   let referredCount = 0;
+  let source: 'none' | 'kv' | 'supabase' = 'none';
+
+  // ─── 1. Upstash Redis (本番で実際に記録されている場所) ───
+  const kvCount = await countRedemptions(code);
+  if (kvCount !== null) {
+    referredCount = kvCount;
+    source = 'kv';
+  }
 
   if (supaUrl && supaKey) {
     try {
@@ -82,12 +95,17 @@ export default async function handler(req: Request) {
         // Content-Range: "0-0/N" の N が総件数
         const cr = resp.headers.get('content-range') || '';
         const total = parseInt(cr.split('/')[1] || '', 10);
+        // ★代入ではなく「多い方を採る」。代入にすると、Upstash に記録済みの
+        //   実績が、テーブルが空の Supabase の 0 で上書きされて消える。
         if (Number.isFinite(total) && total >= 0) {
-          referredCount = total;
+          if (total > referredCount) { referredCount = total; source = 'supabase'; }
         } else {
           // count ヘッダが無い環境向けフォールバック: 行を数える
           const rows = await resp.json() as { id: string }[];
-          if (Array.isArray(rows)) referredCount = rows.length;
+          if (Array.isArray(rows) && rows.length > referredCount) {
+            referredCount = rows.length;
+            source = 'supabase';
+          }
         }
       }
     } catch (e) {
@@ -100,5 +118,7 @@ export default async function handler(req: Request) {
     ok: true,
     referred_count: referredCount,
     bonus_days: referredCount * BONUS_DAYS,
+    // 'none' = どこにも記録が残っていない (人数を保証できない状態)
+    source,
   }, 200, ch);
 }

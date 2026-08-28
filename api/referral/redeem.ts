@@ -6,10 +6,20 @@
 // 200  { ok: true, bonus_days: 7, message: string }
 // 400  { ok: false, message: string }
 //
-// Supabase が設定されていれば referral_redemptions テーブルに記録し、
-// 同じ紹介コード × メールの重複利用を防ぐ。未設定でも形式検証だけは通り
-// クライアント側で +7 日の付与は可能 (UX を止めない)。
+// 記録先は 2 つ:
+//   1. Upstash Redis (本番で実際に動いている保存先) — 常に使う
+//   2. Supabase referral_redemptions (env が設定されていれば併用)
+// どちらにも書けない場合でも形式検証だけは通り、クライアント側で
+// +7 日の付与は可能 (UX を止めない = フェイルオープン)。
+//
+// 2026-08-28 まで記録先が Supabase だけで、その env が本番に無かったため
+// 紹介は 1 件も残らず、招待した人の人数は永久に 0 のままだった。
 // ============================================================
+
+import {
+  recordRedemption,
+  isReferralStoreConfigured,
+} from '../_lib/referralStore';
 
 export const config = { runtime: 'edge' };
 
@@ -73,7 +83,19 @@ export default async function handler(req: Request) {
     return json({ ok: false, message: 'メールアドレスが不正です' }, 400, ch);
   }
 
-  // ─── Supabase が設定されていれば二重利用を弾く ───
+  // ─── 1. Upstash Redis へ記録 (本番で実際に効いている保存先) ───
+  //   ここで初めて「招待した人の人数」がサーバ側に残る。
+  //   同じメールが 2 回目を使おうとしたら 409 で弾く (1 人 1 回)。
+  const stored = await recordRedemption(code, email);
+  if (stored.duplicate) {
+    return json({
+      ok: false,
+      recorded: true,
+      message: 'このメールアドレスは既に紹介コードを利用済です',
+    }, 409, ch);
+  }
+
+  // ─── 2. Supabase が設定されていれば二重利用を弾く ───
   const supaUrl = process.env.SUPABASE_URL;
   const supaKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
@@ -94,6 +116,7 @@ export default async function handler(req: Request) {
         if (Array.isArray(rows) && rows.length > 0) {
           return json({
             ok: false,
+            recorded: true,
             message: 'このメールアドレスは既に紹介コードを利用済です',
           }, 409, ch);
         }
@@ -128,6 +151,10 @@ export default async function handler(req: Request) {
   return json({
     ok: true,
     bonus_days: BONUS_DAYS,
+    // recorded:false は「招待した人の人数には反映できていない」という意味。
+    // 保存先が落ちている時に、成功と同じ顔をさせないための正直な印。
+    recorded: stored.recorded,
+    store: isReferralStoreConfigured() ? 'kv' : 'none',
     message: `🎉 友達招待ボーナスで +${BONUS_DAYS} 日のトライアル延長が適用されました!`,
   }, 200, ch);
 }
