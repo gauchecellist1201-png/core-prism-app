@@ -634,26 +634,44 @@ export default function IdentityDashboard({
   }, [mobileGeminiMode]);
 
   // モバイル + Gemini モードの時は MobileGeminiDashboard を返す
+  // 出典チップ (onAgentOpen('knowledge')) が setShowKnowledge(true) を呼んでも、
+  // ここで早期 return すると下の KnowledgeBase モーダル (L.2010〜) まで到達せず
+  // クリックが画面上どこにも遷移しない無反応ボタンになっていた。モーダルだけ同居させる。
   if (mobileGeminiMode) {
     return (
-      <MobileGeminiDashboard
-        persona={persona}
-        allPersonas={allPersonas}
-        settings={settings}
-        knowledgeItems={knowledgeItems}
-        onSwitch={onSwitch}
-        onOpenSettings={onOpenSettings}
-        onOpenFullFeatures={() => setMobileGeminiMode(false)}
-        onAgentOpen={(key) => {
-          if (key === 'ceo')       setShowCeo(true);
-          else if (key === 'sales')     setShowSalesAgent(true);
-          else if (key === 'cfo')       setShowFinConsult(true);
-          else if (key === 'creative')  setShowContentEngine(true);
-          else if (key === 'knowledge') setShowKnowledge(true);
-          else if (key === 'people')    setShowPeople(true);
-          else if (key === 'life')      setShowHealth(true);
-        }}
-      />
+      <>
+        <MobileGeminiDashboard
+          persona={persona}
+          allPersonas={allPersonas}
+          settings={settings}
+          knowledgeItems={knowledgeItems}
+          onSwitch={onSwitch}
+          onOpenSettings={onOpenSettings}
+          onOpenFullFeatures={() => setMobileGeminiMode(false)}
+          onAgentOpen={(key) => {
+            if (key === 'ceo')       setShowCeo(true);
+            else if (key === 'sales')     setShowSalesAgent(true);
+            else if (key === 'cfo')       setShowFinConsult(true);
+            else if (key === 'creative')  setShowContentEngine(true);
+            else if (key === 'knowledge') setShowKnowledge(true);
+            else if (key === 'people')    setShowPeople(true);
+            else if (key === 'life')      setShowHealth(true);
+          }}
+        />
+        {showKnowledge && (
+          <KnowledgeBase
+            key="kb-mobile-gemini"
+            persona={persona}
+            settings={settings}
+            items={personaKnowledge}
+            onAddFile={onAddKnowledgeFile}
+            onAddNote={onAddKnowledgeNote}
+            onDelete={onDeleteKnowledge}
+            onReanalyze={onReanalyzeKnowledge}
+            onClose={() => setShowKnowledge(false)}
+          />
+        )}
+      </>
     );
   }
 
