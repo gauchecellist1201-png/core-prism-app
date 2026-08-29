@@ -1527,6 +1527,17 @@ input, textarea, select { font-family: inherit; }
   .lp-usecase-grid { grid-template-columns: 1fr !important; }
 }
 
+/* ─── LP ヘッダー: 右上固定のテーマ切替(PublicThemeToggle・44px・top/right 12px・z-70)
+   との衝突を根治 (2026-08-29・BACKLOG「ダークモード切替がheaderの『無料でためす』
+   を338px²覆う」)。maxWidth:1200 + margin:auto のセンタリングは画面幅が1200pxを
+   超えた時しか効かないため、それ以下の幅ではヘッダー右端がそのまま画面右端に
+   張り付き、固定の切替ボタンと重なっていた。ヘッダー側の右余白だけを広げて
+   「押せるものの上に固定ボタンを乗せない」を満たす(見た目は右余白が増えるだけ・
+   機能は無変更)。 */
+@media (max-width: 1200px) {
+  .lp-header-row { padding-right: 5rem !important; }
+}
+
 /* ─── LP コーポレート: スクロール挙動 & ホバーの磨き込み ─── */
 html { scroll-behavior: smooth; }
 #top, #connect, #values, #mission, #products, #who, #journey, #about, #contact {

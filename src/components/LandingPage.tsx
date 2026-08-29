@@ -360,7 +360,11 @@ export default function LandingPage({ onEnterApp }: Props) {
 
       {/* ── ヘッダ ── */}
       <header className="lp-safe" style={{ position: 'sticky', top: 0, zIndex: 50, background: 'rgba(7,7,12,0.82)', backdropFilter: 'blur(14px)', borderBottom: `1px solid ${LINE}` }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0.8rem 1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
+        {/* lp-header-row: 画面右上に固定表示される PublicThemeToggle(44px・z-70)が
+            「無料でためす」に被らないよう、1200px以下では右側に逃げ場を空ける
+            (2026-08-29・BACKLOG「338px²覆う」の根治。1200px超はmaxWidth+auto余白で
+            自然にクリアされるためこのCSSは効かない=見た目は変えていない)。 */}
+        <div className="lp-header-row" style={{ maxWidth: 1200, margin: '0 auto', padding: '0.8rem 1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
           {/* ロゴ5回タップ = オーナー専用の隠しマスターログイン */}
           <span onClick={tapMaster} style={{ cursor: 'default', display: 'inline-flex' }}>
             <PrismLogo size={28} withWordmark />
