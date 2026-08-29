@@ -5,7 +5,7 @@
 // 見出し Noto Serif JP・本文サンセリフ。CTAは濃色ボタン。
 // 文言・価格は plans.ts に集約 (ここにはレイアウトだけを書く)
 // ============================================================
-import { lazy, Suspense, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import {
   STUDIO, STATS, REASONS, PROCESS, PRODUCTION_PLANS, DEV_LEAD, DEV_TIERS,
   CARE_PLANS, WORKS, COMPANY, SERVICE_LINES, thumbOf,
@@ -45,6 +45,48 @@ const readTab = (): TabId => {
 };
 
 const pathOf = (t: TabId) => (t === 'home' ? '/studio' : `/studio/${t}`);
+
+// ---- カーソル追従のあかり (暗部の章だけ) ----
+// 白地でやると光が濁って安っぽくなるので、黒地の Services にだけ置く。
+// pointermove は 1 秒に数百回飛ぶため、座標の保存と描画を分け、rAF で 1 フレーム 1 回に間引く
+// (毎回 style を書くとスクロールごと詰まる)。
+// マウスが無い端末では光が指の下に隠れて意味が無く、hover が residual で残る事故にもなるので付けない。
+function useSpotlight<T extends HTMLElement>() {
+  const ref = useRef<T>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    if (!window.matchMedia?.('(hover: hover) and (pointer: fine)').matches) return;
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
+
+    let raf = 0;
+    let x = 0, y = 0;
+    const paint = () => {
+      raf = 0;
+      el.style.setProperty('--sx', `${x}px`);
+      el.style.setProperty('--sy', `${y}px`);
+    };
+    const onMove = (e: PointerEvent) => {
+      const r = el.getBoundingClientRect();
+      x = e.clientX - r.left;
+      y = e.clientY - r.top;
+      if (!raf) raf = requestAnimationFrame(paint);
+    };
+    const onEnter = () => el.setAttribute('data-lit', 'true');
+    const onLeave = () => el.removeAttribute('data-lit');
+
+    el.addEventListener('pointermove', onMove);
+    el.addEventListener('pointerenter', onEnter);
+    el.addEventListener('pointerleave', onLeave);
+    return () => {
+      if (raf) cancelAnimationFrame(raf);
+      el.removeEventListener('pointermove', onMove);
+      el.removeEventListener('pointerenter', onEnter);
+      el.removeEventListener('pointerleave', onLeave);
+    };
+  }, []);
+  return ref;
+}
 
 // ---- タブごとの title / description (映像は検索の入口が別なので分ける) ----
 // 正本は studio.html / studio-film.html の静的メタ。ここを変えたら向こうも合わせる。
@@ -163,6 +205,71 @@ export default function StudioSite() {
         .st-worklink:hover { color: ${C.gold}; }
         a { -webkit-tap-highlight-color: rgba(168,130,60,0.15); }
 
+        /* ── カーソルの手ざわり (2026-08-29 オーナー指示「カーソルがあった時に動きを」) ──
+           タッチ端末に hover を持ち込むと、タップした要素に状態が residual で残り
+           「押しっぱなし」に見える。マウスがある環境だけに限定する。
+           動きを減らす設定の端末では transform を止め、色の変化だけ残す
+           (動きが理由で気分が悪くなる人に、演出のために我慢させない)。 */
+        @media (hover: hover) and (pointer: fine) {
+          /* 面が浮く。cubic-bezier は「すっと出て、ふわっと止まる」= 手で持ち上げた感じ。
+             linear や ease だと機械が動いた感じになり、高い買い物の画面に見えない */
+          .st-card { transition: border-color 240ms ease, box-shadow 240ms ease, transform 240ms cubic-bezier(.2,.7,.3,1); }
+          .st-card:hover { border-color: ${C.goldLine}; box-shadow: 0 16px 38px -24px rgba(17,24,39,0.42); }
+          /* 押せるカードだけ浮かせる。読むだけのカード (選ばれる理由) は
+             浮かせると押せると誤解されるので、線と影だけにとどめる */
+          .st-workcard:hover { transform: translateY(-4px); }
+          .st-workcard { will-change: transform; }
+          /* 写真がゆっくり寄る。実物のサイトが「近づいてくる」ので、
+             文字で説明しなくても「見に行ける」ことが伝わる */
+          .st-workcard img { transition: transform 620ms cubic-bezier(.2,.7,.3,1); }
+          .st-workcard:hover img { transform: scale(1.055); }
+          /* 矢印が進行方向へ出る。行き先があることを、色ではなく動きで示す */
+          .st-workcard svg, .st-svc-card svg { transition: transform 240ms cubic-bezier(.2,.7,.3,1); }
+          .st-workcard:hover svg, .st-svc-card:hover svg { transform: translateX(4px); }
+          .st-svc-card { transition: border-color 240ms ease, background 240ms ease, transform 240ms cubic-bezier(.2,.7,.3,1); }
+          .st-svc-card:hover { transform: translateY(-4px); }
+          .st-strip-shot img { transition: transform 620ms cubic-bezier(.2,.7,.3,1); }
+          .st-strip-item:hover .st-strip-shot img { transform: scale(1.06); }
+          /* ボタン。従来の opacity 0.88 は「文字まで薄くなる」= 押した手応えではなく
+             要素が死んだ表示だった。浮かせて影を落とし、押せることを体で分からせる */
+          .st-btn { transition: transform 200ms cubic-bezier(.2,.7,.3,1), box-shadow 200ms ease, border-color 200ms ease, background 200ms ease; }
+          .st-btn-primary:hover { opacity: 1; transform: translateY(-2px); box-shadow: 0 14px 26px -14px rgba(17,24,39,0.55); }
+          .st-btn-primary:active { transform: translateY(0); box-shadow: 0 6px 14px -10px rgba(17,24,39,0.5); }
+          .st-btn-ghost:hover { transform: translateY(-2px); box-shadow: 0 12px 24px -18px rgba(17,24,39,0.4); }
+          .st-btn-ghost:active { transform: translateY(0); }
+          .st-chip { transition: border-color 160ms ease, transform 160ms cubic-bezier(.2,.7,.3,1); }
+          .st-chip:hover { transform: translateY(-1px); }
+          /* タブ。金の下線が中央から伸びる。今どこを見ているかが、
+             色の違いだけでなく「線が育つ」動きでも分かる */
+          .st-tab { position: relative; }
+          .st-tab::after { content: ''; position: absolute; left: 50%; right: 50%; bottom: -2px; height: 2px;
+            background: ${C.gold}; transition: left 240ms cubic-bezier(.2,.7,.3,1), right 240ms cubic-bezier(.2,.7,.3,1); }
+          .st-tab:hover::after { left: 13px; right: 13px; }
+          .st-tab[data-on="true"]::after { left: 0; right: 0; }
+          /* 下線は ::after に一本化する。border-bottom を残すと選択中のタブだけ
+             金の線が二重に太って見える (hover が無い端末では ::after を出さないので、
+             従来どおり border-bottom 側が下線を担当する) */
+          .st-tab[data-on="true"] { border-bottom-color: transparent; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .st-card, .st-workcard, .st-workcard img, .st-svc-card, .st-strip-shot img,
+          .st-btn, .st-chip, .st-workcard svg, .st-svc-card svg { transition: none !important; transform: none !important; }
+        }
+
+        /* ── カーソル追従のあかり (黒地の Services だけ) ──────────────────
+           座標は JS が --sx/--sy に書く。JS が動かない/触る端末では
+           data-lit が付かないので、光は最初から最後まで出ない (= 素の黒地のまま)。
+           光そのものは描画コストの軽い background だけで作る (filter/blur は使わない。
+           セクション全面に blur を掛けるとスクロールが目に見えて落ちる)。 */
+        .st-spot { position: relative; isolation: isolate; }
+        .st-spot::before { content: ''; position: absolute; inset: 0; z-index: 0; pointer-events: none;
+          background: radial-gradient(420px circle at var(--sx, 50%) var(--sy, 0px),
+            rgba(212,169,79,0.15), rgba(212,169,79,0.05) 42%, transparent 72%);
+          opacity: 0; transition: opacity 500ms ease; }
+        .st-spot[data-lit]::before { opacity: 1; }
+        /* 中身を光より前に出す。これが無いと ::before が本文の上に乗って字が霞む */
+        .st-spot > * { position: relative; z-index: 1; }
+
         /* ── ヒーロー直下の実績帯 ───────────────────────────────
            制作会社のトップページで、実際に作ったものが1画面目に1枚も無かった。
            文章で「制作します」と言う代わりに、公開中のサイトの実物を流す。
@@ -249,7 +356,7 @@ export default function StudioSite() {
           <img src="/core-studio-logo.png" alt="CORE Studio" style={{ height: 24, width: 'auto', display: 'block' }} />
         </div>
         <a href={`mailto:${STUDIO.email}`} style={{ fontSize: 12.5, color: C.mute, textDecoration: 'underline', minHeight: 44, display: 'inline-flex', alignItems: 'center', padding: '0 8px' }}>{STUDIO.email}</a>
-        <div style={{ fontSize: 11.5, color: C.mute, marginTop: 10, letterSpacing: '0.04em', lineHeight: 1.9 }}>
+        <div style={{ fontSize: 12.5, color: C.mute, marginTop: 10, letterSpacing: '0.04em', lineHeight: 1.9 }}>
           CORE（設立準備中）<br />代表 井出直毅
         </div>
       </footer>
@@ -349,6 +456,7 @@ function WorksStrip({ go }: { go: (t: TabId) => void }) {
 // ホーム
 // ============================================================
 function HomeTab({ go }: { go: (t: TabId) => void }) {
+  const spotRef = useSpotlight<HTMLElement>();
   return (
     <div>
       {/* ヒーロー */}
@@ -375,7 +483,7 @@ function HomeTab({ go }: { go: (t: TabId) => void }) {
           {STATS.map(s => (
             <div key={s.label} style={{ background: '#FFFFFF', padding: '18px 14px', textAlign: 'center' }}>
               <div className="st-serif" style={{ fontSize: 22, fontWeight: 700, color: C.ink, letterSpacing: '0.02em' }}>{s.value}</div>
-              <div style={{ fontSize: 11.5, color: C.mute, marginTop: 4, letterSpacing: '0.04em' }}>{s.label}</div>
+              <div style={{ fontSize: 12.5, color: C.mute, marginTop: 5, letterSpacing: '0.03em', lineHeight: 1.6 }}>{s.label}</div>
             </div>
           ))}
         </div>
@@ -384,7 +492,7 @@ function HomeTab({ go }: { go: (t: TabId) => void }) {
       {/* ご依頼いただけること — 白基調のサイトの中で、ここだけ暗部に落として章の違いを見せる。
           以前はここが映像制作だけの帯で、サイト制作・受託開発・運用はタブを開くまで存在が分からず、
           ホーム全体で価格が1円も出ていなかった。4つの領域と「いくらから」をこの1章にまとめる。 */}
-      <section style={{ background: D.bg, padding: '48px 0' }}>
+      <section ref={spotRef} className="st-spot" style={{ background: D.bg, padding: '48px 0' }}>
         <div className="st-inner">
           <div className="st-label" style={{ color: D.gold, marginBottom: 14 }}>Services</div>
           <h2 className="st-serif" style={{ fontSize: 'clamp(23px, 6.2vw, 32px)', fontWeight: 700, lineHeight: 1.55, color: D.ink, margin: 0 }}>
@@ -399,16 +507,16 @@ function HomeTab({ go }: { go: (t: TabId) => void }) {
               <button key={s.tab} className="st-svc-card" data-featured={s.tab === 'film'} onClick={() => go(s.tab)}>
                 <span style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10 }}>
                   <span>
-                    <span className="st-label" style={{ color: D.gold, fontSize: 10.5, display: 'block', marginBottom: 6 }}>{s.en}</span>
+                    <span className="st-label" style={{ color: D.gold, fontSize: 11, letterSpacing: '0.2em', display: 'block', marginBottom: 7 }}>{s.en}</span>
                     <span className="st-serif" style={{ fontSize: 19, fontWeight: 700, color: D.ink }}>{s.name}</span>
                   </span>
                   <span className="st-serif" style={{ fontSize: 17, fontWeight: 700, color: D.gold, flexShrink: 0, whiteSpace: 'nowrap' }}>{s.from}</span>
                 </span>
                 {/* 金額だけ出して条件を隠さない (「〜から」が何のことか、その場で読めるようにする) */}
-                <span style={{ display: 'block', fontSize: 11.5, color: D.mute, lineHeight: 1.7, letterSpacing: '0.02em', marginTop: -2 }}>{s.fromNote}</span>
+                <span style={{ display: 'block', fontSize: 12.5, color: D.mute, lineHeight: 1.85, letterSpacing: '0.02em', marginTop: -2 }}>{s.fromNote}</span>
                 {/* 最安プランだけに付く除外は、金額と同じ画面で読めないと意味がない */}
                 {s.fromCaveat && (
-                  <span style={{ display: 'block', fontSize: 11.5, color: D.gold, lineHeight: 1.7, letterSpacing: '0.02em', borderLeft: `2px solid ${D.goldLine}`, paddingLeft: 9 }}>
+                  <span style={{ display: 'block', fontSize: 12.5, color: D.gold, lineHeight: 1.85, letterSpacing: '0.02em', borderLeft: `2px solid ${D.goldLine}`, paddingLeft: 10 }}>
                     {s.fromCaveat}
                   </span>
                 )}
