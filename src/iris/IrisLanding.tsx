@@ -112,7 +112,11 @@ const SOLUTIONS: {
     tag: '企画・台本 → 予約投稿',
     title: '「何を作るか」から「投稿」まで',
     before: '企画を考え、台本を書き、投稿時間にスマホを握りしめて待機',
-    after: 'AIが企画・台本を提案。できたリールは予約投稿で、決めた時間に自動で出る',
+    // 2026-08-29: 「決めた時間に自動で出る」と書いていたが、Iris に Instagram へ送り出す
+    //   コードは1行も無い (usePostQueue は localStorage のみ / status が ready に変わるだけ)。
+    //   実物は「時間になったらお知らせ → 本文はコピー済み → 本人が IG で貼って投稿」。
+    //   アプリ内の予約画面は同日に直したので、LP の言葉も実物に合わせる。
+    after: 'AIが企画・台本を提案。決めた時間になったらお知らせ。本文はコピー済みなので、貼り付けて投稿するだけ',
     color: G_PINK, textColor: PINK_TXT,
   },
 ];
@@ -143,7 +147,8 @@ const EDGES: { Icon: LucideIcon; head: string; body: string; color: string }[] =
 const STEPS: { Icon: LucideIcon; n: string; title: string; body: string }[] = [
   { Icon: Upload, n: '1', title: '素材を入れる', body: '撮った動画や写真を選ぶだけ。撮り直しも台本も、なくていい。' },
   { Icon: Wand2, n: '2', title: 'AIにおまかせ', body: '並べ替え・字幕・投稿文をAIが自動で。直したければ「もっと明るく」とひとこと。' },
-  { Icon: CalendarClock, n: '3', title: '予約して、投稿', body: '仕上がったら日時を選んで予約。あとはIrisが投稿まで見届ける。' },
+  // 2026-08-29: 「Irisが投稿まで見届ける」は Iris が代わりに出すと読めてしまう。実物は通知 + 本文コピーまで。
+  { Icon: CalendarClock, n: '3', title: '予約して、お知らせで投稿', body: '仕上がったら日時を選んで予約。時間になったらお知らせします。本文はコピー済みなので、貼り付けるだけ。' },
 ];
 
 // ─── やめるときの安心 ────────────────────────────────────────
