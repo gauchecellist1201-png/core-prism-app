@@ -3,12 +3,13 @@
 // リール書き出し済 / 案件下書きから生成された予約を1画面で管理
 // 「Instagram で開く」 → キャプションを自動コピー → IG アプリへ
 // ============================================================
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Calendar, ExternalLink, Trash2, Copy, Check, Clock, AlertCircle, Image as ImageIcon, Video as VideoIcon, CalendarClock, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { IrisBackgroundDef } from './irisStyle';
 import { IRIS_FONTS, accentFaceBg, accentFaceInk } from './irisStyle';
 import { usePostQueue, buildCaptionText, suggestNextSlot, type ScheduledPost } from './usePostQueue';
-import { shouldAskOutcome, OVERDUE_ASK_TEXT } from './overduePrompt';
+import { shouldAskOutcome, overdueAskCount, OVERDUE_ASK_TEXT } from './overduePrompt';
+import { loadTrend, recordSnapshot, saveTrend, summarizeTrend, trendSentence, localDayKey, type OverdueTrend } from './overdueTrend';
 import IrisIntro from './IrisIntro';
 import { confirmAction } from '../lib/confirmDialog';
 import EmptyInvite from './EmptyInvite';
@@ -28,9 +29,7 @@ const STATUS_META: Record<ScheduledPost['status'], { label: string; color: strin
 
 // ── カレンダー用ヘルパー（すべてローカル時刻基準。ISO を slice すると +9h ずれるので new Date で扱う） ──
 const WEEKDAYS = ['日', '月', '火', '水', '木', '金', '土'];
-/** ローカル時刻での YYYY-MM-DD キー */
-const localDayKey = (d: Date) =>
-  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+// ローカル時刻での YYYY-MM-DD キーは overdueTrend.ts が正本 (2つ持つとカレンダーと記録がずれる)
 /** 月を n ヶ月ずらした「その月の1日」を返す */
 const shiftMonth = (d: Date, n: number) => new Date(d.getFullYear(), d.getMonth() + n, 1);
 
@@ -44,6 +43,20 @@ export default function IrisPostQueueView({ bg, queue }: Props) {
   const [calCursor, setCalCursor] = useState<Date>(() => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), 1); });
   const [selectedDay, setSelectedDay] = useState<string>(() => localDayKey(new Date()));
   const todayKey = localDayKey(new Date());
+
+  // ── 「1日以上ほったらかしの予約」を数え続ける ──
+  // 2026-08-29 の2件 (空状態の嘘を消す / 過ぎた予約に二択) はどちらも判定が
+  // 「この件数が 0 に近づくか」なのに、数える仕組みがどこにも無かった。
+  // ここで1日1行だけ記録して、画面でも本人が見られるようにする (端末内のみ)。
+  const overdueNow = useMemo(() => overdueAskCount(queue.posts), [queue.posts]);
+  const [trend, setTrend] = useState<OverdueTrend | null>(null);
+  useEffect(() => {
+    const next = recordSnapshot(loadTrend(), overdueNow);
+    saveTrend(next);                       // 保存できなくても画面は壊さない
+    setTrend(summarizeTrend(next, overdueNow));
+  }, [overdueNow]);
+  // 一度も溜めたことがない人には出さない (0件です、と毎回言われても意味がない)
+  const showTrend = !!trend && (trend.now > 0 || (trend.todayFirst ?? 0) > 0 || (trend.since?.count ?? 0) > 0);
 
   // 予約を日付（ローカル）でまとめる。時刻昇順。
   const postsByDay = useMemo(() => {
@@ -249,6 +262,30 @@ export default function IrisPostQueueView({ bg, queue }: Props) {
           </div>
         ))}
       </div>
+
+      {/* 1日以上ほったらかしの予約の件数 (数えた事実だけ。記録が無い比較は出さない) */}
+      {showTrend && (
+        <div style={{
+          padding: '0.6rem 0.85rem',
+          background: bg.card,
+          border: `1px solid ${bg.cardBorder}`,
+          borderRadius: 12,
+          fontSize: '0.78rem',
+          lineHeight: 1.65,
+          color: bg.ink,
+          display: 'flex',
+          alignItems: 'flex-start',
+          gap: 8,
+        }}>
+          <Clock size={15} color={bg.accent} style={{ marginTop: 2, flexShrink: 0 }} />
+          <span>
+            {trendSentence(trend)}
+            {trend!.now > 0 && (
+              <span style={{ color: bg.inkSoft }}>。下のカードで「出しました」か「今回は出さない」を選ぶと減ります</span>
+            )}
+          </span>
+        </div>
+      )}
 
       {/* 表示切替：リスト⇄グリッド（フィードの見た目プレビュー＝Later風） */}
       {sorted.length > 0 && (
