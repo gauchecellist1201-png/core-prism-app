@@ -8,6 +8,7 @@ import ContextualUpgradeCard from './ContextualUpgradeCard';
 import { isAuthorized as isAuthorizedFn, loadBillingUser } from '../lib/billing';
 import ApiErrorCard from './ApiErrorCard';
 import AILoadingState from './AILoadingState';
+import NoKnowledgeMatchNote from './NoKnowledgeMatchNote';
 import { onAccentInk } from '../lib/contrast';
 import { onAccent } from '../lib/accentFace';
 
@@ -231,6 +232,13 @@ export default function AISidebar({
                     : undefined
                 }
               >
+                {msg.role === 'assistant' && msg.noKnowledgeMatch && (
+                  <NoKnowledgeMatchNote
+                    accent={persona.accentColor}
+                    onOpenKnowledge={onOpenKnowledge}
+                    hairline="rgba(255,255,255,0.08)"
+                  />
+                )}
                 {msg.role === 'assistant' && i === messages.length - 1
                   ? <AssistantStreamingText content={msg.content} />
                   : <p className="whitespace-pre-wrap">{msg.content}</p>}

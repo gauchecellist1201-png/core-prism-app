@@ -6,6 +6,7 @@ import './index.css';
 import { usePersonas } from './hooks/usePersonas';
 import { useProducts } from './hooks/useProducts';
 import { productContextBlock, scopeForProduct } from './lib/productContext';
+import { isNoKnowledgeMatch } from './lib/knowledgeCoverage';
 import { useKnowledge } from './hooks/useKnowledge';
 import { useSettings } from './hooks/useSettings';
 import { useClaude, selectRelevantKnowledge } from './hooks/useClaude';
@@ -907,7 +908,16 @@ function AppRoutes() {
       personaKnowledge,
     );
     if (reply) {
-      setChatMessages(prev => [...prev, reply]);
+      // 資料からは何も渡せていない回答なら、その事実を答えの上に一行だけ添える。
+      // （AI に書かせず、実際にプロンプトへ渡した件数だけで判定する）
+      setChatMessages(prev => [...prev, {
+        ...reply,
+        noKnowledgeMatch: isNoKnowledgeMatch({
+          totalKnowledgeCount: personaKnowledge.length,
+          relevantChunkCount: relevantChunks.length,
+          relevantItemCount: relevantItems.length,
+        }),
+      }]);
     } else {
       // 失敗 — 同じ内容をワンタップで再送できるよう保持
       setRetryMessage(message);
@@ -1138,6 +1148,11 @@ function AppRoutes() {
           // ルーターを通さない素のAI会話。『タスクって何？』のような質問が
           // 機能起動に横取りされたままにならないよう、逃げ道を1つ用意する。
           onSendChat={handleAskAi}
+          // 「当てはまる資料が無かった」の一行から、その場で資料を入れに行けるように
+          // （ナレッジ画面は IdentityDashboard 側にあるので、既存の core:open-modal に相乗り）
+          onOpenKnowledge={() => window.dispatchEvent(
+            new CustomEvent('core:open-modal', { detail: { modal: 'knowledge' } }),
+          )}
           />
       )}
 

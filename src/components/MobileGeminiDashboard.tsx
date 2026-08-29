@@ -23,6 +23,8 @@ import {
 import type { LucideIcon } from 'lucide-react';
 import { PRISM_SPECS } from '../lib/agentSpecs';
 import CoreCreditsPanel from './CoreCreditsPanel';
+import NoKnowledgeMatchNote from './NoKnowledgeMatchNote';
+import { isNoKnowledgeMatch } from '../lib/knowledgeCoverage';
 import { getBalance as getCreditBalance, earnDaily as earnCreditDaily, earnOnce as earnCreditOnce } from '../lib/coreCredits';
 import { downloadCurrentChatTxt, downloadAllChatsMd } from '../lib/chatHistoryExport';
 import { useChatCloudSync } from '../hooks/useChatCloudSync';
@@ -58,6 +60,8 @@ type Msg = {
   ts: number;
   /** この回答が実際に参照したナレッジ item の ID (AISidebar と同じ実データ・AIには書かせない) */
   usedKnowledge?: string[];
+  /** 資料からは何も渡せないまま作られた回答か (lib/knowledgeCoverage.ts) */
+  noKnowledgeMatch?: boolean;
 };
 
 type AgentKey = 'ceo' | 'sales' | 'cfo' | 'creative' | 'knowledge' | 'people' | 'life';
@@ -261,7 +265,17 @@ export default function MobileGeminiDashboard({
         timestamp: new Date(m.ts).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }),
       }));
       const reply = await sendMessage(persona, text, chatHistory, relevantChunks, relevantItems);
-      appendMsg({ kind: 'ai', text: reply?.content || '応答を取得できませんでした', usedKnowledge: reply?.usedKnowledge });
+      appendMsg({
+        kind: 'ai',
+        text: reply?.content || '応答を取得できませんでした',
+        usedKnowledge: reply?.usedKnowledge,
+        // 資料からは何も渡せていない回答なら、その事実を答えの上に一行だけ添える
+        noKnowledgeMatch: !!reply && isNoKnowledgeMatch({
+          totalKnowledgeCount: personaKnowledge.length,
+          relevantChunkCount: relevantChunks.length,
+          relevantItemCount: relevantItems.length,
+        }),
+      });
     } catch (e) {
       const msg = e instanceof Error ? e.message : '実行に失敗しました';
       appendMsg({ kind: 'system', text: `⚠ ${msg}` });
@@ -790,6 +804,13 @@ export default function MobileGeminiDashboard({
                     fontSize: 14, lineHeight: 1.7,
                     whiteSpace: 'pre-wrap',
                   }}>
+                    {m.noKnowledgeMatch && (
+                      <NoKnowledgeMatchNote
+                        accent={accent}
+                        onOpenKnowledge={() => onAgentOpen('knowledge')}
+                        textColor="rgba(255,255,255,0.75)"
+                      />
+                    )}
                     {m.text}
                     {(() => {
                       // 出典チップ: AI に書かせた文字ではなく、実際にプロンプトへ渡した

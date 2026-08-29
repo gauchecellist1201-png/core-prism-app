@@ -12,6 +12,7 @@ import type { ChatMessage } from '../types/identity';
 import { onAccentInk } from '../lib/contrast';
 import { useCoveredByModal } from '../hooks/useCoveredByModal';
 import { routeCommand } from '../lib/prismCommandRouter';
+import NoKnowledgeMatchNote from './NoKnowledgeMatchNote';
 
 interface Props {
   /** アクセント色（persona.accentColor）。 */
@@ -34,11 +35,16 @@ interface Props {
    *   渡すと「開きます」と出して開かない画面になる。
    */
   onSendChat: (msg: string) => Promise<void> | void;
+  /**
+   * ナレッジ画面を開く。「当てはまる資料が無かった」と言う一行から、
+   * その場で資料を入れに行けるようにするため（言いっぱなしで行き止まりにしない）。
+   */
+  onOpenKnowledge: () => void;
 }
 
 const MINIMIZED_KEY = 'prism-chat-dock-minimized';
 
-export default function BottomChatDock({ accent, name, messages, onSend, isLoading, onSendChat }: Props) {
+export default function BottomChatDock({ accent, name, messages, onSend, isLoading, onSendChat, onOpenKnowledge }: Props) {
   const [input, setInput] = useState('');
   const [expanded, setExpanded] = useState(false);
   // 「待機」状態: 帯だけ残して下の画面を広く見せる。次回訪問時も記憶。
@@ -282,6 +288,13 @@ export default function BottomChatDock({ accent, name, messages, onSend, isLoadi
                       border: m.role === 'user' ? `1px solid ${accent}` : '1px solid var(--border)',
                     }}
                   >
+                    {m.role === 'assistant' && m.noKnowledgeMatch && (
+                      <NoKnowledgeMatchNote
+                        accent={accent}
+                        onOpenKnowledge={onOpenKnowledge}
+                        hairline="var(--dock-hairline, rgba(255,255,255,0.12))"
+                      />
+                    )}
                     {m.content}
                   </div>
                 </div>

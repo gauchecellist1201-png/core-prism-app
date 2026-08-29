@@ -98,6 +98,11 @@ export interface ChatMessage {
   timestamp: string;
   usedKnowledge?: string[];      // RAGで使ったナレッジのID
   tokensUsed?: number;
+  /**
+   * 資料からは何も渡せないまま作られた回答か (lib/knowledgeCoverage.ts で判定)。
+   * true のとき、答えの上に「当てはまる資料が無かったので一般論で答えます」を一行出す。
+   */
+  noKnowledgeMatch?: boolean;
 }
 
 // ── ミーティング ──────────────────────────────────────────
