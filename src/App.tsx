@@ -7,6 +7,7 @@ import { usePersonas } from './hooks/usePersonas';
 import { useProducts } from './hooks/useProducts';
 import { productContextBlock, scopeForProduct } from './lib/productContext';
 import { isNoKnowledgeMatch } from './lib/knowledgeCoverage';
+import { trackAnswerRendered } from './lib/knowledgeUsageTracker';
 import { useKnowledge } from './hooks/useKnowledge';
 import { useSettings } from './hooks/useSettings';
 import { useClaude, selectRelevantKnowledge } from './hooks/useClaude';
@@ -53,6 +54,7 @@ const WebVitals = lazy(() => import('./master/WebVitals'));
 const AuditLog = lazy(() => import('./master/AuditLog'));
 const CashflowForecast = lazy(() => import('./master/CashflowForecast'));
 const SocialShares = lazy(() => import('./master/SocialShares'));
+const KnowledgeUsage = lazy(() => import('./master/KnowledgeUsage'));
 const CompanySetupPage = lazy(() => import('./master/companySetup/CompanySetupPage'));
 const ContactPage = lazy(() => import('./components/ContactPage'));
 const TrustPage = lazy(() => import('./components/TrustPage'));
@@ -255,6 +257,12 @@ function isSocialSharesPath(): boolean {
   if (typeof window === 'undefined') return false;
   const p = window.location.pathname;
   return p === '/master/social-shares' || p === '/social-shares';
+}
+
+function isKnowledgeUsagePath(): boolean {
+  if (typeof window === 'undefined') return false;
+  const p = window.location.pathname;
+  return p === '/master/knowledge-usage' || p === '/knowledge-usage';
 }
 
 function isContactPath(): boolean {
@@ -576,6 +584,11 @@ function AppRoutes() {
   // /master/social-shares — シェア 計測 (XXXXXX 2026-06-04)
   if (isSocialSharesPath()) {
     return <Suspense fallback={<RouteFallback />}><SocialShares /></Suspense>;
+  }
+
+  // /master/knowledge-usage — 出典チップ活用度 + 資料不一致率 (2026-08-29)
+  if (isKnowledgeUsagePath()) {
+    return <Suspense fallback={<RouteFallback />}><KnowledgeUsage /></Suspense>;
   }
 
   // /contact — 公開窓口 (KKK 2026-06-04)
@@ -910,13 +923,15 @@ function AppRoutes() {
     if (reply) {
       // 資料からは何も渡せていない回答なら、その事実を答えの上に一行だけ添える。
       // （AI に書かせず、実際にプロンプトへ渡した件数だけで判定する）
+      const noMatch = isNoKnowledgeMatch({
+        totalKnowledgeCount: personaKnowledge.length,
+        relevantChunkCount: relevantChunks.length,
+        relevantItemCount: relevantItems.length,
+      });
+      trackAnswerRendered(noMatch);
       setChatMessages(prev => [...prev, {
         ...reply,
-        noKnowledgeMatch: isNoKnowledgeMatch({
-          totalKnowledgeCount: personaKnowledge.length,
-          relevantChunkCount: relevantChunks.length,
-          relevantItemCount: relevantItems.length,
-        }),
+        noKnowledgeMatch: noMatch,
       }]);
     } else {
       // 失敗 — 同じ内容をワンタップで再送できるよう保持

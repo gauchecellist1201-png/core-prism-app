@@ -11,6 +11,7 @@ import AILoadingState from './AILoadingState';
 import NoKnowledgeMatchNote from './NoKnowledgeMatchNote';
 import { onAccentInk } from '../lib/contrast';
 import { onAccent } from '../lib/accentFace';
+import { trackCitationClick } from '../lib/knowledgeUsageTracker';
 
 // ブランド ライン グリフ — OS カラー絵文字は使わない(恒久ルール)。currentColor 継承で文脈色に馴染む
 const glyphBase = (size: number) => ({
@@ -254,7 +255,7 @@ export default function AISidebar({
                         {titles.slice(0, 5).map((t, k) => (
                           <button
                             key={k}
-                            onClick={onOpenKnowledge}
+                            onClick={() => { trackCitationClick('sidebar'); onOpenKnowledge(); }}
                             className="text-[10px] px-1.5 py-0.5 rounded transition-opacity hover:opacity-100"
                             style={{
                               background: persona.accentColorLight,

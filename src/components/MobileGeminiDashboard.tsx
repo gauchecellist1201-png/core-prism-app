@@ -25,6 +25,7 @@ import { PRISM_SPECS } from '../lib/agentSpecs';
 import CoreCreditsPanel from './CoreCreditsPanel';
 import NoKnowledgeMatchNote from './NoKnowledgeMatchNote';
 import { isNoKnowledgeMatch } from '../lib/knowledgeCoverage';
+import { trackAnswerRendered, trackCitationClick } from '../lib/knowledgeUsageTracker';
 import { getBalance as getCreditBalance, earnDaily as earnCreditDaily, earnOnce as earnCreditOnce } from '../lib/coreCredits';
 import { downloadCurrentChatTxt, downloadAllChatsMd } from '../lib/chatHistoryExport';
 import { useChatCloudSync } from '../hooks/useChatCloudSync';
@@ -265,16 +266,18 @@ export default function MobileGeminiDashboard({
         timestamp: new Date(m.ts).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }),
       }));
       const reply = await sendMessage(persona, text, chatHistory, relevantChunks, relevantItems);
+      const noMatch = !!reply && isNoKnowledgeMatch({
+        totalKnowledgeCount: personaKnowledge.length,
+        relevantChunkCount: relevantChunks.length,
+        relevantItemCount: relevantItems.length,
+      });
+      if (reply) trackAnswerRendered(noMatch);
       appendMsg({
         kind: 'ai',
         text: reply?.content || '応答を取得できませんでした',
         usedKnowledge: reply?.usedKnowledge,
         // 資料からは何も渡せていない回答なら、その事実を答えの上に一行だけ添える
-        noKnowledgeMatch: !!reply && isNoKnowledgeMatch({
-          totalKnowledgeCount: personaKnowledge.length,
-          relevantChunkCount: relevantChunks.length,
-          relevantItemCount: relevantItems.length,
-        }),
+        noKnowledgeMatch: noMatch,
       });
     } catch (e) {
       const msg = e instanceof Error ? e.message : '実行に失敗しました';
@@ -833,7 +836,7 @@ export default function MobileGeminiDashboard({
                             <button
                               key={k}
                               type="button"
-                              onClick={() => onAgentOpen('knowledge')}
+                              onClick={() => { trackCitationClick('mobile'); onAgentOpen('knowledge'); }}
                               style={{
                                 fontSize: 10, padding: '2px 6px', borderRadius: 6,
                                 background: `${accent}22`, color: accent,
