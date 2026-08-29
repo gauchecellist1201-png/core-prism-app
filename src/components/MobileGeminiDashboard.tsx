@@ -13,7 +13,7 @@
 //   ④ 13 CXO ピル (chip) — 任意で開く
 //   ⑤ ボトム: テキスト入力 + 「✦」マイク
 // ============================================================
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Sparkles, Send, ChevronDown, ChevronUp, Settings, Plus, FileText, BookOpen, Gem,
@@ -56,6 +56,8 @@ type Msg = {
   plan?: ExecutionPlan;
   agentKey?: string;
   ts: number;
+  /** この回答が実際に参照したナレッジ item の ID (AISidebar と同じ実データ・AIには書かせない) */
+  usedKnowledge?: string[];
 };
 
 type AgentKey = 'ceo' | 'sales' | 'cfo' | 'creative' | 'knowledge' | 'people' | 'life';
@@ -153,6 +155,13 @@ export default function MobileGeminiDashboard({
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  // 出典チップ用: item ID → タイトル (AISidebar と同じ考え方・AI には一切書かせない)
+  const knowledgeTitleById = useMemo(() => {
+    const map = new Map<string, string>();
+    knowledgeItems.forEach(it => map.set(it.id, it.title));
+    return map;
+  }, [knowledgeItems]);
+
   // 人格切替で履歴を入れ替え
   useEffect(() => {
     setMsgs(loadMessages(persona.id));
@@ -190,7 +199,7 @@ export default function MobileGeminiDashboard({
         const personaKnowledge = knowledgeItems.filter(k => k.personaId === persona.id);
         const reply = await sendMessage(persona, sysHint, [], [], personaKnowledge.slice(0, 3));
         if (reply?.content) {
-          setMsgs([{ id: `b_${Date.now()}`, kind: 'ai', text: reply.content, ts: Date.now() }]);
+          setMsgs([{ id: `b_${Date.now()}`, kind: 'ai', text: reply.content, ts: Date.now(), usedKnowledge: reply.usedKnowledge }]);
           try { localStorage.setItem(briefKey, '1'); } catch { /* */ }
         }
       } catch { /* fail silently — 既存 example prompts を表示 */ }
@@ -252,7 +261,7 @@ export default function MobileGeminiDashboard({
         timestamp: new Date(m.ts).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }),
       }));
       const reply = await sendMessage(persona, text, chatHistory, relevantChunks, relevantItems);
-      appendMsg({ kind: 'ai', text: reply?.content || '応答を取得できませんでした' });
+      appendMsg({ kind: 'ai', text: reply?.content || '応答を取得できませんでした', usedKnowledge: reply?.usedKnowledge });
     } catch (e) {
       const msg = e instanceof Error ? e.message : '実行に失敗しました';
       appendMsg({ kind: 'system', text: `⚠ ${msg}` });
@@ -780,7 +789,45 @@ export default function MobileGeminiDashboard({
                     borderRadius: '4px 18px 18px 18px',
                     fontSize: 14, lineHeight: 1.7,
                     whiteSpace: 'pre-wrap',
-                  }}>{m.text}</div>
+                  }}>
+                    {m.text}
+                    {(() => {
+                      // 出典チップ: AI に書かせた文字ではなく、実際にプロンプトへ渡した
+                      // ナレッジ item の ID (usedKnowledge) から実物のタイトルを引くだけ。
+                      // 新しい AI 呼び出しはゼロ・候補にならない資料は出さない。
+                      const titles = (m.usedKnowledge ?? [])
+                        .map(id => knowledgeTitleById.get(id))
+                        .filter((t): t is string => !!t);
+                      if (titles.length === 0) return null;
+                      return (
+                        <div style={{
+                          marginTop: 8, paddingTop: 8, display: 'flex', flexWrap: 'wrap', gap: 4,
+                          borderTop: '1px dashed rgba(255,255,255,0.12)',
+                        }}>
+                          <span style={{
+                            fontSize: 10, opacity: 0.6, marginRight: 2,
+                            display: 'inline-flex', alignItems: 'center', gap: 3,
+                          }}><BookOpen size={10} />参照:</span>
+                          {titles.slice(0, 5).map((t, k) => (
+                            <button
+                              key={k}
+                              type="button"
+                              onClick={() => onAgentOpen('knowledge')}
+                              style={{
+                                fontSize: 10, padding: '2px 6px', borderRadius: 6,
+                                background: `${accent}22`, color: accent,
+                                maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap', border: 'none', cursor: 'pointer',
+                              }}
+                              title={t}
+                            >
+                              {t.length > 20 ? `${t.slice(0, 20)}…` : t}
+                            </button>
+                          ))}
+                        </div>
+                      );
+                    })()}
+                  </div>
                 </div>
               )}
               {m.kind === 'plan' && m.plan && (
