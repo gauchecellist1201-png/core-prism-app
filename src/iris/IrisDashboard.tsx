@@ -147,6 +147,8 @@ const IrisStudioHub = React.lazy(() => import('./IrisStudioHub'));
 const IrisCoverStudio = React.lazy(() => import('./IrisCoverStudio'));
 const IrisPostQueueView = React.lazy(() => import('./IrisPostQueueView'));
 import { usePostQueue } from './usePostQueue';
+import { overdueAskCount } from './overduePrompt';
+import { loadTrend, recordSnapshot, saveTrend } from './overdueTrend';
 const IrisTriageView = React.lazy(() => import('./IrisTriageView'));
 const IrisCommunityView = React.lazy(() => import('./IrisCommunityView'));
 const IrisStrategistView = React.lazy(() => import('./IrisStrategistView'));
@@ -1269,6 +1271,13 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
 
   const desk = useInfluencerDesk();
   const postQueue = usePostQueue();
+  // 「1日以上ほったらかしの予約」の記録は、以前は予約投稿タブ (schedule) を
+  // 開いた日しか付かなかった (=日々の折れ線にできない粒度)。ここで
+  // Iris を開いた時点 (どのタブでも) に記録するよう起点をアプリ側へ引き上げる。
+  // IrisPostQueueView.tsx 側の記録はそのまま残す (同じ日なら上書きするだけで無害)。
+  useEffect(() => {
+    saveTrend(recordSnapshot(loadTrend(), overdueAskCount(postQueue.posts)));
+  }, [postQueue.posts]);
   const team = useIrisTeam();
   const health = useHealth();
   const multiAccount = useMultiAccount();
