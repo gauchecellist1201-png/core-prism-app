@@ -658,6 +658,7 @@ export default function IdentityDashboard({
             else if (key === 'life')      setShowHealth(true);
           }}
         />
+        <Suspense fallback={<StudioOpeningSheet brand="prism" />}>
         {showKnowledge && (
           <KnowledgeBase
             key="kb-mobile-gemini"
@@ -671,6 +672,58 @@ export default function IdentityDashboard({
             onClose={() => setShowKnowledge(false)}
           />
         )}
+        {showHealth && (
+          <HealthHub
+            key="health-mobile-gemini"
+            persona={persona}
+            settings={settings}
+            onClose={() => setShowHealth(false)}
+          />
+        )}
+        {showCeo && (
+          <CeoStudio
+            key="ceo-mobile-gemini"
+            persona={persona}
+            settings={settings}
+            knowledge={knowledgeForAgent}
+            onClose={() => setShowCeo(false)}
+          />
+        )}
+        {showContentEngine && (
+          <ContentEngineStudio
+            key="content-engine-mobile-gemini"
+            persona={persona}
+            settings={settings}
+            knowledge={knowledgeForAgent}
+            onClose={() => setShowContentEngine(false)}
+          />
+        )}
+        {showFinConsult && (
+          <FinancialConsultant
+            key="fin-consult-mobile-gemini"
+            persona={persona}
+            settings={settings}
+            onClose={() => setShowFinConsult(false)}
+          />
+        )}
+        {showSalesAgent && (
+          <SalesAgentStudio
+            key="sales-agent-mobile-gemini"
+            persona={persona}
+            settings={settings}
+            knowledge={knowledgeForAgent}
+            onClose={() => setShowSalesAgent(false)}
+          />
+        )}
+        {showPeople && (
+          <PeopleStudio
+            key="people-mobile-gemini"
+            persona={persona}
+            settings={settings}
+            onClose={() => setShowPeople(false)}
+          />
+        )}
+        </Suspense>
       </>
     );
   }
