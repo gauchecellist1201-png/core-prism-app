@@ -173,6 +173,12 @@ export function usePostQueue() {
     update(id, { status: 'posted' });
   }, [update]);
 
+  // 「今回は出さない」— 予約は消さずに、やること/並びプレビュー/件数から外す。
+  // (状態は最初から在ったが、これを立てる入口がどこにも無かった)
+  const markSkipped = useCallback((id: string) => {
+    update(id, { status: 'skipped' });
+  }, [update]);
+
   // 「次にユーザーが気にすべき投稿」(ready → scheduled の最近 → draft の順)
   const upcoming = useCallback(() => {
     const sorted = [...posts].sort((a, b) => a.scheduledAt.localeCompare(b.scheduledAt));
@@ -182,7 +188,7 @@ export function usePostQueue() {
     return [...ready, ...scheduled, ...drafts];
   }, [posts]);
 
-  return { posts, add, update, remove, markPosted, upcoming, saveError, dismissSaveError };
+  return { posts, add, update, remove, markPosted, markSkipped, upcoming, saveError, dismissSaveError };
 }
 
 // ─── スマートタイミング推奨 ─────

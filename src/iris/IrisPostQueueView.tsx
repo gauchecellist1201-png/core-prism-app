@@ -8,6 +8,7 @@ import { Calendar, ExternalLink, Trash2, Copy, Check, Clock, AlertCircle, Image 
 import type { IrisBackgroundDef } from './irisStyle';
 import { IRIS_FONTS, accentFaceBg, accentFaceInk } from './irisStyle';
 import { usePostQueue, buildCaptionText, suggestNextSlot, type ScheduledPost } from './usePostQueue';
+import { shouldAskOutcome, OVERDUE_ASK_TEXT } from './overduePrompt';
 import IrisIntro from './IrisIntro';
 import { confirmAction } from '../lib/confirmDialog';
 import EmptyInvite from './EmptyInvite';
@@ -126,6 +127,7 @@ export default function IrisPostQueueView({ bg, queue }: Props) {
   };
 
   const markPosted = (p: ScheduledPost) => queue.markPosted(p.id);
+  const markSkipped = (p: ScheduledPost) => queue.markSkipped(p.id);
 
   // ★下書きをベスト枠にまとめて予約：未スケジュールの下書きを、よく伸びる時間帯へ順に自動割当（手入力ゼロ）。
   //   時刻はベスト投稿枠を起点から順送り（suggestNextSlotを連鎖）＝それぞれ別の枠。あとで個別に変更可。
@@ -405,6 +407,8 @@ export default function IrisPostQueueView({ bg, queue }: Props) {
             const when = new Date(p.scheduledAt);
             const diff = when.getTime() - Date.now();
             const overdue = diff < 0 && p.status !== 'posted';
+            // 1日以上ほったらかしの ready にだけ「出しましたか？」の二択を出す (判定の正本は overduePrompt.ts)
+            const askOutcome = shouldAskOutcome(p);
             const inHours = diff / 3_600_000;
             const whenText = overdue
               ? `予定時刻を ${Math.abs(inHours) < 24 ? Math.round(Math.abs(inHours) * 60) + '分' : Math.round(Math.abs(inHours) / 24) + '日'} 過ぎ`
@@ -510,7 +514,7 @@ export default function IrisPostQueueView({ bg, queue }: Props) {
                       <CalendarClock size={11} /> ベスト時間に再予約
                     </button>
                   )}
-                  {p.status === 'ready' && (
+                  {p.status === 'ready' && !askOutcome && (
                     <button onClick={() => markPosted(p)} title="投稿済にする" style={{
                       padding: '0.4rem 0.7rem',
                       background: 'transparent', color: '#065F46',
@@ -533,6 +537,41 @@ export default function IrisPostQueueView({ bg, queue }: Props) {
                     <Trash2 size={11} /> 削除
                   </button>
                 </div>
+
+                {/* 過ぎた予約の締めくくり — 出したのか、今回は出さないのか、1度だけ訊く。
+                    どちらを押しても予約は消えない (「出さない」は やること/並び から外れるだけ)。 */}
+                {askOutcome && (
+                  <div style={{
+                    gridColumn: '1 / -1',
+                    marginTop: 2, paddingTop: 10,
+                    borderTop: `1px solid ${bg.cardBorder}`,
+                    display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center',
+                  }}>
+                    <span style={{ fontSize: '0.85rem', color: bg.ink, fontWeight: 600, lineHeight: 1.55, flex: '1 1 12rem' }}>
+                      {OVERDUE_ASK_TEXT.question}
+                    </span>
+                    <button onClick={() => markPosted(p)} style={{
+                      minHeight: 44, padding: '0.55rem 1rem',
+                      background: accentFaceBg(bg.accent), color: accentFaceInk(bg.accent),
+                      border: 'none', borderRadius: 10,
+                      fontSize: '0.8rem', fontWeight: 800, cursor: 'pointer',
+                      display: 'inline-flex', gap: 6, alignItems: 'center',
+                    }}>
+                      <Check size={13} /> {OVERDUE_ASK_TEXT.posted}
+                    </button>
+                    <button onClick={() => markSkipped(p)} title={OVERDUE_ASK_TEXT.skipHint} style={{
+                      minHeight: 44, padding: '0.55rem 1rem',
+                      background: 'transparent', color: bg.ink,
+                      border: `1px solid ${bg.cardBorder}`, borderRadius: 10,
+                      fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer',
+                    }}>
+                      {OVERDUE_ASK_TEXT.skip}
+                    </button>
+                    <span style={{ flexBasis: '100%', fontSize: '0.75rem', color: bg.inkSoft, lineHeight: 1.6 }}>
+                      {OVERDUE_ASK_TEXT.skipHint}
+                    </span>
+                  </div>
+                )}
               </div>
             );
           })}
