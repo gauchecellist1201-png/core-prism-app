@@ -13,7 +13,7 @@ import {
   Image as ImageIcon, Film, Music, Play, Square, Download, Share2,
   Sparkles, Wand2, ChevronRight, Plus, X, Trash2, Settings2, Loader2,
   Flame, Scissors, ArrowLeft, ArrowRight, Eye, Type as TypeIcon,
-  AlertCircle, Copy, MessageSquare, Layers, Camera, Mic, Clock,
+  AlertCircle, Copy, MessageSquare, Layers, Camera, Mic, Clock, Undo2,
 } from 'lucide-react';
 import { takePendingReelTheme } from './reelHandoff';
 import type { IrisBackgroundDef } from './irisStyle';
@@ -56,6 +56,7 @@ import {
   routeEditCommand, interpretEditWithAi, applyActions,
   type ReelEditCtx, type ColorMoodId,
 } from './reelChatEdit';
+import { reelEditChanged, undoLabelFromSummaries } from './reelUndo';
 import {
   REEL_DESTINATIONS, getReelDestination, type ReelDestId,
   REEL_SAFE_TOP, REEL_SAFE_BOTTOM,
@@ -1612,6 +1613,62 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
   const clipsRef = useRef<Clip[]>([]);
   useEffect(() => { clipsRef.current = clips; }, [clips]);
 
+  // ─── ひとつ前に戻す (直前の 1 手だけ) ─────
+  // 自然文の編集は AI が解釈した結果を実行するので、言い間違い 1 つでカットが 1 枚消える。
+  // 版の履歴は作らない。「変える直前の姿」を 1 つだけ控え、下のスナックバーで戻す。
+  // 素材そのもの (IndexedDB の Blob) には触らないので、戻した時にそのまま読み直せる。
+  type UndoSnap = { clips: Clip[]; presetId: PresetId | null; colorMood: ColorMood; label: string };
+  const [undoSnap, setUndoSnap] = useState<UndoSnap | null>(null);
+  const [undoDoneMsg, setUndoDoneMsg] = useState('');
+  const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // 状態は常に最新の ref から作る (呼ぶのは「変える直前」なので、まだ変わっていない姿が取れる)
+  const presetIdRef = useRef<PresetId | null>(null);
+  const colorMoodRef = useRef<ColorMood>('none');
+  useEffect(() => { presetIdRef.current = presetId; }, [presetId]);
+  useEffect(() => { colorMoodRef.current = colorMood; }, [colorMood]);
+  // 画面を離れた時にタイマーを残さない
+  useEffect(() => () => { if (undoTimerRef.current) clearTimeout(undoTimerRef.current); }, []);
+
+  const clearUndoTimer = useCallback(() => {
+    if (undoTimerRef.current) { clearTimeout(undoTimerRef.current); undoTimerRef.current = null; }
+  }, []);
+
+  /** 変える直前の姿を控える。必ず「変える前」に呼ぶこと */
+  const captureEdit = useCallback(() => ({
+    clips: clipsRef.current.slice(),
+    presetId: presetIdRef.current,
+    colorMood: colorMoodRef.current,
+  }), []);
+
+  /** 変えたあとに呼ぶ。10 秒で自然に消える (モーダルにしない) */
+  const offerUndo = useCallback((before: Omit<UndoSnap, 'label'>, label: string) => {
+    setUndoDoneMsg('');
+    setUndoSnap({ ...before, label });
+    clearUndoTimer();
+    undoTimerRef.current = setTimeout(() => { setUndoSnap(null); undoTimerRef.current = null; }, 10_000);
+  }, [clearUndoTimer]);
+
+  // 控えた姿と今が同じなら引っ込める＝押しても何も起きない「元に戻す」を出さない。
+  // ref は再描画のあとに更新されるので、比べるのはここ (描画後) でしかできない。
+  useEffect(() => {
+    if (!undoSnap) return;
+    if (!reelEditChanged(undoSnap, { clips, presetId, colorMood })) {
+      setUndoSnap(null);
+      clearUndoTimer();
+    }
+  }, [undoSnap, clips, presetId, colorMood, clearUndoTimer]);
+
+  const undoLastEdit = useCallback(() => {
+    if (!undoSnap) return;
+    setClips(undoSnap.clips);
+    setPresetId(undoSnap.presetId);
+    setColorMood(undoSnap.colorMood);
+    setUndoSnap(null);
+    clearUndoTimer();
+    setUndoDoneMsg('ひとつ前の状態に戻しました');
+    undoTimerRef.current = setTimeout(() => { setUndoDoneMsg(''); undoTimerRef.current = null; }, 4000);
+  }, [undoSnap, clearUndoTimer]);
+
   const pushChat = useCallback((role: 'user' | 'assistant', text: string) => {
     setChatMsgs(prev => [...prev.slice(-19), { id: makeId(), role, text }]);
     setChatOpen(true);
@@ -1646,10 +1703,15 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
       },
       setCaption: (i, text) => { const c = clipsRef.current[i]; if (c) setClipCaption(c.id, text); },
       removeClip: (i) => { const c = clipsRef.current[i]; if (c) removeClip(c.id); },
-      runAiCaptions: () => { void runAiCaption(); },
+      // AI 字幕は出来上がるのが後。戻す口も「入ったあと」に出す
+      // (失敗した時は字幕が変わらないので、下の比較でこの控えは自動的に引っ込む)
+      runAiCaptions: () => {
+        const before = captureEdit();
+        void runAiCaption().then(() => offerUndo(before, 'AI 字幕を入れました'));
+      },
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [presetId, colorMood, applyPreset, runAiCaption]);
+  }, [presetId, colorMood, applyPreset, runAiCaption, captureEdit, offerUndo]);
 
   /** チャットバーへの素材添付/ドロップ → 既存 addFiles で取込 → 件数を正直に応答 */
   const handleChatFiles = useCallback(async (files: FileList | File[]) => {
@@ -1671,8 +1733,10 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
     // 一段目: キーワードルーター (コード確定・即時・無料)
     const routed = routeEditCommand(text, ctx.state);
     if (routed.length) {
+      const before = captureEdit();   // 変える直前の姿を控える (言い間違いを 1 タップで戻すため)
       const summaries = applyActions(routed, ctx);
       pushChat('assistant', summaries.length ? `✓ ${summaries.join('。')}` : 'この指示には操作が見つかりませんでした');
+      if (summaries.length) offerUndo(before, undoLabelFromSummaries(summaries));
       return;
     }
     // 二段目: AI 解釈 (30s タイムアウト・失敗時フォールバック文言)
@@ -1680,7 +1744,9 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
     try {
       const out = await interpretEditWithAi(text, ctx.state);
       if (out.actions.length) {
+        const before = captureEdit();   // AI の解釈を当てる直前の姿。ここがいちばん戻したくなる
         const summaries = applyActions(out.actions, buildChatCtx());
+        if (summaries.length) offerUndo(before, undoLabelFromSummaries(summaries));
         pushChat('assistant', (summaries.length ? `✓ ${summaries.join('。')}` : '') + (out.reply ? `${summaries.length ? '\n' : ''}${out.reply}` : ''));
       } else if (out.reply) {
         pushChat('assistant', out.reply);
@@ -1692,7 +1758,7 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
     } finally {
       setChatBusy(false);
     }
-  }, [chatInput, chatBusy, buildChatCtx, pushChat]);
+  }, [chatInput, chatBusy, buildChatCtx, pushChat, captureEdit, offerUndo]);
 
   /** マイク: 話し終わると入力欄へ入り自動送信 (ja-JP・非対応ブラウザではボタン非表示) */
   const stopChatVoice = useCallback(() => {
@@ -2527,7 +2593,11 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
                       <ArrowRight size={11} />
                     </button>
                     <div style={{ flex: 1 }} />
-                    <button onClick={() => { removeClip(c.id); setSelectedClipId(null); }} style={{
+                    <button onClick={() => {
+                      const before = captureEdit();
+                      removeClip(c.id); setSelectedClipId(null);
+                      offerUndo(before, `カット ${idx + 1} を消しました`);
+                    }} style={{
                       ...iconBtn(bg, false),
                       color: '#EF4444', borderColor: '#FCA5A5',
                     }}>
@@ -2791,7 +2861,11 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
                             ? <img src={c.url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                             : <video src={c.url} muted playsInline style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                           }
-                          <button onClick={() => removeClip(c.id)} style={{
+                          <button onClick={() => {
+                            const before = captureEdit();
+                            removeClip(c.id);
+                            offerUndo(before, `カット ${i + 1} を消しました`);
+                          }} style={{
                             position: 'absolute', top: 2, right: 2,
                             width: 20, height: 20, borderRadius: '50%',
                             background: 'rgba(0,0,0,0.6)', color: '#fff',
@@ -3788,6 +3862,44 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
           onDragLeave={() => setChatDragOver(false)}
           onDrop={e => { e.preventDefault(); setChatDragOver(false); if (e.dataTransfer.files?.length) void handleChatFiles(e.dataTransfer.files); }}
         >
+          {/* ひとつ前に戻す。親指の届く位置に、10 秒だけ。モーダルにしない */}
+          <div aria-live="polite" style={{ display: (undoSnap || undoDoneMsg) ? 'block' : 'none' }}>
+            {undoSnap ? (
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8,
+                padding: '0.45rem 0.5rem 0.45rem 0.75rem',
+                background: 'rgba(255,255,255,0.94)', backdropFilter: 'blur(18px)',
+                border: `1px solid ${bg.cardBorder}`, borderRadius: 14,
+                boxShadow: '0 4px 16px rgba(0,0,0,0.10)',
+              }}>
+                <span style={{
+                  flex: 1, minWidth: 0, fontSize: 11.5, lineHeight: 1.5, fontWeight: 700,
+                  color: bg.ink, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                }}>{undoSnap.label}</span>
+                <button
+                  type="button"
+                  onClick={undoLastEdit}
+                  style={{
+                    flexShrink: 0, minHeight: 44, display: 'inline-flex', alignItems: 'center', gap: 6,
+                    border: `1px solid ${bg.accent}`, background: '#fff', color: bg.accentText,
+                    borderRadius: 12, padding: '0 0.85rem', fontSize: 12.5, fontWeight: 800,
+                    cursor: 'pointer', fontFamily: IRIS_FONTS.body,
+                  }}
+                ><Undo2 size={14} /> 元に戻す</button>
+              </div>
+            ) : undoDoneMsg ? (
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 7, marginBottom: 8,
+                padding: '0.5rem 0.75rem',
+                background: 'rgba(255,255,255,0.94)', backdropFilter: 'blur(18px)',
+                border: `1px solid ${bg.cardBorder}`, borderRadius: 14,
+                fontSize: 11.5, fontWeight: 700, color: bg.ink,
+              }}>
+                <Undo2 size={13} color={bg.accentText} style={{ flexShrink: 0 }} />
+                {undoDoneMsg}
+              </div>
+            ) : null}
+          </div>
           {/* 会話履歴 (折りたたみ・最大高 40vh の内部スクロール) */}
           {chatMsgs.length > 0 && chatOpen && (
             <div ref={chatListRef} style={{
