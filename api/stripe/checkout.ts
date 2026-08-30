@@ -49,6 +49,8 @@ function getPriceId(plan: string, brand: string, cycle: string): string | undefi
     // m4/m8/m12 は月額継続 (mode=subscription)。
     film_trial_monthly:      process.env.STRIPE_PRICE_FILM_TRIAL,
     film_standard_monthly:   process.env.STRIPE_PRICE_FILM_STANDARD,
+    film_m1_monthly:         process.env.STRIPE_PRICE_FILM_M1,
+    film_m2_monthly:         process.env.STRIPE_PRICE_FILM_M2,
     film_m4_monthly:         process.env.STRIPE_PRICE_FILM_M4,
     film_m8_monthly:         process.env.STRIPE_PRICE_FILM_M8,
     film_m12_monthly:        process.env.STRIPE_PRICE_FILM_M12,
