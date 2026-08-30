@@ -647,6 +647,41 @@ export default function MasterEntry() {
             📣 シェア計測
           </a>
           <a
+            href="/master/studio-funnel"
+            style={{
+              flex: 1,
+              padding: '10px 0',
+              borderRadius: 10,
+              background: 'rgba(212,169,79,0.12)',
+              border: '1px solid rgba(212,169,79,0.35)',
+              color: '#f5e2b8',
+              fontSize: 12,
+              fontWeight: 600,
+              textAlign: 'center',
+              textDecoration: 'none',
+            }}
+          >
+            📈 Studio 導線
+          </a>
+          {/* 2026-08-29 に作ったのに、ここから開く道が無くURLを手で打つしかなかった */}
+          <a
+            href="/master/knowledge-usage"
+            style={{
+              flex: 1,
+              padding: '10px 0',
+              borderRadius: 10,
+              background: 'rgba(168,85,247,0.12)',
+              border: '1px solid rgba(168,85,247,0.35)',
+              color: '#e9d5ff',
+              fontSize: 12,
+              fontWeight: 600,
+              textAlign: 'center',
+              textDecoration: 'none',
+            }}
+          >
+            📚 出典活用度
+          </a>
+          <a
             href="/master/stripe-status"
             style={{
               flex: 1,

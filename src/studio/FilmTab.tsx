@@ -17,10 +17,11 @@ import {
   FILM_FAQ, FILM_CTA, INQUIRY_FIELDS, FILM_MENU, MENU_LEAD,
   menuPriceParts, menuSpecLabel, menuTarget,
 } from './film';
-import { logEvent } from '../lib/onboardingAnalytics';
-
-// ---- 計測 (既存の core_events_v1 に載せる。外部サービスは追加しない) ----
-const track = (event: string, props?: Record<string, unknown>) => logEvent(event, props);
+// ---- 計測 ----
+// 以前はここで logEvent() を呼ぶだけだった = 記録は訪問者自身の localStorage に
+// 溜まるだけで、CORE 側には 1 件も届いていなかった。track() は手元にも残しつつ
+// /api/track/studio へビーコンを飛ばす (外部サービスは追加しない)。
+import { track } from './track';
 
 // 遠い行き先へ smooth を指定するとブラウザが移動そのものを諦め、押しても何も起きない
 // (実測: ヒーローから 10,700px 下の相談欄へ smooth 指定 → scrollY が 0 のまま)。

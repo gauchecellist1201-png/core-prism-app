@@ -55,6 +55,7 @@ const AuditLog = lazy(() => import('./master/AuditLog'));
 const CashflowForecast = lazy(() => import('./master/CashflowForecast'));
 const SocialShares = lazy(() => import('./master/SocialShares'));
 const KnowledgeUsage = lazy(() => import('./master/KnowledgeUsage'));
+const StudioFunnel = lazy(() => import('./master/StudioFunnel'));
 const CompanySetupPage = lazy(() => import('./master/companySetup/CompanySetupPage'));
 const ContactPage = lazy(() => import('./components/ContactPage'));
 const TrustPage = lazy(() => import('./components/TrustPage'));
@@ -263,6 +264,12 @@ function isKnowledgeUsagePath(): boolean {
   if (typeof window === 'undefined') return false;
   const p = window.location.pathname;
   return p === '/master/knowledge-usage' || p === '/knowledge-usage';
+}
+
+function isStudioFunnelPath(): boolean {
+  if (typeof window === 'undefined') return false;
+  const p = window.location.pathname;
+  return p === '/master/studio-funnel' || p === '/studio-funnel';
 }
 
 function isContactPath(): boolean {
@@ -589,6 +596,12 @@ function AppRoutes() {
   // /master/knowledge-usage — 出典チップ活用度 + 資料不一致率 (2026-08-29)
   if (isKnowledgeUsagePath()) {
     return <Suspense fallback={<RouteFallback />}><KnowledgeUsage /></Suspense>;
+  }
+
+  // /master/studio-funnel — CORE Studio の導線 (2026-08-30)
+  // それまで /studio の計測は訪問者自身の localStorage 止まりで、CORE 側は 0 件だった
+  if (isStudioFunnelPath()) {
+    return <Suspense fallback={<RouteFallback />}><StudioFunnel /></Suspense>;
   }
 
   // /contact — 公開窓口 (KKK 2026-06-04)

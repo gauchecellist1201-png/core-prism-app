@@ -8,14 +8,15 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import {
   STUDIO, STATS, REASONS, PROCESS, PRODUCTION_PLANS, DEV_LEAD, DEV_TIERS,
-  CARE_PLANS, WORKS, COMPANY, SERVICE_LINES, thumbOf,
+  CARE_PLANS, WORKS, COMPANY, SERVICE_LINES, STUDIO_FAQ, thumbOf,
   type ProductionPlan, type DevTier,
 } from './plans';
 import { CONTACT } from './plans';
 import { estimate, type EstimateAnswers, type Purpose, type Scale, type Feature, type Timeline, type Budget } from './estimate';
 import { C, D, SERIF, SANS } from './theme';
 import { Band, H2, Note, IconCheck, IconArrow, IconChat, IconCopy } from './ui';
-import { logEvent } from '../lib/onboardingAnalytics';
+import { track } from './track';
+import { ESTIMATE_KEY, EMPTY_DRAFT, parseSavedEstimate, type DraftOptions } from './estimateDraft';
 
 const FilmTab = lazy(() => import('./FilmTab'));
 
@@ -144,6 +145,11 @@ export default function StudioSite() {
     if (!canonical) { canonical = document.createElement('link'); canonical.setAttribute('rel', 'canonical'); document.head.appendChild(canonical); }
     canonical.setAttribute('href', url);
   }, [tab]);
+
+  // どのタブが実際に見られたかを CORE 側に残す。
+  // (これまで /studio の計測は訪問者自身の localStorage にしか無く、
+  //  「映像を見に来た人が何人いたか」すら分からなかった)
+  useEffect(() => { track('studio_tab_view', { tab }); }, [tab]);
 
   // Service の構造化データ (SPAなので実行時に差し込む。離脱時に必ず片付ける)
   useEffect(() => {
@@ -367,7 +373,7 @@ export default function StudioSite() {
 // ---- 相談導線 (どのタブでも入口はLINEに統一する) ----
 const LineCta = ({ label = CONTACT.lineLabel, where }: { label?: string; where: string }) => (
   <a className="st-btn st-btn-primary" href={CONTACT.lineUrl} target="_blank" rel="noopener noreferrer"
-    onClick={() => logEvent('studio_line_cta', { where })}>
+    onClick={() => track('studio_line_cta', { where })}>
     <IconChat /> {label}
   </a>
 );
@@ -376,6 +382,24 @@ const LineCta = ({ label = CONTACT.lineLabel, where }: { label?: string; where: 
 function studioJsonLd() {
   return {
     '@context': 'https://schema.org',
+    '@graph': [studioServiceLd(), studioFaqLd()],
+  };
+}
+
+/** ホームに出しているものと同じ質問・同じ答えだけを渡す (画面に無い Q&A を構造化データに書かない) */
+function studioFaqLd() {
+  return {
+    '@type': 'FAQPage',
+    mainEntity: STUDIO_FAQ.map(f => ({
+      '@type': 'Question',
+      name: f.q,
+      acceptedAnswer: { '@type': 'Answer', text: f.a },
+    })),
+  };
+}
+
+function studioServiceLd() {
+  return {
     '@type': 'ProfessionalService',
     name: 'CORE Studio',
     url: STUDIO.url,
@@ -590,6 +614,14 @@ function HomeTab({ go }: { go: (t: TabId) => void }) {
         </div>
       </Band>
 
+      {/* よくあるご質問 — 相談ボタンの直前に置く。
+          発注前に確認したいこと (無料の範囲・実費・支払い・NDA) は、
+          これまでサイト制作のプランカードを開かないと読めなかった。 */}
+      <Band alt>
+        <H2 en="FAQ" sub="ご相談の前に多くいただくご質問です。ここに無いことも、そのままお尋ねください。">よくあるご質問</H2>
+        <FaqList items={STUDIO_FAQ} />
+      </Band>
+
       {/* CTA */}
       <Band>
         <div style={{ border: `1px solid ${C.goldLine}`, borderRadius: 14, padding: '36px 22px', textAlign: 'center', background: '#FFFFFF' }}>
@@ -605,6 +637,33 @@ function HomeTab({ go }: { go: (t: TabId) => void }) {
           <Note>{CONTACT.lineNote}</Note>
         </div>
       </Band>
+    </div>
+  );
+}
+
+// ---- 開閉する Q&A (プランカードの中と同じ手ざわりに揃える) ----
+// 1問目だけ開いておく。全部閉じた状態だと「質問の見出しが並んだだけ」に見え、
+// ここに答えがあること自体が伝わらない。
+function FaqList({ items }: { items: Array<{ q: string; a: string }> }) {
+  const [open, setOpen] = useState<number | null>(0);
+  return (
+    <div className="st-card" style={{ padding: '6px 22px' }}>
+      {items.map((f, i) => (
+        <div key={f.q} style={{ borderTop: i === 0 ? 'none' : `1px solid ${C.line}` }}>
+          <button
+            onClick={() => setOpen(open === i ? null : i)}
+            aria-expanded={open === i}
+            style={{ width: '100%', minHeight: 44, background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left',
+              padding: '14px 0', fontSize: 14, fontWeight: 600, color: C.ink, fontFamily: SANS,
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, lineHeight: 1.7 }}>
+            <span>{f.q}</span>
+            <span style={{ color: C.goldText, fontSize: 18, lineHeight: 1, flexShrink: 0 }}>{open === i ? '−' : '+'}</span>
+          </button>
+          {open === i && (
+            <p style={{ fontSize: 13.5, lineHeight: 2, color: C.body, margin: '0 0 16px' }}>{f.a}</p>
+          )}
+        </div>
+      ))}
     </div>
   );
 }
@@ -897,15 +956,32 @@ const BUDGETS: Array<{ v: Budget; label: string }> = [
 
 const labelOf = <T extends string>(list: Array<{ v: T; label: string }>, v: T) => list.find(x => x.v === v)?.label ?? String(v);
 
+/** 保存の読み戻しに渡す「実在する選択肢」の一覧 (画面の並びが唯一の出どころ) */
+const DRAFT_OPTIONS: DraftOptions = {
+  purposes: PURPOSES.map(x => x.v),
+  scales: SCALES.map(x => x.v),
+  features: FEATURES.map(x => x.v),
+  timelines: TIMELINES.map(x => x.v),
+  budgets: BUDGETS.map(x => x.v),
+};
+
 function ContactTab() {
-  const [step, setStep] = useState<WizardStep>(0);
-  const [purpose, setPurpose] = useState<Purpose | null>(null);
-  const [scale, setScale] = useState<Scale | null>(null);
-  const [cms, setCms] = useState<boolean | null>(null);
-  const [features, setFeatures] = useState<Feature[]>([]);
-  const [timeline, setTimeline] = useState<Timeline | null>(null);
-  const [budget, setBudget] = useState<Budget | null>(null);
+  // 保存があれば続きから開く (読めない・壊れている時は素の初期値)
+  const restored = useMemo(() => {
+    if (typeof window === 'undefined') return null;
+    try { return parseSavedEstimate(localStorage.getItem(ESTIMATE_KEY), DRAFT_OPTIONS); } catch { return null; }
+  }, []);
+  const init = restored ?? EMPTY_DRAFT;
+
+  const [step, setStep] = useState<WizardStep>(init.step as WizardStep);
+  const [purpose, setPurpose] = useState<Purpose | null>(init.purpose as Purpose | null);
+  const [scale, setScale] = useState<Scale | null>(init.scale as Scale | null);
+  const [cms, setCms] = useState<boolean | null>(init.cms);
+  const [features, setFeatures] = useState<Feature[]>(init.features as Feature[]);
+  const [timeline, setTimeline] = useState<Timeline | null>(init.timeline as Timeline | null);
+  const [budget, setBudget] = useState<Budget | null>(init.budget as Budget | null);
   const [copied, setCopied] = useState(false);
+  const [resumed, setResumed] = useState(restored !== null);
 
   const answers: EstimateAnswers | null = useMemo(() => {
     if (!purpose || !scale || cms === null || !timeline || !budget) return null;
@@ -913,6 +989,51 @@ function ContactTab() {
   }, [purpose, scale, cms, features, timeline, budget]);
 
   const result = useMemo(() => (answers ? estimate(answers) : null), [answers]);
+
+  // 途中の答えを手元に残す。1問目のまま (step 0) は残さない
+  // ——「開いただけ」を復帰対象にすると、次に来た時に何も変わらないのに
+  // 「続きから」と名乗ることになる。
+  useEffect(() => {
+    try {
+      if (step === 0) localStorage.removeItem(ESTIMATE_KEY);
+      else localStorage.setItem(ESTIMATE_KEY, JSON.stringify({ step, purpose, scale, cms, features, timeline, budget }));
+    } catch { /* 保存できない設定でも入力は続けられる */ }
+  }, [step, purpose, scale, cms, features, timeline, budget]);
+
+  // 何問目まで来て帰ったかを CORE 側に残す。戻るボタンで下がった時は数えない
+  // (同じ人が行ったり来たりするたびに「到達者」が増えると、離脱地点が読めなくなる)。
+  // 続きから開いた回は、その step を新規到達として数えない (reachedRef の初期値がそれ)。
+  const reachedRef = useRef<number>(init.step);
+  useEffect(() => {
+    if (step <= reachedRef.current) return;
+    if (reachedRef.current === 0 && step === 1) track('studio_estimate_start');
+    reachedRef.current = step;
+    track('studio_estimate_step', { step });
+  }, [step]);
+
+  useEffect(() => {
+    if (restored) track('studio_estimate_resume', { step: restored.step });
+    // 復帰は「この画面を開いた回」に 1 度だけ数える
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // 結果が出たことは 1 回だけ数える (プラン別)
+  const doneRef = useRef(false);
+  useEffect(() => {
+    if (step === 6 && result && !doneRef.current) {
+      doneRef.current = true;
+      track('studio_estimate_done', { plan: result.plan });
+    }
+  }, [step, result]);
+
+  const resetAll = () => {
+    setStep(0); setPurpose(null); setScale(null); setCms(null);
+    setFeatures([]); setTimeline(null); setBudget(null);
+    setResumed(false);
+    reachedRef.current = 0;
+    doneRef.current = false;
+    try { localStorage.removeItem(ESTIMATE_KEY); } catch { /* */ }
+  };
 
   const summaryText = useMemo(() => {
     if (!answers || !result) return '';
@@ -942,7 +1063,7 @@ function ContactTab() {
 
   // LINEを開く前に概算結果をコピーしておく。貼るだけで相談が始まる状態にする。
   const openLine = () => {
-    logEvent('studio_line_cta', { where: 'estimate-result' });
+    track('studio_line_cta', { where: 'estimate-result' });
     void copySummary();
   };
 
@@ -1020,7 +1141,7 @@ function ContactTab() {
           LINEをお使いでない場合は <a href={`mailto:${STUDIO.email}?subject=${encodeURIComponent('【CORE Studio】制作のご相談')}`} style={{ color: C.ink }}>{STUDIO.email}</a> でも承ります。
         </p>
         <div style={{ textAlign: 'center', marginTop: 10 }}>
-          <button onClick={() => { setStep(0); setPurpose(null); setScale(null); setCms(null); setFeatures([]); setTimeline(null); setBudget(null); }}
+          <button onClick={resetAll}
             style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12.5, color: C.mute, textDecoration: 'underline', minHeight: 44, fontFamily: SANS }}>
             最初からやり直す
           </button>
@@ -1033,6 +1154,18 @@ function ContactTab() {
   return (
     <Band>
       <H2 en="Contact" sub="6つの質問にお答えいただくと、最適なプランと概算をその場でご確認いただけます。">お問い合わせ</H2>
+      {/* 続きから開いたことを黙って隠さない。前の答えのまま進むか、やり直すかを選べるようにする */}
+      {resumed && (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap',
+          background: C.alt, borderLeft: `3px solid ${C.gold}`, borderRadius: 4, padding: '10px 14px', marginBottom: 16 }}>
+          <span style={{ fontSize: 13, color: C.body, lineHeight: 1.8 }}>前回の続きから表示しています。</span>
+          <button onClick={resetAll}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12.5, color: C.ink, fontWeight: 600, textDecoration: 'underline', minHeight: 44, padding: 0, fontFamily: SANS }}>
+            最初からやり直す
+          </button>
+        </div>
+      )}
+
       {/* 進捗 */}
       <div style={{ display: 'flex', gap: 5, marginBottom: 20 }}>
         {stepDefs.map((_, i) => (
