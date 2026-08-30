@@ -36,6 +36,7 @@ import PersonaGlyph, { isRoleCode } from './PersonaGlyph';
 // ⌘K の検索結果も、ホームのタイル・からっぽ画面とまったく同じ台帳から絵と色を引く。
 // (これが無い間、同じ「スライドを作る」がタイルでは紫の投影機・⌘K では 🎨 に見えていた)
 import { resolveFeatureIcon } from '../lib/featureIcons';
+import { fuzzyScore, FUZZY_MIN_SCORE } from '../lib/commandFuzzy';
 // 「答えが 1 つ返るだけ」の用事で、見ていた画面を失わせないための札。
 import {
   buildKnowledgeResult,
@@ -1021,13 +1022,8 @@ export default function CommandPalette({
   // 0 件時の「もしかして」候補 (bigram 重なりスコア)
   // ────────────────────────────────────────────────────────
   const fuzzySuggestions = useMemo<CmdAction[]>(() => {
-    const q = query.trim().toLowerCase();
+    const q = query.trim();
     if (!q || filtered.length > 0) return [];
-    // 1 文字 + 隣接 2 文字の n-gram で重なりカウント
-    const grams = new Set<string>();
-    for (const ch of q) grams.add(ch);
-    for (let i = 0; i < q.length - 1; i++) grams.add(q.slice(i, i + 2));
-    if (grams.size === 0) return [];
 
     const scored: Array<{ item: CmdAction; score: number }> = [];
     const seen = new Set<string>();
@@ -1036,10 +1032,10 @@ export default function CommandPalette({
       if (item.kind === 'jump-knowledge' || item.kind === 'jump-task' || item.kind === 'switch-persona') continue;
       const id = actionId(item);
       if (seen.has(id)) continue;
-      const hay = (item.label + ' ' + ('subtitle' in item && item.subtitle ? item.subtitle : '')).toLowerCase();
-      let score = 0;
-      for (const g of grams) if (hay.includes(g)) score += g.length;
-      if (score > 0) {
+      const hay = item.label + ' ' + ('subtitle' in item && item.subtitle ? item.subtitle : '');
+      // 2 文字以上つながって重なった時だけ候補にする (見当違いを出さない = src/lib/commandFuzzy.ts)
+      const score = fuzzyScore(q, hay);
+      if (score >= FUZZY_MIN_SCORE) {
         seen.add(id);
         scored.push({ item, score });
       }
@@ -1263,6 +1259,22 @@ export default function CommandPalette({
   }, [filteredWithAi]);
 
   const flatItems = filteredWithAi.map(f => f.item);
+
+  /**
+   * 「見つかりませんでした」画面を出すかどうか。
+   *
+   * 【なぜ filteredWithAi ではなく filtered で見るのか】(2026-08-30)
+   * filteredWithAi は「AI に依頼する」行を必ず 1 本足したあとの一覧なので、
+   * 文字を打っている限り必ず 1 件以上ある = flatItems.length === 0 は
+   * **打っている間は絶対に成立しなかった**。そのため打ち間違えた人には
+   * 細い「AI に依頼する」1 行しか出ず、下の 0 件画面 (もしかして? / 前にやった依頼 /
+   * 最近使った / AI に依頼 / デモ) は一度も画面に出ていなかった。
+   * AI 行を足す前の filtered で見ることで、書いてあるとおりに出る。
+   * (打っていない時に一覧が空 = 今までどおりこの画面が出る)
+   */
+  const showZeroState = filtered.length === 0;
+  /** 画面に並んでいる件数。0 件画面を出している時は「AI に依頼」行を数えない。 */
+  const shownCount = showZeroState ? 0 : flatItems.length;
 
   // ────────────────────────────────────────────────────────
   // カテゴリ アイコン
@@ -1698,7 +1710,7 @@ export default function CommandPalette({
                   </button>
                 </div>
               )}
-              {flatItems.length === 0 ? (
+              {showZeroState ? (
                 <div className="cp-zero">
                   <p className="cp-empty-icon" style={{ marginTop: 8 }}><Search size={32} /></p>
                   <p className="cp-zero-title">
@@ -1948,13 +1960,13 @@ export default function CommandPalette({
               <span className="flex items-center gap-1"><kbd className="cp-pill" style={{ fontSize: '0.6rem' }}>@</kbd>対象を指す</span>
               <span className="flex items-center gap-1"><kbd className="cp-pill" style={{ fontSize: '0.6rem' }}>⌘↵</kbd>AI 依頼</span>
               <span className="flex items-center gap-1"><kbd className="cp-pill" style={{ fontSize: '0.6rem' }}>Esc</kbd>閉じる</span>
-              <span className="ml-auto">{(mentionQuery !== null ? mentionCandidates.length : flatItems.length)} 件</span>
+              <span className="ml-auto">{(mentionQuery !== null ? mentionCandidates.length : shownCount)} 件</span>
             </div>
             <div
               className="px-5 py-1.5 flex md:hidden items-center justify-end text-fg-subtle"
               style={{ borderTop: '1px solid var(--border)', fontSize: '0.7rem' }}
             >
-              {(mentionQuery !== null ? mentionCandidates.length : flatItems.length)} 件
+              {(mentionQuery !== null ? mentionCandidates.length : shownCount)} 件
             </div>
             </>
             )}
