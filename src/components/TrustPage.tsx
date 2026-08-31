@@ -107,7 +107,7 @@ const SECTIONS: Section[] = [
     title: '法令 / 認証',
     oneLine: '個人情報保護法 / GDPR / CCPA 準拠。SOC2 / ISO27001 は 2026Q4 取得を目標に。',
     rows: [
-      { label: '個人情報保護法 (日本)', value: '対応済。事業者: 井出 直毅（屋号: CORE）' },
+      { label: '個人情報保護法 (日本)', value: '対応済。事業者: 株式会社CORE（代表: 井出 直毅）' },
       { label: 'GDPR (EU)',            value: '対応済 (アクセス / 訂正 / 削除 / 持ち出し / 異議申立 の権利を保証)' },
       { label: 'CCPA (米 加州)',        value: '対応済 (Do Not Sell / Share — 弊社は そもそも 個人データを 売却しません)' },
       { label: 'SOC2 / ISO27001',       value: '現時点では未取得です。事業規模の都合上、取得時期は確定しておりませんが、代替として本ページにて運用状況を包括的に開示しています' },
