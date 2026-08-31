@@ -272,6 +272,21 @@
     },
     {
       "source": "/(.*)",
+      "has": [{ "type": "host", "value": "studio.core-ai.jp" }],
+      "destination": "/studio.html"
+    },
+    {
+      "source": "/(.*)",
+      "has": [{ "type": "host", "value": "core-ai.jp" }],
+      "destination": "/corp.html"
+    },
+    {
+      "source": "/(.*)",
+      "has": [{ "type": "host", "value": "www.core-ai.jp" }],
+      "destination": "/corp.html"
+    },
+    {
+      "source": "/(.*)",
       "destination": "/index.html"
     }
   ],
