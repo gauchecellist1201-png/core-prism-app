@@ -37,6 +37,7 @@ import PersonaGlyph, { isRoleCode } from './PersonaGlyph';
 // (これが無い間、同じ「スライドを作る」がタイルでは紫の投影機・⌘K では 🎨 に見えていた)
 import { resolveFeatureIcon } from '../lib/featureIcons';
 import { fuzzyScore, FUZZY_MIN_SCORE } from '../lib/commandFuzzy';
+import { rankScore, compareRanked } from '../lib/commandScore';
 // 「答えが 1 つ返るだけ」の用事で、見ていた画面を失わせないための札。
 import {
   buildKnowledgeResult,
@@ -836,6 +837,17 @@ export default function CommandPalette({
   // ────────────────────────────────────────────────────────
   // 最近使った (recent) を解決
   // ────────────────────────────────────────────────────────
+  /**
+   * action id → 使った回数。打った時の並び順に効かせるためだけに使う
+   * (2026-08-31)。`recent` が既に持っている数字をそのまま読む
+   * = 新しい保存先ゼロ・追加の読み込みゼロ。
+   */
+  const countById = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const r of recent) m.set(r.id, r.count ?? 0);
+    return m;
+  }, [recent]);
+
   const recentItems = useMemo<CmdAction[]>(() => {
     const byId = new Map<string, CmdAction>();
     for (const { item } of allItems) byId.set(actionId(item), item);
@@ -946,25 +958,26 @@ export default function CommandPalette({
       }
     }
     if (activeTab === 'saved') return savedHits;
-    const scored: Array<{ entry: { item: CmdAction; category: CategoryKey }; score: number }> = [];
+    const scored: Array<{ entry: { item: CmdAction; category: CategoryKey }; score: number; count: number }> = [];
     for (const entry of allItems) {
       if (activeTab !== 'all' && entry.category !== activeTab) continue;
       const item = entry.item;
-      const hay = (item.label + ' ' + ('subtitle' in item && item.subtitle ? item.subtitle : '')).toLowerCase();
-      if (!parts.every(p => hay.includes(p))) continue;
-      // スコア: 先頭一致 +10, ラベル一致 +5, それ以外 +1
-      let score = 0;
-      for (const p of parts) {
-        if (item.label.toLowerCase().startsWith(p)) score += 10;
-        else if (item.label.toLowerCase().includes(p)) score += 5;
-        else score += 1;
-      }
-      scored.push({ entry, score });
+      // スコア: 先頭一致 +10, ラベル一致 +5, それ以外 +1, + 使った回数 (上限 4)
+      // 上限 4 は「先頭一致が何回使われた相手にも抜かれない」ための数字 (src/lib/commandScore.ts)
+      const count = countById.get(actionId(item)) ?? 0;
+      const score = rankScore(
+        item.label,
+        'subtitle' in item && item.subtitle ? item.subtitle : undefined,
+        parts,
+        count,
+      );
+      if (score === null) continue;
+      scored.push({ entry, score, count });
     }
-    scored.sort((a, b) => b.score - a.score);
+    scored.sort(compareRanked);
     const savedIds = new Set(savedHits.map(h => actionId(h.item)));
     return [...savedHits, ...scored.map(s => s.entry).filter(e => !savedIds.has(actionId(e.item)))];
-  }, [allItems, recentItems, savedItems, query, activeTab]);
+  }, [allItems, recentItems, savedItems, query, activeTab, countById]);
 
   // ────────────────────────────────────────────────────────
   // 画面に並べる数だけ畳む (検索の対象は上の filtered = 全件のまま)
