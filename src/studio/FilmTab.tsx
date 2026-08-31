@@ -48,6 +48,26 @@ const scrollToId = (id: string) => {
 export default function FilmTab() {
   useScrollDepth();
 
+  // FAQPage の構造化データ (ここで実際に画面へ出している FILM_FAQ と同じ質問・同じ答えだけを渡す)。
+  // StudioSite側の studioJsonLd() は home の STUDIO_FAQ だけを持つので、film タブでは
+  // ここで自分のぶんを足す (離脱時に必ず片付ける)。
+  useEffect(() => {
+    const el = document.createElement('script');
+    el.type = 'application/ld+json';
+    el.id = 'film-faq-jsonld';
+    el.textContent = JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'FAQPage',
+      mainEntity: FILM_FAQ.map(f => ({
+        '@type': 'Question',
+        name: f.q,
+        acceptedAnswer: { '@type': 'Answer', text: f.a },
+      })),
+    });
+    document.head.appendChild(el);
+    return () => { el.remove(); };
+  }, []);
+
   // 発注の形 (単発 / 月額) は料金セクションの外からも切り替える。
   // 目次の「月額プラン」から飛んだのに単発のカードが出ている、という食い違いを作らないため、
   // 状態は Pricing ではなくページ側で持つ。

@@ -151,15 +151,16 @@ export default function StudioSite() {
   //  「映像を見に来た人が何人いたか」すら分からなかった)
   useEffect(() => { track('studio_tab_view', { tab }); }, [tab]);
 
-  // Service の構造化データ (SPAなので実行時に差し込む。離脱時に必ず片付ける)
+  // Service の構造化データ (SPAなので実行時に差し込む。タブが変わるたびに
+  // 画面の中身と揃え直す。離脱時に必ず片付ける)
   useEffect(() => {
     const el = document.createElement('script');
     el.type = 'application/ld+json';
     el.id = 'studio-jsonld';
-    el.textContent = JSON.stringify(studioJsonLd());
+    el.textContent = JSON.stringify(studioJsonLd(tab));
     document.head.appendChild(el);
     return () => { el.remove(); };
-  }, []);
+  }, [tab]);
 
   useEffect(() => {
     const sync = () => setTab(readTab());
@@ -378,11 +379,15 @@ const LineCta = ({ label = CONTACT.lineLabel, where }: { label?: string; where: 
   </a>
 );
 
-// ---- 構造化データ (提供サービスの一覧。価格は film.ts / plans.ts の実値に合わせる) ----
-function studioJsonLd() {
+// ---- 構造化データ (提供サービスの一覧。価格は film.ts / plans.ts の実値に合わせる)
+// FAQPage は STUDIO_FAQ (HomeTab の <FaqList> だけ) が画面に出ているタブでのみ足す。
+// film タブは同じ場所に別の質問 (FILM_FAQ) を出しているので、ここでは足さず
+// FilmTab 側で自分の FAQ を注入する。plans/dev/care/works/about/contact には
+// 画面上どこにも FAQ が無いので、FAQPage は載せない。 ----
+function studioJsonLd(tab: TabId) {
   return {
     '@context': 'https://schema.org',
-    '@graph': [studioServiceLd(), studioFaqLd()],
+    '@graph': tab === 'home' ? [studioServiceLd(), studioFaqLd()] : [studioServiceLd()],
   };
 }
 
