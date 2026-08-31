@@ -605,7 +605,7 @@ export default function UltimaLanding() {
         {/* 建設業法・補助金の但し書き。10.9px では読ませる気がない字になっていたので 12.2px に。 */}
         <p style={{ maxWidth: 1080, margin: '1.6rem auto 0', fontSize: '0.76rem', color: 'rgba(240,233,216,0.66)', lineHeight: 1.9 }}>
           ULTIMA は CORE の業界特化プロダクトです。AIが作成した書類は、建設業法にもとづき有資格者による最終確認を前提としています。補助金に関する情報は参考提供であり、申請の責任はお客様に帰属します。<br />
-          © {new Date().getFullYear()} CORE（設立準備中）
+          © {new Date().getFullYear()} 株式会社CORE
         </p>
       </footer>
     </div>

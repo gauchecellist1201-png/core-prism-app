@@ -648,7 +648,7 @@ function ProposalSheet() {
             display: 'flex', justifyContent: 'space-between', alignItems: 'center',
             fontSize: 11, color: '#666',
           }}>
-            <span>CORE（設立準備中） — core-prism-app.vercel.app</span>
+            <span>株式会社CORE — core-prism-app.vercel.app</span>
             <span>{new Date().toLocaleDateString('ja-JP', { year: 'numeric', month: 'long' })}</span>
           </div>
         </div>
@@ -707,7 +707,7 @@ function Footer() {
       </div>
       {/* 法人表記は「読める」ことが要件。0.4 は地 #0A0A12 の上で 3.77（実測）だったので 0.5(5.33) に。 */}
       <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', margin: 0 }}>
-        © 2026 CORE（設立準備中） — Music School Edition
+        © 2026 株式会社CORE — Music School Edition
       </p>
     </footer>
   );

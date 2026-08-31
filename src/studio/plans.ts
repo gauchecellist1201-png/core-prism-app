@@ -472,7 +472,7 @@ export const COMPANY = {
   repName: '井出 直毅',
   repTitle: '代表',
   profile: [
-    { label: '名称', value: 'CORE（設立準備中）' },
+    { label: '名称', value: '株式会社CORE' },
     { label: '代表', value: '井出 直毅' },
     // 列挙も本数も CORE_PRODUCTS から出す (ここだけ6つしか書かれておらず、上の本文と食い違っていた)
     { label: '事業内容', value: `映像制作・Webサイト制作・システム受託開発・AIプロダクトの開発運営 (${CORE_PRODUCTS.join(', ')})` },

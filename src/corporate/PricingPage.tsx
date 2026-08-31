@@ -876,10 +876,10 @@ export default function PricingPage() {
             </button>
           ))}
         </div>
-        {/* 2026-07-30 是正: 個人事業フェーズのため「CORE INC.」は使わない（恒久ルール）。
-            あわせて 0.3 は黒地で 2.48:1 と読めなかったので 0.55 に上げる。 */}
+        {/* 2026-08-31 更新: 法人化にともない「CORE INC.」ではなく「株式会社CORE」表記に統一（オーナー指示）。
+            0.3 は黒地で 2.48:1 と読めなかったので 0.55 に上げてある。 */}
         <p style={{ fontFamily: FONT_DISPLAY, fontSize: '0.7rem', letterSpacing: '0.3em', color: 'rgba(255,255,255,0.55)' }}>
-          © {new Date().getFullYear()} CORE（設立準備中）
+          © {new Date().getFullYear()} 株式会社CORE
         </p>
       </footer>
       {legalKind && (

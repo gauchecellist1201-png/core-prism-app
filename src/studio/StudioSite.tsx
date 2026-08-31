@@ -364,7 +364,7 @@ export default function StudioSite() {
         </div>
         <a href={`mailto:${STUDIO.email}`} style={{ fontSize: 12.5, color: C.mute, textDecoration: 'underline', minHeight: 44, display: 'inline-flex', alignItems: 'center', padding: '0 8px' }}>{STUDIO.email}</a>
         <div style={{ fontSize: 12.5, color: C.mute, marginTop: 10, letterSpacing: '0.04em', lineHeight: 1.9 }}>
-          CORE（設立準備中）<br />代表 井出直毅
+          株式会社CORE<br />代表 井出直毅
         </div>
       </footer>
     </div>

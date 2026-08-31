@@ -233,7 +233,7 @@ export default function VerticalHub() {
             <span style={{ fontSize: '0.74rem', letterSpacing: '0.1em' }}>CORE のトップへ</span>
           </a>
           <p style={{ fontSize: '0.68rem', color: 'rgba(240,233,216,0.55)', margin: 0 }}>
-            © {new Date().getFullYear()} CORE（設立準備中）
+            © {new Date().getFullYear()} 株式会社CORE
           </p>
         </div>
       </footer>

@@ -1329,7 +1329,7 @@ function PulseLanding({ onEnter }: { onEnter: () => void }) {
           CORE Pulseは医療機器ではありません。診断・治療は医療機関にご相談ください。
         </p>
         <div style={{ fontSize: 11, color: C.sub, marginTop: 10, letterSpacing: '0.1em', opacity: 0.85 }}>
-          CORE Pulse — CORE（設立準備中）
+          CORE Pulse — 株式会社CORE
         </div>
       </footer>
 

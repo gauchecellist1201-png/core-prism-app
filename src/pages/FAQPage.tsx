@@ -60,8 +60,7 @@ const FAQS: FaqItem[] = [
     a: (
       <>
         <p>
-          <strong>CORE</strong>（設立準備中）が開発・運営しています。運営責任者は <strong>井出 直毅</strong> です。
-          法人としての設立はこれからで、現在は個人事業として運営しています。
+          <strong>株式会社CORE</strong> が開発・運営しています。運営責任者は <strong>井出 直毅</strong> です。
         </p>
         <p>
           7 つのプロダクト（Prism / Iris / Guild / Resonance / Lume / Crystal / Pulse）は、
