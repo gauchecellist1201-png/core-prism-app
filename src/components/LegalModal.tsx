@@ -14,7 +14,7 @@ interface Props {
   onClose: () => void;
 }
 
-const COMPANY = 'CORE 株式会社';
+const COMPANY = '株式会社CORE';
 const REP = '井出 直毅';
 const EMAIL = 'core.inc.guild@gmail.com';
 const URL = 'https://core-prism-app.vercel.app/';
