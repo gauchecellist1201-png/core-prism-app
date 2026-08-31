@@ -329,11 +329,11 @@ export default function CoreSite() {
     const DESC = 'COREは、AI戦略・業務設計・システム開発・事業開発を通じて、企業のDXとAI Transformationを支援します。';
     setMeta('meta[property="og:title"]', 'content', 'CORE | AI Transformation Company');
     setMeta('meta[property="og:description"]', 'content', DESC);
-    setMeta('meta[property="og:image"]', 'content', 'https://core-prism-app.vercel.app/og-core-v5.png');
+    setMeta('meta[property="og:image"]', 'content', 'https://core-prism-app.vercel.app/og-core-v6.png');
     setMeta('meta[property="og:url"]', 'content', 'https://core-prism-app.vercel.app/corp');
     setMeta('meta[property="og:type"]', 'content', 'website');
     setMeta('meta[name="twitter:card"]', 'content', 'summary_large_image');
-    setMeta('meta[name="twitter:image"]', 'content', 'https://core-prism-app.vercel.app/og-core-v5.png');
+    setMeta('meta[name="twitter:image"]', 'content', 'https://core-prism-app.vercel.app/og-core-v6.png');
     setMeta('meta[name="twitter:title"]', 'content', 'CORE | AI Transformation Company');
     setMeta('meta[name="twitter:description"]', 'content', 'すべての時代の、核となるものを。AIとテクノロジーで、企業の仕組みそのものを変える。');
     setMeta('meta[name="description"]', 'content', DESC);
@@ -2129,7 +2129,7 @@ function HeroVideo({ onAnchor }: { onAnchor?: (e: ReactMouseEvent<HTMLAnchorElem
    * 高さは % ではなく実測 px で渡す。親が minHeight（高さ不定）なので、
    * % 指定の height/maxHeight は解決されず効かない。
    */
-  const LOGO_MAX = 340;
+  const LOGO_MAX = 420;
   const [copyH, setCopyH] = useState(0);
   const [viewportH, setViewportH] = useState(0);
   // 3つを1回でまとめて測る。別々の effect にすると「chrome だけ更新された中間状態」で
@@ -2199,16 +2199,19 @@ function HeroVideo({ onAnchor }: { onAnchor?: (e: ReactMouseEvent<HTMLAnchorElem
         }}
       >
         <img
-          src="/corp-hero-logo-trim.webp"
+          src="/corp-hero-logo-v2.webp"
           alt="CORE — AI Transformation Company"
-          width={952}
-          height={868}
+          width={1211}
+          height={840}
           fetchPriority="high"
-          /* 元画像は左右 42%・下 17% が真っ黒な余白で、contain が枠の高さに
-             合わせて縮めるとロゴ本体はさらにその 58% しか残らなかった。
-             余白を切り落とした trim 版（952x868）を使い、枠いっぱいまでロゴ本体で埋める。 */
+          /* v2: 元画像 (corp-hero-logo.webp) から、水平の光線とロゴ本体が
+             フレーム端で完全に黒へ収束する範囲だけを切り出し、下端は反射が
+             キャンバス外で唐突に途切れていた分を除去した上でスムーズに黒へ
+             フェードさせてある（旧 trim 版は光線・反射がフレーム端で
+             途中から一定値のまま止まり、「無理やり切り取った」ような
+             継ぎ目に見えていた）。地は #000 のまま＝section と同色。 */
           style={{
-            width: 'min(74vw, 420px)', maxWidth: '100%',
+            width: 'min(88vw, 520px)', maxWidth: '100%',
             height: logoH, objectFit: 'contain', display: 'block',
           }}
         />
