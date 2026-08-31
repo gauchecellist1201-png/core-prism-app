@@ -12,9 +12,11 @@ import {
   type ProductionPlan, type DevTier,
 } from './plans';
 import { CONTACT } from './plans';
+// 映像の制作実績。film.ts ではなく works.ts が正本 (実績タブと映像タブの両方が使うため)。
+import { FILM_WORKS } from './works';
 import { estimate, type EstimateAnswers, type Purpose, type Scale, type Feature, type Timeline, type Budget } from './estimate';
 import { C, D, SERIF, SANS } from './theme';
-import { Band, H2, Note, IconCheck, IconArrow, IconChat, IconCopy } from './ui';
+import { Reveal, Band, H2, Note, IconCheck, IconArrow, IconChat, IconCopy } from './ui';
 import { track } from './track';
 import { ESTIMATE_KEY, EMPTY_DRAFT, parseSavedEstimate, type DraftOptions } from './estimateDraft';
 
@@ -96,9 +98,11 @@ const SEO = {
   // 切り抜き・反転した実ロゴへ差し替え、サイト本体と同じ白基調のカードに刷新。
   // ファイル名を変えないと X/Facebook/LINE のキャッシュが差し替わらないので版番号を上げる。
   ogImage: 'https://core-prism-app.vercel.app/og-studio-film-v3.png',
+  // 2026-08-31 訂正: ここが studio.html (正本) の title/description を上書きして、
+  // 「映像制作」を落とした古い文言に戻していた。主力は映像制作なので正本に合わせる。
   default: {
-    title: 'CORE Studio — 成果から逆算する、ウェブ制作と受託開発',
-    description: 'COREは、AIプロダクトを自社で開発・運営する制作スタジオです。戦略設計からデザイン・実装・公開後の運用改善まで一貫体制で、貴社の事業を前に進めるウェブをつくります。',
+    title: 'CORE Studio — 映像制作・ウェブ制作・受託開発',
+    description: 'COREは、AIプロダクトを自社で開発・運営する制作スタジオです。AIショートドラマなどの映像制作から、ウェブサイト制作、システム受託開発まで。戦略設計から公開後の運用改善まで一貫体制で担当します。',
   },
   film: {
     title: 'AI動画制作・ショートドラマ制作代行 — CORE Studio',
@@ -181,6 +185,22 @@ export default function StudioSite() {
     <div style={{ background: C.bg, color: C.body, minHeight: '100dvh', fontFamily: SANS, overflowX: 'clip' }}>
       <style>{`
         .st-inner { max-width: 760px; margin: 0 auto; padding-left: 20px; padding-right: 20px; }
+        /* ── スクロールで現れる箱 (ui.tsx の Reveal が付ける) ──────────────
+           translate だけだと「ずれて出た」で終わる。ごく浅い blur を足して抜くと、
+           止まった瞬間に像が結び、目が「今ここに来た」と感じる。
+           easing は出だしが速く終わりが長い曲線。機械が動いた感じにしない。
+           opacity:0 から始める以上、ui.tsx 側の「時間切れで必ず出す」逃げ道は外さないこと。 */
+        .st-rv { transition: opacity 820ms cubic-bezier(.16,1,.3,1), transform 820ms cubic-bezier(.16,1,.3,1), filter 820ms cubic-bezier(.16,1,.3,1); }
+        .st-rv[data-rv="pending"] { opacity: 0; transform: translateY(20px); filter: blur(6px); }
+        .st-rv[data-rv="in"] { opacity: 1; transform: none; filter: none; }
+        /* 章見出しの金の短い線。現れる時に左から伸びる = 章が始まった合図 */
+        .st-h2-rule { display: block; width: 22px; height: 1.5px; flex: 0 0 auto; transform-origin: left center;
+          transition: transform 900ms cubic-bezier(.16,1,.3,1) 140ms; }
+        .st-rv[data-rv="pending"] .st-h2-rule { transform: scaleX(0); }
+        @media (prefers-reduced-motion: reduce) {
+          .st-rv, .st-rv[data-rv="pending"] { opacity: 1 !important; transform: none !important; filter: none !important; transition: none; }
+          .st-h2-rule, .st-rv[data-rv="pending"] .st-h2-rule { transform: none !important; transition: none; }
+        }
         .st-serif { font-family: ${SERIF}; }
         /* 金は白地で 3.55:1 しかないので、文字には goldText を使う (暗部では D.gold を上書き指定) */
         .st-label { font-family: ${SANS}; font-size: 11px; font-weight: 600; letter-spacing: 0.28em; text-transform: uppercase; color: ${C.goldText}; }
@@ -311,6 +331,59 @@ export default function StudioSite() {
           .st-strip-dup { display: none; }
         }
 
+        /* ── ホームのヒーロー = 自社リール (2026-08-31 新設) ────────────────
+           制作スタジオのトップページなのに、作ったものが1画面目に1つも動いていなかった。
+           自社の実績5本から1.6秒ずつ抜いた8秒 (628KB) を1画面目に敷く。
+           高さを dvh で取るのは、iOS のアドレスバーが出入りしても
+           「映像 + 見出し + ボタン」が1画面に収まる関係を崩さないため。
+           文字は映像の上に重ねるので、下側の暗幕は必ず濃く敷く (白文字で 4.5:1 を割らせない)。 */
+        .st-reel { position: relative; width: 100%; height: min(58dvh, 430px); overflow: hidden;
+          background: ${D.bg}; isolation: isolate; }
+        @media (min-width: 900px) { .st-reel { height: min(64dvh, 560px); } }
+        .st-reel video, .st-reel img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+        /* 上は少しだけ (白いヘッダーとの境目)、下は文字が乗るので濃く */
+        .st-reel::after { content: ''; position: absolute; inset: 0; pointer-events: none;
+          background: linear-gradient(180deg, rgba(8,8,9,0.44) 0%, rgba(8,8,9,0.16) 30%,
+            rgba(8,8,9,0.62) 66%, rgba(8,8,9,0.93) 100%); }
+        .st-reel-copy { position: absolute; left: 0; right: 0; bottom: 0; z-index: 1;
+          max-width: 760px; margin: 0 auto; padding: 0 20px 20px; }
+        .st-reel-h1 { font-size: clamp(25px, 6.8vw, 44px); font-weight: 700; line-height: 1.45;
+          letter-spacing: 0.02em; color: #FFFFFF; margin: 9px 0 0; text-shadow: 0 2px 20px rgba(0,0,0,0.45); }
+        /* 「これは自社が作った映像である」を、映像の中で名乗る。
+           他所の素材を敷いているのではないことが、この1行で伝わる */
+        .st-reel-cap { position: absolute; top: 14px; right: 20px; z-index: 1;
+          display: inline-flex; align-items: center; gap: 7px; padding: 6px 12px; border-radius: 999px;
+          border: 1px solid rgba(255,255,255,0.3); background: rgba(8,8,9,0.5);
+          backdrop-filter: blur(7px); -webkit-backdrop-filter: blur(7px);
+          color: #FFFFFF; font-size: 10.5px; letter-spacing: 0.1em; line-height: 1; }
+        .st-reel-dot { width: 5px; height: 5px; border-radius: 999px; background: ${D.gold}; flex: 0 0 auto; }
+        @media (prefers-reduced-motion: no-preference) {
+          .st-reel-dot { animation: st-reel-pulse 2.4s ease-in-out infinite; }
+          @keyframes st-reel-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }
+        }
+
+        /* ── 実績タブの先頭に置く映像実績 (2026-08-31 新設) ────────────────
+           主力は映像制作なのに、実績タブにはサイトの画像しか無かった。
+           ここでは映像は再生せず静止画で見せ、押すと映像タブへ運ぶ
+           (再生できない絵に再生の印を付けない)。 */
+        .st-fw { display: grid; grid-template-columns: 1fr; gap: 20px; align-items: center; }
+        @media (min-width: 860px) { .st-fw { grid-template-columns: minmax(0, 268px) minmax(0, 1fr); gap: 40px; } }
+        .st-fw-shot { position: relative; width: min(66vw, 258px); margin: 0 auto; aspect-ratio: 9 / 16;
+          border-radius: 12px; overflow: hidden; border: 1px solid ${D.line}; background: #000; padding: 0;
+          cursor: pointer; box-shadow: 0 34px 70px -44px rgba(0,0,0,0.9); }
+        @media (min-width: 860px) { .st-fw-shot { width: 100%; margin: 0; } }
+        .st-fw-shot img, .st-fw-thumb img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+        .st-fw-row { display: flex; gap: 11px; overflow-x: auto; -webkit-overflow-scrolling: touch;
+          scrollbar-width: none; padding: 2px 20px 12px; scroll-snap-type: x mandatory; }
+        .st-fw-row::-webkit-scrollbar { display: none; }
+        .st-fw-item { flex: 0 0 auto; width: 126px; scroll-snap-align: center; background: none; border: none;
+          padding: 0; cursor: pointer; text-align: left; font-family: ${SANS};
+          -webkit-tap-highlight-color: rgba(212,169,79,0.18); }
+        .st-fw-thumb { display: block; position: relative; width: 100%; aspect-ratio: 9 / 16; border-radius: 10px;
+          overflow: hidden; border: 1px solid ${D.line}; background: #000; transition: border-color 180ms ease; }
+        .st-fw-item:hover .st-fw-thumb, .st-fw-item:focus-visible .st-fw-thumb { border-color: ${D.goldLine}; }
+        .st-fw-name { display: block; font-size: 11.5px; color: ${D.body}; margin-top: 8px; line-height: 1.6; }
+
         /* ── ご依頼いただけること (暗部) ── */
         .st-svc { display: grid; gap: 12px; }
         @media (min-width: 700px) { .st-svc { grid-template-columns: 1fr 1fr; } }
@@ -352,7 +425,7 @@ export default function StudioSite() {
         {tab === 'plans' && <PlansTab go={go} />}
         {tab === 'dev' && <DevTab go={go} />}
         {tab === 'care' && <CareTab />}
-        {tab === 'works' && <WorksTab />}
+        {tab === 'works' && <WorksTab go={go} />}
         {tab === 'about' && <AboutTab />}
         {tab === 'contact' && <ContactTab />}
       </main>
@@ -488,17 +561,30 @@ function HomeTab({ go }: { go: (t: TabId) => void }) {
   const spotRef = useSpotlight<HTMLElement>();
   return (
     <div>
-      {/* ヒーロー */}
-      <Band pad="60px 0 48px">
-        <div className="st-label" style={{ marginBottom: 18 }}>Web Production &amp; Development</div>
-        <h1 className="st-serif" style={{ fontSize: 'clamp(27px, 7vw, 40px)', fontWeight: 700, lineHeight: 1.55, letterSpacing: '0.02em', margin: 0, color: C.ink }}>
-          成果から逆算する、<br />ウェブ制作と受託開発。
-        </h1>
-        <p style={{ fontSize: 15, lineHeight: 2.1, color: C.body, margin: '22px 0 0', maxWidth: 600 }}>
+      {/* ヒーロー = 自社リール (2026-08-31)。
+          旧版は文字だけの1画面目で、制作スタジオなのに作ったものが1つも見えていなかった。
+          しかも本文3行が長く、iPhone では相談ボタンが1画面目の外 (実測 y≈990 / 812) にあった。
+          映像を敷いて見出しをその上に重ね、本文を1文に畳んだことで、
+          見出しも相談ボタンも1画面目に収まる。 */}
+      <section className="st-reel" aria-label="CORE Studio の制作実績より">
+        <video
+          src="/studio/film/studio-showreel.mp4"
+          poster="/studio/film/studio-showreel.jpg"
+          autoPlay muted loop playsInline preload="metadata" aria-hidden
+        />
+        <span className="st-reel-cap"><span className="st-reel-dot" aria-hidden />CORE STUDIO 制作実績より</span>
+        <div className="st-reel-copy">
+          <div className="st-label" style={{ color: D.gold }}>Film / Web / Development</div>
+          <h1 className="st-serif st-reel-h1">映像も、ウェブも、<br />成果から逆算してつくる。</h1>
+        </div>
+      </section>
+
+      <Band pad="26px 0 44px">
+        <p style={{ fontSize: 15, lineHeight: 2.1, color: C.body, margin: 0, maxWidth: 600 }}>
           COREは、AIプロダクトを自社で開発・運営する制作スタジオです。
-          戦略設計からデザイン、実装、公開後の運用改善まで一貫体制で、貴社の事業を前に進めるウェブをつくります。
+          映像制作・ウェブ制作・受託開発・公開後の運用まで、ひとつの体制で担当します。
         </p>
-        <div style={{ display: 'flex', gap: 12, marginTop: 30, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: 12, marginTop: 24, flexWrap: 'wrap' }}>
           <LineCta where="home-hero" />
           {/* 実績は真下の帯で見えているので、2つ目のボタンは「相場を知る」に充てる */}
           <button className="st-btn st-btn-ghost" onClick={() => go('contact')}>6つの質問で概算を出す</button>
@@ -522,7 +608,7 @@ function HomeTab({ go }: { go: (t: TabId) => void }) {
           以前はここが映像制作だけの帯で、サイト制作・受託開発・運用はタブを開くまで存在が分からず、
           ホーム全体で価格が1円も出ていなかった。4つの領域と「いくらから」をこの1章にまとめる。 */}
       <section ref={spotRef} className="st-spot" style={{ background: D.bg, padding: '48px 0' }}>
-        <div className="st-inner">
+        <Reveal className="st-inner">
           <div className="st-label" style={{ color: D.gold, marginBottom: 14 }}>Services</div>
           <h2 className="st-serif" style={{ fontSize: 'clamp(23px, 6.2vw, 32px)', fontWeight: 700, lineHeight: 1.55, color: D.ink, margin: 0 }}>
             映像から、サイト、システム、<br />そのあとの運用まで。
@@ -559,7 +645,7 @@ function HomeTab({ go }: { go: (t: TabId) => void }) {
           <p style={{ fontSize: 12, color: D.mute, lineHeight: 1.9, margin: '18px 0 0' }}>
             {CONTACT.lineNote}
           </p>
-        </div>
+        </Reveal>
       </section>
 
       {/* 選ばれる理由 */}
@@ -828,11 +914,57 @@ function CareTab() {
 // ============================================================
 // Works
 // ============================================================
-function WorksTab() {
+// ---- 実績タブの先頭 = 映像制作の実績 ----
+// 主力商品は映像制作。実績タブがサイトの画像だけで始まっていたのを、先頭に映像を置いた。
+function FilmWorksBand({ go }: { go: (t: TabId) => void }) {
+  const [lead, ...rest] = FILM_WORKS;
+  if (!lead) return null;
+  const openFilm = () => { track('studio_works_to_film', { from: 'works-tab' }); go('film'); };
+
+  return (
+    <section style={{ background: D.bg, padding: '46px 0 40px' }}>
+      <Reveal className="st-inner">
+        <H2 dark en="Film" sub="商品広告・ブランドムービー・ショートドラマまで。すべて当社が制作し、実際に納品した映像です。">映像制作の実績</H2>
+        <div className="st-fw">
+          <button type="button" className="st-fw-shot" onClick={openFilm}
+            aria-label={`${lead.client} の制作事例を映像制作のページで見る`}>
+            {lead.poster && <img src={lead.poster} alt={`${lead.client} の制作事例`} loading="lazy" />}
+          </button>
+          <div>
+            <span className="st-label" style={{ color: D.gold, fontSize: 10.5 }}>{lead.category}</span>
+            <h3 className="st-serif" style={{ fontSize: 'clamp(20px, 5vw, 27px)', fontWeight: 700, color: D.ink, lineHeight: 1.5, margin: '11px 0 0' }}>{lead.client}</h3>
+            <p style={{ fontSize: 13.5, lineHeight: 2.05, color: D.body, margin: '12px 0 18px', maxWidth: 560 }}>{lead.purpose}</p>
+            <button className="st-btn" onClick={openFilm}
+              style={{ background: D.gold, color: '#17130A', border: `1px solid ${D.gold}`, fontWeight: 700 }}>
+              映像を再生して見る
+            </button>
+          </div>
+        </div>
+      </Reveal>
+      {rest.length > 0 && (
+        <div style={{ marginTop: 26 }}>
+          <div className="st-fw-row">
+            {rest.map(w => (
+              <button key={w.id} type="button" className="st-fw-item" onClick={openFilm}
+                aria-label={`${w.client} の制作事例を映像制作のページで見る`}>
+                <span className="st-fw-thumb">{w.poster && <img src={w.poster} alt="" loading="lazy" />}</span>
+                <span className="st-fw-name">{w.client}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function WorksTab({ go }: { go: (t: TabId) => void }) {
   const cats = ['企業サイト', 'EC・ブランド', 'アプリ', '個人'] as const;
   return (
+    <>
+    <FilmWorksBand go={go} />
     <Band>
-      <H2 en="Works" sub="いずれも公開中のサイト・システムです。実物をご確認ください。">制作実績</H2>
+      <H2 en="Web" sub="いずれも公開中のサイト・システムです。実物をご確認ください。">サイト・システムの実績</H2>
       {cats.map(cat => {
         const list = WORKS.filter(w => w.category === cat);
         if (!list.length) return null;
@@ -875,6 +1007,7 @@ function WorksTab() {
         <LineCta where="works" />
       </div>
     </Band>
+    </>
   );
 }
 

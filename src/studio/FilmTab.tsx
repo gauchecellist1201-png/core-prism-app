@@ -6,14 +6,14 @@
 // ============================================================
 import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { C, D, SERIF, SANS } from './theme';
-import { Band, H2, Note, IconCheck, IconChat, IconCopy } from './ui';
+import { Band, H2, Note, Reveal, IconCheck, IconChat, IconCopy, IconArrow } from './ui';
 import { STUDIO, CONTACT, COMPANY } from './plans';
 import {
   FILM, FILM_PLANS, MONTHLY_LEAD, MONTHLY_PLANS, MONTHLY_TERMS, MONTHLY_SPEC,
   PLAN_LADDER, PRICE_NOTE, PRICE_WHY, VALUE, monthlySavings, yen,
   TRIAL_OFFER, CAMPAIGN, isCampaignLive, offPercent,
   PRICING_MODES, PRICING_LEAD, planMatrix, type PricingMode, type FilmPlan,
-  FILM_WORKS, FILM_PROCESS, PROCESS_STATEMENT, START_STEPS, REVISION, TERMS, AI_TERMS,
+  FILM_PROCESS, PROCESS_STATEMENT, START_STEPS, REVISION, TERMS, AI_TERMS,
   FILM_FAQ, FILM_CTA, INQUIRY_FIELDS, FILM_MENU, MENU_LEAD,
   menuPriceParts, menuSpecLabel, menuTarget,
 } from './film';
@@ -22,6 +22,8 @@ import {
 // 溜まるだけで、CORE 側には 1 件も届いていなかった。track() は手元にも残しつつ
 // /api/track/studio へビーコンを飛ばす (外部サービスは追加しない)。
 import { track } from './track';
+// 実績データの正本は works.ts (実績タブと映像タブの両方が使う)
+import { FILM_WORKS } from './works';
 
 // 遠い行き先へ smooth を指定するとブラウザが移動そのものを諦め、押しても何も起きない
 // (実測: ヒーローから 10,700px 下の相談欄へ smooth 指定 → scrollY が 0 のまま)。
@@ -92,12 +94,6 @@ export default function FilmTab() {
   return (
     <div>
       <style>{`
-        .fm-rv { transition: opacity 620ms ease, transform 620ms ease; }
-        .fm-rv[data-rv="pending"] { opacity: 0; transform: translateY(14px); }
-        .fm-rv[data-rv="in"] { opacity: 1; transform: none; }
-        @media (prefers-reduced-motion: reduce) {
-          .fm-rv, .fm-rv[data-rv="pending"] { opacity: 1 !important; transform: none !important; transition: none; }
-        }
         .fm-scroller { display: flex; justify-content: safe center; gap: 14px; overflow-x: auto; -webkit-overflow-scrolling: touch;
           scroll-snap-type: x mandatory; padding: 4px 20px 18px; scrollbar-width: none; }
         .fm-scroller::-webkit-scrollbar { display: none; }
@@ -112,6 +108,37 @@ export default function FilmTab() {
         .fm-frame::after { content: ''; position: absolute; inset: 0; pointer-events: none; opacity: 0.5;
           background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='0.16'/%3E%3C/svg%3E"); }
         .fm-frame img, .fm-frame video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+        /* ── 代表実績 (先頭1件だけを大きく出す枠) ─────────────────
+           横スクロールの中に同じ大きさで混ぜると、いちばん効く1本が
+           「4件のうちの1件」に見える。発注を検討している人が最初に確かめるのは
+           「誰の、どんな仕事をしたのか」なので、先頭だけは名前と一緒に大きく出す。 */
+        .fm-flag { display: grid; grid-template-columns: 1fr; gap: 20px; align-items: center; }
+        @media (min-width: 860px) { .fm-flag { grid-template-columns: minmax(0, 300px) minmax(0, 1fr); gap: 44px; } }
+        .fm-flag-media { position: relative; width: min(72vw, 292px); margin: 0 auto; }
+        @media (min-width: 860px) { .fm-flag-media { width: 100%; margin: 0; } }
+        /* 映像の背後の光。作品を「置いてある」でなく「灯っている」ように見せる */
+        .fm-flag-media::before { content: ''; position: absolute; inset: -14% -18%; pointer-events: none;
+          background: radial-gradient(58% 46% at 50% 46%, rgba(198,160,74,0.24) 0%, rgba(198,160,74,0) 70%);
+          filter: blur(6px); }
+        .fm-flag-media .fm-frame { box-shadow: 0 40px 80px -44px rgba(0,0,0,0.9); }
+        .fm-flag-badge { display: inline-flex; align-items: center; gap: 7px; padding: 6px 12px; border-radius: 999px;
+          border: 1px solid ${D.goldLine}; color: ${D.gold}; font-size: 10.5px; font-weight: 700; letter-spacing: 0.12em; }
+        .fm-flag-client { font-size: clamp(21px, 5.2vw, 30px); font-weight: 700; line-height: 1.45;
+          color: ${D.ink}; letter-spacing: 0.02em; margin: 13px 0 0; }
+        .fm-flag-cat { font-size: 11px; letter-spacing: 0.14em; color: ${D.mute}; margin-top: 8px; }
+        .fm-flag-body { font-size: 13.5px; line-height: 2.05; color: ${D.body}; margin: 14px 0 0; max-width: 560px; }
+        .fm-flag-link { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; margin-top: 6px;
+          font-size: 12.5px; color: ${D.gold}; text-decoration: none; letter-spacing: 0.02em; }
+        .fm-flag-link:hover { text-decoration: underline; text-underline-offset: 3px; }
+        /* 停止中の印。ホバー再生は指では起きないので、印が無いと静止画に見える。
+           装飾なので必ずタップを透過させる (押せない透明な板を作らない) */
+        .fm-play-badge { position: absolute; left: 9px; bottom: 9px; z-index: 2; pointer-events: none;
+          display: inline-flex; align-items: center; gap: 5px; padding: 5px 10px 5px 9px; border-radius: 999px;
+          border: 1px solid rgba(255,255,255,0.32); background: rgba(11,11,12,0.58);
+          backdrop-filter: blur(7px); -webkit-backdrop-filter: blur(7px);
+          color: #FFFFFF; font-size: 10px; letter-spacing: 0.08em; line-height: 1;
+          transition: opacity 220ms ease; }
+        .fm-play-badge[data-on="true"] { opacity: 0; }
         .fm-grid3 { display: grid; grid-template-columns: 1fr; gap: 14px; }
         @media (min-width: 700px) { .fm-grid3 { grid-template-columns: repeat(3, 1fr); } }
         .fm-tag { display: inline-flex; align-items: center; min-height: 34px; padding: 6px 13px; border-radius: 999px;
@@ -439,6 +466,38 @@ export default function FilmTab() {
           color: #FFFFFF; font-family: ${SANS}; font-size: 12px; letter-spacing: 0.04em; }
         .fm-hero-sound:hover { border-color: ${D.gold}; color: ${D.gold}; }
         .fm-hero-note { font-size: 12px; color: ${D.mute}; letter-spacing: 0.02em; margin: 16px 0 0; line-height: 1.8; }
+        /* 1画面目がまるごと映像なので、続きがあることを映像の中で示す。
+           見出しではなく操作の合図なので「文字は映像の下」の方針とは別枠。
+           iPhone では下に固定CTAが乗るので、その上に逃がす。 */
+        .fm-hero-scroll { position: absolute; left: 50%; transform: translateX(-50%); bottom: 84px; z-index: 3;
+          display: flex; flex-direction: column; align-items: center; gap: 8px; pointer-events: none;
+          color: rgba(255,255,255,0.82); font-size: 9.5px; letter-spacing: 0.24em; }
+        @media (min-width: 768px) { .fm-hero-scroll { bottom: 22px; } }
+        .fm-hero-scroll-line { display: block; width: 1px; height: 30px; overflow: hidden;
+          background: rgba(255,255,255,0.26); }
+        .fm-hero-scroll-line::after { content: ''; display: block; width: 1px; height: 12px; background: #FFFFFF; }
+        @media (prefers-reduced-motion: no-preference) {
+          .fm-hero-scroll-line::after { animation: fm-scroll-run 2.1s cubic-bezier(.6,0,.4,1) infinite; }
+          @keyframes fm-scroll-run { 0% { transform: translateY(-14px); } 60%, 100% { transform: translateY(32px); } }
+        }
+        /* ── ご依頼をいただいた企業・ブランド ─────────────────
+           「AIで作ります」と言うだけの会社と、実際に法人から受注している会社の差は、
+           社名が並ぶかどうかで一瞬で伝わる。名前は FILM_WORKS から取るので、
+           掲載可否の判断が1か所 (film.ts) に閉じたままになる。 */
+        .fm-clients { margin-top: 22px; padding-top: 18px; border-top: 1px solid ${D.line}; }
+        .fm-clients-lead { display: block; font-size: 10.5px; letter-spacing: 0.2em; color: ${D.mute}; margin-bottom: 12px; }
+        /* 枠付きの札を4つ縦に積むと iPhone で約400px を占め、社名を読ませる前に
+           次の章 (料金早見表) が1画面ぶん遠のいた。線で区切った1行の名簿に畳む。 */
+        .fm-clients-row { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 11px; }
+        .fm-clients-item { display: inline-flex; align-items: baseline; color: ${D.ink};
+          font-size: 12.5px; letter-spacing: 0.02em; line-height: 2; }
+        /* 区切りは、2つ以上が同じ行に並ぶ幅でだけ出す。
+           iPhone では社名が長く1行に1つしか入らないため、区切りを出すと
+           行末に「／」だけが取り残されて意味のない記号になる (実測)。 */
+        @media (min-width: 640px) {
+          .fm-clients-item:not(:last-child)::after { content: '／'; margin-left: 11px;
+            color: rgba(255,255,255,0.3); }
+        }
         /* ヒーローの金額。2つを横に並べる (縦に積むとCTAが1画面目から押し出される) */
         .fm-heroprice { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: ${D.line};
           border: 1px solid ${D.line}; border-radius: 12px; overflow: hidden; margin-top: 14px; }
@@ -550,28 +609,6 @@ function useScrollDepth() {
 // ---- スクロール出現 ----
 // 背面タブでは IntersectionObserver が発火せず opacity:0 のまま固まるため、
 // 安全網として一定時間後に必ず全部出す。JS が無い/動かない場合は最初から見えている。
-function Reveal({ children, delay = 0 }: { children: ReactNode; delay?: number }) {
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-    if (reduced || typeof IntersectionObserver === 'undefined') return;
-
-    el.dataset.rv = 'pending';
-    const show = () => { el.dataset.rv = 'in'; };
-    const io = new IntersectionObserver(entries => {
-      for (const e of entries) if (e.isIntersecting) { show(); io.disconnect(); }
-    }, { rootMargin: '0px 0px -8% 0px' });
-    io.observe(el);
-
-    const safety = window.setTimeout(() => { show(); io.disconnect(); }, 2600);
-    return () => { window.clearTimeout(safety); io.disconnect(); };
-  }, []);
-
-  return <div ref={ref} className="fm-rv" style={{ transitionDelay: `${delay}ms` }}>{children}</div>;
-}
 
 // ---- スマホ専用の固定下部CTA。最終CTAセクション (id=film-inquiry) に入ったら隠す
 // (常時表示だと、そこにある本来のLINEボタン・相談フォームの入力欄に重なるため) ----
@@ -607,6 +644,9 @@ function MobileStickyCta() {
 // 自動再生は端末側の事情 (低電力モード/データセーバー/背面タブ) で普通に拒否される。
 // その時に何も起きない静止画で終わらせないため、停止中は必ず再生ボタンを出す。
 // ============================================================
+// 同じ相手から複数本いただいている場合に社名が2度並ぶと、件数を水増ししているように見える。
+const HERO_CLIENTS = [...new Set(FILM_WORKS.map(w => w.client))];
+
 function FilmHero() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [muted, setMuted] = useState(true);
@@ -658,6 +698,10 @@ function FilmHero() {
           <button type="button" className="fm-hero-sound" onClick={toggleSound} aria-pressed={!muted}>
             {muted ? '音を出す' : '音を消す'}
           </button>
+          <span className="fm-hero-scroll" aria-hidden="true">
+            SCROLL
+            <span className="fm-hero-scroll-line" />
+          </span>
         </div>
       </div>
 
@@ -692,6 +736,13 @@ function FilmHero() {
 
         <p className="fm-hero-sub">{FILM.heroSub}</p>
         <p className="fm-hero-note">この映像はすべてAIで制作しました。撮影はしていません。</p>
+
+        <div className="fm-clients">
+          <span className="fm-clients-lead">ご依頼をいただいた企業・ブランド</span>
+          <div className="fm-clients-row">
+            {HERO_CLIENTS.map(name => <span key={name} className="fm-clients-item">{name}</span>)}
+          </div>
+        </div>
       </div>
     </section>
   );
@@ -1625,12 +1676,71 @@ function Pricing({ mode, onMode, openPlan, onOpenPlan }: {
 // ============================================================
 // 制作実績
 // ============================================================
-function WorkCard({ w }: { w: (typeof FILM_WORKS)[number] }) {
+// 2026-08-31 改訂 (2点)。
+//  1. 4件を同じ大きさで横に並べる形をやめ、先頭1件だけを名前と一緒に大きく出す枠 (fm-flag) と、
+//     残りの横スクロールに分けた。実績は「何件あるか」より「誰の仕事をしたか」が効く。
+//  2. この章の地を白 (#F7F7F5) から暗部へ移した。映像は暗い地の上でないと黒が締まらず、
+//     白地に並べると4本ともコントラストの浅い映像に見える。
+//     結果、ヒーロー〜実績までが1つの暗い章、価格〜FAQが明部、最後のCTAで再び暗部、という並びになる。
+
+// 停止中であることを、映像の上に小さく出す。
+// ホバーで再生する仕掛けは指では起きないため、印が無いと静止画に見える。
+function PlayBadge({ playing }: { playing: boolean }) {
+  return (
+    <span className="fm-play-badge" data-on={playing ? 'true' : 'false'} aria-hidden="true">
+      <svg width="9" height="11" viewBox="0 0 26 30"><path d="M3 2 L24 15 L3 28 Z" fill="currentColor" /></svg>
+      再生
+    </span>
+  );
+}
+
+function useWorkVideo(id: string) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [playing, setPlaying] = useState(false);
   const play = () => { videoRef.current?.play().then(() => setPlaying(true)).catch(() => {}); };
   const pause = () => { videoRef.current?.pause(); setPlaying(false); };
-  const toggle = () => { if (playing) pause(); else play(); };
+  const toggle = () => {
+    if (playing) { pause(); return; }
+    track('studio_film_work_play', { work: id });
+    play();
+  };
+  return { videoRef, playing, play, pause, toggle };
+}
+
+// ---- 代表実績 (先頭の1件) ----
+function FlagshipWork({ w }: { w: (typeof FILM_WORKS)[number] }) {
+  const { videoRef, playing, play, pause, toggle } = useWorkVideo(w.id);
+
+  return (
+    <article className="fm-flag">
+      <div className="fm-flag-media">
+        <button type="button" onClick={toggle} onMouseEnter={play} onMouseLeave={pause}
+          aria-label={`${w.client} の制作事例を${playing ? '止める' : '再生する'}`}
+          style={{ display: 'block', width: '100%', padding: 0, border: 'none', background: 'none', cursor: 'pointer' }}>
+          <div className="fm-frame" style={{ aspectRatio: '9 / 16' }}>
+            {w.videoUrl && <video ref={videoRef} src={w.videoUrl} poster={w.poster} muted loop playsInline preload="metadata" aria-hidden />}
+            <PlayBadge playing={playing} />
+          </div>
+        </button>
+      </div>
+      <div>
+        <span className="fm-flag-badge">代表実績</span>
+        <h3 className="st-serif fm-flag-client">{w.client}</h3>
+        <div className="fm-flag-cat">{w.category}</div>
+        <p className="fm-flag-body">{w.purpose}</p>
+        {w.result && <p className="fm-flag-body" style={{ color: D.gold, fontWeight: 600 }}>{w.result}</p>}
+        {w.url && (
+          <a className="fm-flag-link" href={w.url} target="_blank" rel="noopener noreferrer">
+            {w.client} 公式サイト <IconArrow color={D.gold} />
+          </a>
+        )}
+      </div>
+    </article>
+  );
+}
+
+function WorkCard({ w }: { w: (typeof FILM_WORKS)[number] }) {
+  const { videoRef, playing, play, pause, toggle } = useWorkVideo(w.id);
 
   return (
     <article className="fm-shot">
@@ -1640,19 +1750,20 @@ function WorkCard({ w }: { w: (typeof FILM_WORKS)[number] }) {
           style={{ display: 'block', width: '100%', padding: 0, border: 'none', background: 'none', cursor: 'pointer' }}>
           <div className="fm-frame" style={{ aspectRatio: '9 / 16' }}>
             <video ref={videoRef} src={w.videoUrl} poster={w.poster} muted loop playsInline preload="none" aria-hidden />
+            <PlayBadge playing={playing} />
           </div>
         </button>
       ) : w.poster ? (
         <div className="fm-frame" style={{ aspectRatio: '9 / 16' }}><img src={w.poster} alt={`${w.client} の制作事例`} loading="lazy" /></div>
       ) : null}
       <div style={{ marginTop: 12 }}>
-        <div className="st-label" style={{ fontSize: 10, marginBottom: 4 }}>{w.category}</div>
-        <div style={{ fontSize: 13.5, fontWeight: 700, color: C.ink }}>{w.client}</div>
-        <p style={{ fontSize: 12.5, lineHeight: 1.8, color: C.body, margin: '6px 0 0' }}>{w.purpose}</p>
-        {w.result && <p style={{ fontSize: 12.5, lineHeight: 1.8, color: C.goldText, margin: '4px 0 0', fontWeight: 600 }}>{w.result}</p>}
+        <div className="st-label" style={{ fontSize: 10, marginBottom: 4, color: D.gold }}>{w.category}</div>
+        <div style={{ fontSize: 13.5, fontWeight: 700, color: D.ink }}>{w.client}</div>
+        <p style={{ fontSize: 12.5, lineHeight: 1.8, color: D.body, margin: '6px 0 0' }}>{w.purpose}</p>
+        {w.result && <p style={{ fontSize: 12.5, lineHeight: 1.8, color: D.gold, margin: '4px 0 0', fontWeight: 600 }}>{w.result}</p>}
         {w.url && (
           <a href={w.url} target="_blank" rel="noopener noreferrer"
-            style={{ display: 'inline-flex', alignItems: 'center', minHeight: 44, fontSize: 11.5, color: C.body, textDecoration: 'underline', textUnderlineOffset: 2 }}>
+            style={{ display: 'inline-flex', alignItems: 'center', minHeight: 44, fontSize: 11.5, color: D.mute, textDecoration: 'underline', textUnderlineOffset: 2 }}>
             {w.client} 公式サイト ↗
           </a>
         )}
@@ -1665,16 +1776,25 @@ function WorkCard({ w }: { w: (typeof FILM_WORKS)[number] }) {
 // 2026-08-27: 先頭にあったイベントブランディングの説明 (1段落) は撤去した。
 // 同じ内容を「作れるもの」の1行に畳んであり、ここに残すと同じ話を2度読ませることになる。
 function FilmWorks() {
+  const [flagship, ...rest] = FILM_WORKS;
   return (
-    <section id="film-works" style={{ background: C.alt, padding: '56px 0', scrollMarginTop: 96 }}>
+    <section id="film-works" style={{ background: D.bg, padding: '10px 0 60px', scrollMarginTop: 96 }}>
       <div className="st-inner">
-        <Reveal><H2 en="Works" sub="すべて当社が制作し、実際に納品した映像です。掲載は貴社の許可をいただいたもののみで、非公開のご希望があれば一切掲載しません。">制作実績</H2></Reveal>
+        <Reveal><H2 dark en="Works" sub="すべて当社が制作し、実際に納品した映像です。掲載は貴社の許可をいただいたもののみで、非公開のご希望があれば一切掲載しません。">制作実績</H2></Reveal>
+        {flagship && <Reveal delay={60}><FlagshipWork w={flagship} /></Reveal>}
       </div>
-      <Reveal delay={60}>
-        <div className="fm-scroller">
-          {FILM_WORKS.map(w => <WorkCard key={w.id} w={w} />)}
-        </div>
-      </Reveal>
+      {rest.length > 0 && (
+        <Reveal delay={90}>
+          <div style={{ marginTop: 34 }}>
+            <div className="st-inner" style={{ marginBottom: 12 }}>
+              <div className="st-label" style={{ color: D.mute, fontSize: 10.5 }}>ほかの制作実績</div>
+            </div>
+            <div className="fm-scroller">
+              {rest.map(w => <WorkCard key={w.id} w={w} />)}
+            </div>
+          </div>
+        </Reveal>
+      )}
     </section>
   );
 }

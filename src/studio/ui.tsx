@@ -2,30 +2,87 @@
 // CORE Studio — 共通の見出し / 帯 / ラインアイコン
 // 配色とフォントは theme.ts
 // ============================================================
-import type { ReactNode } from 'react';
+import { useEffect, useRef, type ReactNode } from 'react';
 import { C, D } from './theme';
 
 // ---- セクション帯 (白 / #F7F7F5 / 暗部) ----
-export const Band = ({ alt, dark, children, pad = '52px 0', id }: {
-  alt?: boolean; dark?: boolean; children: ReactNode; pad?: string; id?: string;
+// 2026-08-31: 既定でスクロール入場 (Reveal) を掛ける。章がひとつずつ立ち上がるので、
+// 20画面ある1枚ものが「終わらない本文」ではなく「章のある読み物」になる。
+// 演出を入れたくない帯 (中身が自前で動く等) だけ flat を渡す。
+export const Band = ({ alt, dark, children, pad = '52px 0', id, flat }: {
+  alt?: boolean; dark?: boolean; children: ReactNode; pad?: string; id?: string; flat?: boolean;
 }) => (
   // 固定ヘッダーの下に見出しが潜らないよう、アンカー着地位置を下げる
   <section id={id} style={{ background: dark ? D.bg : alt ? C.alt : C.bg, padding: pad, scrollMarginTop: id ? 96 : undefined }}>
 
-    <div className="st-inner">{children}</div>
+    <div className="st-inner">{flat ? children : <Reveal>{children}</Reveal>}</div>
   </section>
 );
 
 // ---- 共通見出し (英字ラベル + 明朝見出し + 補足) ----
+// 2026-08-31: 英字ラベルの頭に金の短い線を足し、見出しの上限を 24px から広げた。
+// 章の頭がどれも同じ大きさの黒い1行だと、20画面ある1枚ものが「延々と続く本文」に見える。
+// 線は章の始まりの合図で、幅が変わるのは Reveal が入った後 (CSS の st-h2-rule)。
 export const H2 = ({ children, en, sub, dark }: {
   children: ReactNode; en?: string; sub?: string; dark?: boolean;
 }) => (
   <div style={{ margin: '0 0 26px' }}>
-    {en && <div className="st-label" style={{ marginBottom: 10, color: dark ? D.gold : C.goldText }}>{en}</div>}
-    <h2 className="st-serif" style={{ fontSize: 24, fontWeight: 700, lineHeight: 1.5, letterSpacing: '0.03em', color: dark ? D.ink : C.ink, margin: 0 }}>{children}</h2>
-    {sub && <p style={{ fontSize: 14, color: dark ? D.body : C.body, margin: '10px 0 0', lineHeight: 2 }}>{sub}</p>}
+    {en && (
+      <div style={{ display: 'flex', alignItems: 'center', gap: 11, marginBottom: 12 }}>
+        <span className="st-h2-rule" style={{ background: dark ? D.gold : C.gold }} aria-hidden />
+        <span className="st-label" style={{ color: dark ? D.gold : C.goldText }}>{en}</span>
+      </div>
+    )}
+    <h2 className="st-serif" style={{ fontSize: 'clamp(23px, 5.6vw, 30px)', fontWeight: 700, lineHeight: 1.5, letterSpacing: '0.03em', color: dark ? D.ink : C.ink, margin: 0 }}>{children}</h2>
+    {sub && <p style={{ fontSize: 14, color: dark ? D.body : C.body, margin: '12px 0 0', lineHeight: 2, maxWidth: 620 }}>{sub}</p>}
   </div>
 );
+
+// ---- スクロールで現れる箱 ----
+// StudioSite / FilmTab で同じものを使う。
+//
+// 守ること (2026-08-31 実測で作り直した):
+//  1. 最初から画面内にあるものは、演出しない。
+//     opacity:0 から始めると、その瞬間に読めるはずの文字が読めなくなる。
+//     実測: お問い合わせタブは本文がまるごと1つの Reveal なので、
+//     画面内でも pending のままだと、ページ全体が2秒以上ぼやけたまま出ない。
+//     最大要素の描画 (LCP) も同じだけ遅れる。動かすのは「これから入ってくる」ものだけ。
+//  2. それでも pending にした分には、時間切れで必ず出す逃げ道を残すこと。
+//     IntersectionObserver は「ページが隠れている間」は発火しない
+//     (内蔵ブラウザは document.hidden が常に true。実測で確認済み)。
+//     演出のために本文を失ってはいけない。
+export const Reveal = ({ children, delay = 0, className }: {
+  children: ReactNode; delay?: number; className?: string;
+}) => {
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    if (reduced || typeof IntersectionObserver === 'undefined') return;
+
+    // すでに画面に入っているものは、そのまま出す (上記 1.)
+    const vh = window.innerHeight || 0;
+    if (el.getBoundingClientRect().top < vh * 0.92) return;
+
+    el.dataset.rv = 'pending';
+    const show = () => { el.dataset.rv = 'in'; };
+    const io = new IntersectionObserver(entries => {
+      for (const e of entries) if (e.isIntersecting) { show(); io.disconnect(); }
+    }, { rootMargin: '0px 0px -8% 0px' });
+    io.observe(el);
+
+    const safety = window.setTimeout(() => { show(); io.disconnect(); }, 1500);
+    return () => { window.clearTimeout(safety); io.disconnect(); };
+  }, []);
+
+  return (
+    <div ref={ref} className={className ? `st-rv ${className}` : 'st-rv'} style={{ transitionDelay: `${delay}ms` }}>
+      {children}
+    </div>
+  );
+};
 
 // ---- CTA下の実務的な添え書き ----
 export const Note = ({ children, dark }: { children: ReactNode; dark?: boolean }) => (
