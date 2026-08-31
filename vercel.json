@@ -57,6 +57,26 @@
       "schedule": "10 23 * * *"
     }
   ],
+  "redirects": [
+    {
+      "source": "/",
+      "has": [{ "type": "host", "value": "studio.core-ai.jp" }],
+      "destination": "/studio",
+      "permanent": false
+    },
+    {
+      "source": "/",
+      "has": [{ "type": "host", "value": "www.core-ai.jp" }],
+      "destination": "/corp",
+      "permanent": false
+    },
+    {
+      "source": "/",
+      "has": [{ "type": "host", "value": "core-ai.jp" }],
+      "destination": "/corp",
+      "permanent": false
+    }
+  ],
   "rewrites": [
     {
       "source": "/ultima",
