@@ -104,7 +104,7 @@ function classifyError(error: string): {
     steps: [
       '60 秒ほど待ってから、もう一度ためしてみてください',
       'それでも応答がないときは、設定 → API キーで自分の Claude / Gemini キーを 1 つ登録すると即座に使えるようになります (無料の Google AI Studio で取得可能)',
-      '解消しないときは core.inc.guild@gmail.com までメールください',
+      '解消しないときは info@core-ai.jp までメールください',
     ],
   };
 }

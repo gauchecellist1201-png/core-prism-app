@@ -206,7 +206,7 @@ export default function CorpContactForm() {
           お手数ですが、下のメールアドレスへ直接お送りください。
         </p>
         <a
-          href={`mailto:core.inc.guild@gmail.com?subject=${encodeURIComponent('AI・DXのご相談')}&body=${encodeURIComponent(buildBody())}`}
+          href={`mailto:info@core-ai.jp?subject=${encodeURIComponent('AI・DXのご相談')}&body=${encodeURIComponent(buildBody())}`}
           style={{
             display: 'inline-flex', alignItems: 'center', justifyContent: 'center', minHeight: 52,
             padding: '0 1.8rem', borderRadius: 999, textDecoration: 'none',

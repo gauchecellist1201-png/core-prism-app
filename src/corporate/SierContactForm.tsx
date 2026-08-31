@@ -184,7 +184,7 @@ export default function SierContactForm() {
           お手数ですが、下のメールアドレスへ直接お送りください。
         </p>
         <a
-          href={`mailto:core.inc.guild@gmail.com?subject=${encodeURIComponent('AI案件のご相談（SIer協業）')}&body=${encodeURIComponent(buildBody())}`}
+          href={`mailto:info@core-ai.jp?subject=${encodeURIComponent('AI案件のご相談（SIer協業）')}&body=${encodeURIComponent(buildBody())}`}
           style={{
             display: 'inline-flex', alignItems: 'center', justifyContent: 'center', minHeight: 52,
             padding: '0 1.8rem', borderRadius: 999, textDecoration: 'none',
@@ -299,7 +299,7 @@ export default function SierContactForm() {
             お手数ですが、もう一度お試しいただくか、下の直通メールへお送りください。
             <br />
             <a
-              href={`mailto:core.inc.guild@gmail.com?subject=${encodeURIComponent('AI案件のご相談（SIer協業）')}&body=${encodeURIComponent(buildBody())}`}
+              href={`mailto:info@core-ai.jp?subject=${encodeURIComponent('AI案件のご相談（SIer協業）')}&body=${encodeURIComponent(buildBody())}`}
               style={{ color: GOLD_LIGHT, textDecoration: 'underline', display: 'inline-block', marginTop: '0.5rem' }}
             >
               入力した内容をメールで送る

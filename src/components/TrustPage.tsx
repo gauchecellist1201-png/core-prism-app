@@ -71,7 +71,7 @@ const SECTIONS: Section[] = [
       { label: '会話履歴 エクスポート', value: 'モバイル チャット 履歴を .txt / .md で保存' },
       { label: '退会 / 削除',         value: '設定 → 個人情報 → 「すべて削除」 をタップ → 確認 → 即時削除 (バックアップから 30 日以内に消滅)' },
       { label: 'サブスク解約',         value: 'Stripe カスタマー ポータル (自動 リンク) で 即時 解約' },
-      { label: '通信履歴 / メール',    value: 'メールアドレス を 削除依頼 として core.inc.guild@gmail.com に送信 → 7 日以内に対応' },
+      { label: '通信履歴 / メール',    value: 'メールアドレス を 削除依頼 として info@core-ai.jp に送信 → 7 日以内に対応' },
     ],
   },
   {
@@ -112,7 +112,7 @@ const SECTIONS: Section[] = [
       { label: 'CCPA (米 加州)',        value: '対応済 (Do Not Sell / Share — 弊社は そもそも 個人データを 売却しません)' },
       { label: 'SOC2 / ISO27001',       value: '現時点では未取得です。事業規模の都合上、取得時期は確定しておりませんが、代替として本ページにて運用状況を包括的に開示しています' },
       { label: '特定商取引法',           value: '/tokushoho に 事業者情報・販売条件・解約 を 全文掲載' },
-      { label: '個人情報保護管理者',     value: '井出直毅 (core.inc.guild@gmail.com)' },
+      { label: '個人情報保護管理者',     value: '井出直毅 (info@core-ai.jp)' },
     ],
   },
 ];
@@ -257,7 +257,7 @@ export default function TrustPage() {
             メール 1 通 で 24 時間以内に 返信します。
           </p>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
-            <a href="mailto:core.inc.guild@gmail.com?subject=%5BCORE%20Trust%5D%20%E5%95%8F%E5%90%88%E3%82%8F%E3%81%9B" style={{
+            <a href="mailto:info@core-ai.jp?subject=%5BCORE%20Trust%5D%20%E5%95%8F%E5%90%88%E3%82%8F%E3%81%9B" style={{
               display: 'inline-flex', alignItems: 'center', gap: 6, minHeight: 44,
               padding: '10px 16px', borderRadius: 10,
               background: 'linear-gradient(135deg, #6366F1, #A855F7)', color: '#fff',

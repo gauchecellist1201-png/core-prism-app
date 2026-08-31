@@ -290,12 +290,12 @@ export default function ContactPage() {
           {/* フォームを使わない人にとってはここが唯一の連絡手段。15pxでは押せないので
               inline-flex で「行の高さ」のほうを44pxへ持ち上げる（文の流れは変えない・2026-08-19） */}
           直接メール: <a
-            href="mailto:core.inc.guild@gmail.com"
+            href="mailto:info@core-ai.jp"
             style={{
               color: '#60a5fa', fontWeight: 600, textDecoration: 'underline',
               display: 'inline-flex', alignItems: 'center', minHeight: 44,
             }}
-          >core.inc.guild@gmail.com</a>
+          >info@core-ai.jp</a>
         </div>
       </div>
     </div>

@@ -12,7 +12,7 @@
 
 import { SUITE_COUNT, SUITE_BEST_TOTAL, sumBest, formatYen } from './suiteData';
 
-export const CONTINUUM_CONTACT_EMAIL = 'core.inc.guild@gmail.com';
+export const CONTINUUM_CONTACT_EMAIL = 'info@core-ai.jp';
 
 // ── 比較に使う実額 ────────────────────────────────────────
 // 2026-08-21: 文面に「約¥109,000」「6サービス」「7つ」がベタ書きされていて、

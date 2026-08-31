@@ -2505,7 +2505,7 @@ const { data: deals } = useQuery({
 | 思想 (PHILOSOPHY) | 「光は、分かれる。光は、受け止められる。そのどちらもが、核」 |
 | 会社概要 (ABOUT) | 株式会社コアプリズム (仮) の情報 |
 | プロダクト紹介 | Prism / Iris の 2 ブランド統合表示 |
-| お問い合わせ | hello@core-inc.jp |
+| お問い合わせ | info@core-ai.jp |
 | ベータ告知バー | 「2026/05/12 — CORE Prism / Iris ベータ同時公開」 |
 
 ---

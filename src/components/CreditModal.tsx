@@ -33,7 +33,7 @@ const BILLING_PLAN_OF: Record<Exclude<PlanId, 'master'>, BillingPlanId> = {
   team: 'studio',
 };
 
-const SUPPORT_MAIL = 'core.inc.guild@gmail.com';
+const SUPPORT_MAIL = 'info@core-ai.jp';
 
 interface Props {
   open: boolean;

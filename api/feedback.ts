@@ -120,7 +120,7 @@ export default async function handler(req: Request) {
     return json({ success: true, delivered: ok, reason: ok ? 'gmail_fallback' : 'mail_not_configured', logged: true }, 200, ch);
   }
 
-  const from = process.env.EMAIL_FROM || 'core.inc.guild@gmail.com';
+  const from = process.env.EMAIL_FROM || 'info@core-ai.jp';
   const brandLabel = brand === 'iris' ? 'CORE Iris' : 'CORE Prism';
   const subject = `[Beta フィードバック] ${brandLabel} NPS=${nps} ${email ? `from ${email}` : ''}`;
 

@@ -757,7 +757,7 @@ export default function LandingPage({ onEnterApp }: Props) {
             <p style={footHead}>CONTACT</p>
             <p style={{ fontSize: '0.85rem', color: TXT_MUTE, lineHeight: 1.7 }}>
               お気軽にどうぞ。<br />
-              <a href="mailto:core.inc.guild@gmail.com" style={{ color: A_PURPLE, textDecoration: 'none', display: 'inline-block', padding: '0.65rem 0.25rem', margin: '-0.35rem -0.25rem', wordBreak: 'break-all' }}>core.inc.guild@gmail.com</a>
+              <a href="mailto:info@core-ai.jp" style={{ color: A_PURPLE, textDecoration: 'none', display: 'inline-block', padding: '0.65rem 0.25rem', margin: '-0.35rem -0.25rem', wordBreak: 'break-all' }}>info@core-ai.jp</a>
               <br />
               <a href="tel:090-6326-1783" style={{ color: A_PURPLE, textDecoration: 'none', display: 'inline-block', padding: '0.65rem 0.25rem', margin: '-0.35rem -0.25rem' }}>090-6326-1783</a>
               <br />

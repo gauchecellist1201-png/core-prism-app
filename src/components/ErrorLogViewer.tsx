@@ -9,7 +9,7 @@ import { X, Copy, Trash2, RefreshCw, Check, Mail } from 'lucide-react';
 import { confirmAction } from '../lib/confirmDialog';
 import { readLocalErrors, clearLocalErrors } from '../lib/errorCapture';
 
-const SUPPORT_EMAIL = 'core.inc.guild@gmail.com';
+const SUPPORT_EMAIL = 'info@core-ai.jp';
 
 interface ErrorEntry {
   type: 'console' | 'window' | 'unhandledrejection';

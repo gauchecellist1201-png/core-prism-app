@@ -169,7 +169,7 @@ export default function BillingDashboard({ onClose }: Props) {
     if (!user.subscriptionId && !user.stripeCustomerId) {
       setCancelError(
         'お客様の契約情報をこの端末から特定できませんでした。'
-        + 'お手数ですが core.inc.guild@gmail.com にこのメールアドレスをお送りください。'
+        + 'お手数ですが info@core-ai.jp にこのメールアドレスをお送りください。'
         + '当社側で解約を確認してお返事します（料金は止めます）。',
       );
       return;
@@ -579,7 +579,7 @@ export default function BillingDashboard({ onClose }: Props) {
                   </button>
                 )}
                 <a
-                  href={`mailto:core.inc.guild@gmail.com?subject=${encodeURIComponent('解約のお願い')}&body=${encodeURIComponent(`登録メールアドレス: ${user.email}\n\nアプリから解約できなかったため、解約をお願いします。`)}`}
+                  href={`mailto:info@core-ai.jp?subject=${encodeURIComponent('解約のお願い')}&body=${encodeURIComponent(`登録メールアドレス: ${user.email}\n\nアプリから解約できなかったため、解約をお願いします。`)}`}
                   style={{
                     width: '100%', minHeight: 44, background: 'transparent', color: '#9B1B30',
                     border: '1px solid rgba(155,27,48,0.35)', borderRadius: 999,

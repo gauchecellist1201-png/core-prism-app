@@ -183,7 +183,7 @@ export default function BillingSuccess() {
               }}>
                 {brand === 'film' ? '制作ページへ戻る' : 'アプリへ進む'}
               </a>
-              <a href="mailto:core.inc.guild@gmail.com" style={{
+              <a href="mailto:info@core-ai.jp" style={{
                 display: 'inline-block',
                 background: 'rgba(0,0,0,0.06)', color: '#5A5562',
                 border: '1px solid rgba(0,0,0,0.1)',

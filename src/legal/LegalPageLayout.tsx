@@ -239,7 +239,7 @@ export default function LegalPageLayout({ eyebrow = 'CORE', title, updatedAt, to
           </p>
           <p style={{ fontSize: '0.95rem', margin: 0 }}>
             <a
-              href="mailto:core.inc.guild@gmail.com"
+              href="mailto:info@core-ai.jp"
               style={{
                 color: COLORS.text,
                 textDecoration: 'underline',
@@ -249,7 +249,7 @@ export default function LegalPageLayout({ eyebrow = 'CORE', title, updatedAt, to
                 minHeight: 44,
               }}
             >
-              core.inc.guild@gmail.com
+              info@core-ai.jp
             </a>
           </p>
           <p style={{ fontSize: '0.78rem', color: COLORS.textMute, margin: '0.8rem 0 0' }}>

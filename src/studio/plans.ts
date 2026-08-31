@@ -12,7 +12,7 @@ export const STUDIO = {
   nameJa: 'CORE ウェブ制作・受託開発',
   tagline: '成果から逆算する、ウェブ制作と受託開発。',
   taglineSub: 'COREは、AIプロダクトを自社で開発・運営する制作スタジオです。',
-  email: 'core.inc.guild@gmail.com',
+  email: 'info@core-ai.jp',
   url: 'https://core-prism-app.vercel.app/studio',
 } as const;
 
@@ -476,7 +476,7 @@ export const COMPANY = {
     { label: '代表', value: '井出 直毅' },
     // 列挙も本数も CORE_PRODUCTS から出す (ここだけ6つしか書かれておらず、上の本文と食い違っていた)
     { label: '事業内容', value: `映像制作・Webサイト制作・システム受託開発・AIプロダクトの開発運営 (${CORE_PRODUCTS.join(', ')})` },
-    { label: '連絡先', value: 'core.inc.guild@gmail.com' },
+    { label: '連絡先', value: 'info@core-ai.jp' },
   ],
 } as const;
 
