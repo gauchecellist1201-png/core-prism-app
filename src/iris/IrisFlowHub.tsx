@@ -27,6 +27,7 @@ import type { IgProfile } from './instagramConnect';
 import { useIgStrategy, type StrategyItem } from './useIgStrategy';
 import { useIgAnalysis } from './useIgAnalysis';
 import { generateReelScript, type ReelScriptResult } from './reelAiScript';
+import { buildDurationPlan, buildDurationPlanText, REEL_DURATIONS, type ReelDuration } from './reelDurationPlan';
 import { getAllBrandDeals, CATEGORY_META, type BrandDeal } from './brandDeals';
 import { generateApplicationDraft, type ApplicationDraft } from './brandDealMatch';
 import IrisReelComposer from './IrisReelComposer';
@@ -877,6 +878,104 @@ function buildScriptText(reel: ReelScriptResult, theme: string): string {
   return lines.join('\n').trim();
 }
 
+/**
+ * 尺（15/30/60秒）を選ぶだけでカット割りが出る。
+ *
+ * なぜ要るか: 台本を書く AI は **必ず 3 シーン・15〜20 秒**しか返さない
+ * (`reelAiScript.ts` のルールで固定)。30秒 / 60秒 で撮りたい時、ここまでは
+ * 手で足すしかなかった。選ぶ = 1 タップ、AI は呼ばない（押した瞬間に出る・
+ * 失敗しない）。台本に無いカットは字幕を空のまま「埋める場所」として出す
+ * = 書いたつもりの嘘を作らない。音源そのものは配らない（構成と秒数まで）。
+ */
+function DurationPlanPicker({ reel, theme, accent, bg }: {
+  reel: ReelScriptResult; theme: string; accent: string; bg: IrisBackgroundDef;
+}) {
+  const [dur, setDur] = useState<ReelDuration | null>(null);
+  const [copied, setCopied] = useState(false);
+  const [copyFailed, setCopyFailed] = useState(false);
+  const plan = useMemo(() => (dur === null ? null : buildDurationPlan(reel, dur)), [reel, dur]);
+
+  const handleCopy = async () => {
+    if (!plan) return;
+    const ok = await copyText(buildDurationPlanText(plan, reel, theme));
+    if (ok) {
+      setCopied(true); setCopyFailed(false);
+      window.setTimeout(() => setCopied(false), 1800);
+    } else {
+      setCopyFailed(true);
+      window.setTimeout(() => setCopyFailed(false), 2600);
+    }
+  };
+
+  return (
+    <div style={{ marginTop: 12, paddingTop: 12, borderTop: `1px solid ${bg.cardBorder}` }}>
+      <div style={{ fontSize: 12, fontWeight: 800, color: bg.ink }}>この尺で組み直す</div>
+      <div style={{ fontSize: 10.5, color: bg.inkSoft, marginTop: 2, lineHeight: 1.5 }}>
+        選ぶだけでカット割りと秒数が出ます（AI は使いません）
+      </div>
+      <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+        {REEL_DURATIONS.map((d) => {
+          const on = dur === d;
+          return (
+            <button key={d} type="button"
+              onClick={() => { setDur(on ? null : d); setCopied(false); setCopyFailed(false); }}
+              aria-pressed={on}
+              style={{
+                flex: 1, minHeight: 44, borderRadius: 12, cursor: 'pointer',
+                background: on ? warmFaceBg(accent) : 'transparent',
+                border: on ? 'none' : `1px solid ${bg.cardBorder}`,
+                color: on ? '#fff' : bg.ink,
+                fontSize: 13, fontWeight: 800,
+              }}>
+              {d}秒
+            </button>
+          );
+        })}
+      </div>
+
+      {plan && (
+        <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} style={{ marginTop: 10 }}>
+          <div style={{ fontSize: 11, color: bg.inkSoft, lineHeight: 1.5 }}>
+            カット {plan.cuts.length} 枚 ・ 合計 {plan.total}秒
+            {plan.addedCount > 0 && `（うち ${plan.addedCount} 枚は、${plan.duration}秒 に伸ばすための枠です）`}
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 8 }}>
+            {plan.cuts.map((c) => (
+              <div key={c.no} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                <div style={{ width: 22, height: 22, flexShrink: 0, borderRadius: 7, background: c.fromScript ? `${accent}1A` : `${bg.inkSoft}1A`, color: c.fromScript ? accent : bg.inkSoft, fontSize: 11, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{c.no}</div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 10, color: bg.inkSoft, fontWeight: 700 }}>{c.roleLabel}</div>
+                  {c.caption !== '' ? (
+                    <div style={{ fontSize: 13, fontWeight: 700, color: bg.ink, lineHeight: 1.45 }}>{c.caption}</div>
+                  ) : (
+                    <div style={{ fontSize: 12.5, fontWeight: 700, color: bg.inkSoft, lineHeight: 1.45 }}>
+                      字幕はここに 1 行（8〜18 字）
+                    </div>
+                  )}
+                  <div style={{ display: 'flex', gap: 4, alignItems: 'flex-start', marginTop: 3, fontSize: 11, color: accent, lineHeight: 1.5 }}>
+                    <Camera size={11} style={{ flexShrink: 0, marginTop: 2 }} />
+                    <span>{c.shot}</span>
+                  </div>
+                </div>
+                <span style={{ fontSize: 10, color: bg.inkSoft, display: 'inline-flex', alignItems: 'center', gap: 2, flexShrink: 0 }}><Clock size={10} />{c.seconds}s</span>
+              </div>
+            ))}
+          </div>
+          <button type="button" onClick={handleCopy}
+            style={{ width: '100%', minHeight: 44, marginTop: 10, background: copied ? `${accent}12` : 'transparent', border: `1px solid ${copied ? accent : bg.cardBorder}`, color: copied ? accent : bg.inkSoft, fontSize: 12.5, fontWeight: 800, borderRadius: 12, padding: '10px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, transition: 'all .18s ease' }}>
+            {copied ? <><Check size={13} /> コピーしました</> : <><Copy size={13} /> {plan.duration}秒 の構成をコピー</>}
+          </button>
+          {copyFailed && (
+            <div style={{ marginTop: 6, fontSize: 11, color: '#9B1B30', lineHeight: 1.5 }}>
+              コピーできませんでした。構成を長押しして選択→コピーしてください。
+            </div>
+          )}
+        </motion.div>
+      )}
+    </div>
+  );
+}
+
 function ReelScriptCard({ reel, theme, accent, bg, onRegenerate, onOpenStudio }: {
   reel: ReelScriptResult; theme: string; accent: string; bg: IrisBackgroundDef; onRegenerate: () => void; onOpenStudio: () => void;
 }) {
@@ -928,6 +1027,7 @@ function ReelScriptCard({ reel, theme, accent, bg, onRegenerate, onOpenStudio }:
           ))}
         </div>
       )}
+      <DurationPlanPicker reel={reel} theme={theme} accent={accent} bg={bg} />
       <button type="button" onClick={handleCopy}
         style={{ width: '100%', minHeight: 44, marginTop: 12, background: copied ? `${accent}12` : 'transparent', border: `1px solid ${copied ? accent : bg.cardBorder}`, color: copied ? accent : bg.inkSoft, fontSize: 12.5, fontWeight: 800, borderRadius: 12, padding: '10px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, transition: 'all .18s ease' }}>
         {copied ? <><Check size={13} /> コピーしました</> : <><Copy size={13} /> 台本をコピー（撮影者にそのまま渡せる）</>}
