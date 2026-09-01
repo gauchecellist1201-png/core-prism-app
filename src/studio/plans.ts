@@ -6,6 +6,7 @@
 // ============================================================
 import { FILM_PLANS } from './film';
 import { SUITE_ALL } from '../corporate/suiteData';
+import { COMPANY_INFO } from '../data/companyInfo';
 
 export const STUDIO = {
   name: 'CORE Studio',
@@ -469,14 +470,14 @@ export const COMPANY = {
     '代表の井出は、歯学部で医療を学び、チューリッヒで音楽を学び、世界100カ国を歩いてきました。分野の異なる知見は、業種ごとに大きく異なるお客様の事業を深く理解するための土台になっています。',
     '私たちがお約束するのは、成果から逆算した設計、ご契約時に確定する明朗な金額、そして公開後も続く改善です。貴社の事業を前に進めるパートナーとして、末永くお付き合いできれば幸いです。',
   ],
-  repName: '井出 直毅',
+  repName: COMPANY_INFO.representative,
   repTitle: '代表',
   profile: [
-    { label: '名称', value: '株式会社CORE' },
-    { label: '代表', value: '井出 直毅' },
+    { label: '名称', value: COMPANY_INFO.name },
+    { label: '代表', value: COMPANY_INFO.representative },
     // 列挙も本数も CORE_PRODUCTS から出す (ここだけ6つしか書かれておらず、上の本文と食い違っていた)
     { label: '事業内容', value: `映像制作・Webサイト制作・システム受託開発・AIプロダクトの開発運営 (${CORE_PRODUCTS.join(', ')})` },
-    { label: '連絡先', value: 'info@core-ai.jp' },
+    { label: '連絡先', value: COMPANY_INFO.email },
   ],
 } as const;
 

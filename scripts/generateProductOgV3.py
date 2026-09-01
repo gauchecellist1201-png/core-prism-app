@@ -229,7 +229,7 @@ build(
 build(
     slug='core',
     accent_hexes=['#38BDF8', '#7DD3FC', '#0EA5E9'],
-    eyebrow='CORE INC. — すべての時代の、核となるものを',
+    eyebrow='CORE INC. — いつの時代も、変わらない核を',
     headline=['仕事も SNS も、', 'ひとつの流れに。'],
     sub='Prism ・ Iris ・ Resonance ・ Lume',
     pills=['事業', 'Instagram', 'LINE', 'リンク'],

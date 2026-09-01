@@ -537,7 +537,7 @@ for k, d in PRODUCTS.items():
 def build_combined():
     global TOTAL, PAGE, FOOTER_L, P
     newdeck('core')
-    FOOTER_L = '株式会社コア  ·  CORE Inc.  ·  すべての時代の、核となるものを。'
+    FOOTER_L = '株式会社コア  ·  CORE Inc.  ·  いつの時代も、変わらない核を。'
     TOTAL = 20
     PAGE = 0
 

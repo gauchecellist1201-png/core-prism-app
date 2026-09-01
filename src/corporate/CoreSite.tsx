@@ -1,6 +1,6 @@
 // ============================================================
 // CORE — 法人サイト (Corporate Site)
-// 「すべての時代の、核となるものを。」
+// 「いつの時代も、変わらない核を。」
 // 配置: /corp ルート（2026-08-02 検索インデックス解禁／2026-08-31 株式会社CORE 表記に更新）
 //
 // 2026-08-21 オーナー指示で事業の見せ方を全面再定義:
@@ -38,16 +38,17 @@ import {
   EngagementSection, SecuritySection, FaqSection,
 } from './TransformSections';
 import { ContactSection } from './CorpContactForm';
+import { COMPANY_INFO } from '../data/companyInfo';
 
 const COMPANY = {
-  nameJa: '株式会社CORE',
-  nameEn: 'CORE Inc.',
-  founded: '2026年',
-  ceoJa: '井出 直毅',
-  ceoEn: 'Naoki Ide',
-  addressJa: '〒658-0025 兵庫県神戸市東灘区魚崎南町7丁目11番7号',
-  addressEn: '7-11-7 Uozaki-Minamimachi, Higashinada-ku, Kobe, Hyogo 658-0025, Japan',
-  email: 'info@core-ai.jp',
+  nameJa: COMPANY_INFO.name,
+  nameEn: COMPANY_INFO.nameEn,
+  founded: COMPANY_INFO.founded,
+  ceoJa: COMPANY_INFO.representative,
+  ceoEn: COMPANY_INFO.representativeEn,
+  addressJa: COMPANY_INFO.addressJa,
+  addressEn: COMPANY_INFO.addressEn,
+  email: COMPANY_INFO.email,
 };
 
 // プラットフォーム価格グリッド — 安い入口→最上位Crystalへ昇る並び。製品追加は1オブジェクト追加で並ぶ
@@ -335,7 +336,7 @@ export default function CoreSite() {
     setMeta('meta[name="twitter:card"]', 'content', 'summary_large_image');
     setMeta('meta[name="twitter:image"]', 'content', 'https://core-prism-app.vercel.app/og-core-v6.png');
     setMeta('meta[name="twitter:title"]', 'content', 'CORE | AI Transformation Company');
-    setMeta('meta[name="twitter:description"]', 'content', 'すべての時代の、核となるものを。AIとテクノロジーで、企業の仕組みそのものを変える。');
+    setMeta('meta[name="twitter:description"]', 'content', 'いつの時代も、変わらない核を。AIとテクノロジーで、企業の仕組みそのものを変える。');
     setMeta('meta[name="description"]', 'content', DESC);
   }, []);
 
@@ -1538,7 +1539,7 @@ export default function CoreSite() {
               {
                 year: '2026',
                 title: 'CORE 創業',
-                body: '「すべての時代の、核となるものを」を理念に創業。事業家のための Prism を起点に、Iris・Resonance・Lume を加えた四つのプロダクトと、13 名の AI 役員で、中小経営者と個人事業主を支える土台を築きます。',
+                body: '「いつの時代も、変わらない核を」を理念に創業。事業家のための Prism を起点に、Iris・Resonance・Lume を加えた四つのプロダクトと、13 名の AI 役員で、中小経営者と個人事業主を支える土台を築きます。',
                 accent: '#F1DCA7',
               },
               {
@@ -2018,7 +2019,7 @@ export default function CoreSite() {
                 marginTop: '0.85rem',
               }}
             >
-              すべての時代の、<br />核となるものを。
+              いつの時代も、<br />変わらない核を。
             </p>
           </div>
           <div>
@@ -2258,9 +2259,9 @@ function HeroVideo({ onAnchor }: { onAnchor?: (e: ReactMouseEvent<HTMLAnchorElem
           WebkitBackgroundClip: 'text', backgroundClip: 'text', WebkitTextFillColor: 'transparent',
           filter: 'drop-shadow(0 2px 22px rgba(0,0,0,0.65))',
         }}>
-          すべての時代の、
+          いつの時代も、
           <br />
-          核となるものを。
+          変わらない核を。
         </h1>
         <p style={{
           fontFamily: FONT_SERIF_JA, fontSize: 'clamp(0.95rem, 2.2vw, 1.25rem)', fontWeight: 600,

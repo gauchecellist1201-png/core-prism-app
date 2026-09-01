@@ -8,15 +8,16 @@
 import { motion } from 'framer-motion';
 import PRIVACY_V3 from '../legal/privacy-v3.md?raw';
 import TERMS_V3 from '../legal/terms-v3.md?raw';
+import { COMPANY_INFO } from '../data/companyInfo';
 
 interface Props {
   kind: 'terms' | 'privacy' | 'tokushou';
   onClose: () => void;
 }
 
-const COMPANY = '株式会社CORE';
-const REP = '井出 直毅';
-const EMAIL = 'info@core-ai.jp';
+const COMPANY = COMPANY_INFO.name;
+const REP = COMPANY_INFO.representative;
+const EMAIL = COMPANY_INFO.email;
 const URL = 'https://core-prism-app.vercel.app/';
 
 const TERMS = `

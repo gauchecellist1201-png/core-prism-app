@@ -87,7 +87,7 @@ const CORE_OG_SVG = `<?xml version='1.0' encoding='UTF-8'?>
     CORE
   </text>
   <text x='600' y='560' font-family='Noto Serif JP, serif' font-size='20' font-weight='400' fill='#64748B' letter-spacing='4' text-anchor='middle'>
-    すべての時代の、核となるものを。
+    いつの時代も、変わらない核を。
   </text>
 </svg>
 `;
