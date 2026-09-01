@@ -330,11 +330,11 @@ export default function CoreSite() {
     const DESC = 'COREは、AI戦略・業務設計・システム開発・事業開発を通じて、企業のDXとAI Transformationを支援します。';
     setMeta('meta[property="og:title"]', 'content', 'CORE | AI Transformation Company');
     setMeta('meta[property="og:description"]', 'content', DESC);
-    setMeta('meta[property="og:image"]', 'content', 'https://core-prism-app.vercel.app/og-core-v6.png');
+    setMeta('meta[property="og:image"]', 'content', 'https://core-prism-app.vercel.app/og-core-v7.png');
     setMeta('meta[property="og:url"]', 'content', 'https://core-prism-app.vercel.app/corp');
     setMeta('meta[property="og:type"]', 'content', 'website');
     setMeta('meta[name="twitter:card"]', 'content', 'summary_large_image');
-    setMeta('meta[name="twitter:image"]', 'content', 'https://core-prism-app.vercel.app/og-core-v6.png');
+    setMeta('meta[name="twitter:image"]', 'content', 'https://core-prism-app.vercel.app/og-core-v7.png');
     setMeta('meta[name="twitter:title"]', 'content', 'CORE | AI Transformation Company');
     setMeta('meta[name="twitter:description"]', 'content', 'いつの時代も、変わらない核を。AIとテクノロジーで、企業の仕組みそのものを変える。');
     setMeta('meta[name="description"]', 'content', DESC);
