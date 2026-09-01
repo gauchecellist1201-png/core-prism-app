@@ -47,6 +47,8 @@ export interface KnowledgeItem {
   pages?: number;
   imageBase64?: string;
   createdAt: string;
+  /** その場で見出し・本文を直した時刻。一度も直していないものは未設定 */
+  updatedAt?: string;
   tags: string[];
   /** 同じフォルダ取込 (一括取込) 単位の ID。まとめて削除に使う。旧データは未設定=個別削除のみ */
   batchId?: string;
@@ -57,6 +59,11 @@ export interface KnowledgeItem {
    */
   analysisStatus?: 'pending' | 'parsing' | 'tagging' | 'summarizing' | 'extracting' | 'done' | 'error';
   analysisError?: string;
+  /**
+   * 要約を作ったあとで本文を直した = この要約は「直す前の文章」から作ったもの、という印。
+   * 消さずに印だけ立てて画面で正直に言う（読み込み直すと false に戻る）。
+   */
+  analysisStale?: boolean;
 }
 
 export interface KnowledgeChunk {

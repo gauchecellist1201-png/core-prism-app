@@ -5,6 +5,8 @@ import PersonaGlyph from './PersonaGlyph';
 import StudioBackButton from './StudioBackButton';
 import type { KnowledgeItem, Persona, AppSettings } from '../types/identity';
 import { friendlyFileError } from '../lib/fileErrorMessage';
+import { canEditBody } from '../lib/knowledgeEdit';
+import type { KnowledgeEditPatch, KnowledgeEditResult } from '../lib/knowledgeEdit';
 import { relatedKnowledge, agoLabel } from '../lib/relatedKnowledge';
 
 /** いつもの「PRISM マークが回る」生成演出（脳の絵文字の置き換え） */
@@ -164,6 +166,8 @@ interface Props {
   items: KnowledgeItem[];
   onAddFile: (file: File, batchId?: string) => Promise<KnowledgeItem>;
   onAddNote: (title: string, content: string) => KnowledgeItem;
+  /** その場で直す。渡されない時は編集の入口を1pxも出さない（今までと同じ画面のまま） */
+  onUpdate?: (id: string, patch: KnowledgeEditPatch) => KnowledgeEditResult;
   onDelete: (id: string) => void;
   onReanalyze?: (id: string) => Promise<void>;
   onClose: () => void;
@@ -277,8 +281,37 @@ function RelatedStrip({ current, items, accent, onOpen }: {
   );
 }
 
-export default function KnowledgeBase({ persona, settings, items, onAddFile, onAddNote, onDelete, onReanalyze, onClose }: Props) {
+export default function KnowledgeBase({ persona, settings, items, onAddFile, onAddNote, onUpdate, onDelete, onReanalyze, onClose }: Props) {
   const [expanded, setExpanded] = useState<string | null>(null);
+  // ── その場で直す（Notion のインライン編集の移植）──────────────
+  // 別画面へ飛ばさない。開いているカードの中で見出し・本文を直して、押した瞬間に一覧へ返す。
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState('');
+  const [editBody, setEditBody] = useState('');
+  const [editError, setEditError] = useState<string | null>(null);
+  const [savedId, setSavedId] = useState<string | null>(null);
+  const startEdit = (item: KnowledgeItem) => {
+    setEditingId(item.id);
+    setEditTitle(item.title);
+    setEditBody(item.content);
+    setEditError(null);
+  };
+  const cancelEdit = () => { setEditingId(null); setEditError(null); };
+  const commitEdit = (item: KnowledgeItem) => {
+    if (!onUpdate) return;
+    const res = onUpdate(item.id, canEditBody(item) ? { title: editTitle, content: editBody } : { title: editTitle });
+    if (!res.ok) { setEditError(res.reason); return; }
+    setEditingId(null);
+    setEditError(null);
+    // 「直しました」は変わった時だけ出す（何も変えずに閉じた時に出すと嘘になる）
+    if (res.changed) setSavedId(item.id);
+  };
+  // 「直しました」は 2.5 秒で自然に消す
+  useEffect(() => {
+    if (!savedId) return;
+    const t = setTimeout(() => setSavedId(null), 2500);
+    return () => clearTimeout(t);
+  }, [savedId]);
   // 「関係のあるもの」を押したとき。別画面へ飛ばさず、その場でその資料を開く。
   // 一覧の中で位置が離れていることがあるので、開いた先を必ず画面内へ寄せる
   // （内蔵ブラウザは smooth を動かさないので behavior は指定しない＝即座に寄る）。
@@ -1028,7 +1061,12 @@ export default function KnowledgeBase({ persona, settings, items, onAddFile, onA
                       >
                         <button
                           className="w-full p-3 text-left"
-                          onClick={() => selectMode ? toggleSelected(item.id) : setExpanded(isOpen ? null : item.id)}
+                          onClick={() => {
+                            if (selectMode) { toggleSelected(item.id); return; }
+                            // 畳んでも書きかけは捨てない（開き直すと続きから直せる）。
+                            // 捨てるのは「やめる」を押した時だけ＝打った文字が黙って消えない。
+                            setExpanded(isOpen ? null : item.id);
+                          }}
                         >
                           <div className="flex items-start justify-between gap-2">
                             <div className="flex items-start gap-2 flex-1 min-w-0">
@@ -1097,6 +1135,91 @@ export default function KnowledgeBase({ persona, settings, items, onAddFile, onA
                               className="overflow-hidden"
                             >
                               <div className="px-3 pb-3 space-y-3" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                                {/* ── その場で直す ─────────────────────────── */}
+                                {onUpdate && editingId === item.id ? (
+                                  <div className="pt-3 space-y-2">
+                                    <p className="text-fg-muted text-[10px] tracking-wider uppercase">見出し</p>
+                                    <input
+                                      value={editTitle}
+                                      onChange={e => { setEditTitle(e.target.value); setEditError(null); }}
+                                      className="w-full bg-transparent text-fg font-light outline-none border-b py-2"
+                                      /* 16px 未満だと iPhone が focus のたびに画面を拡大する＝その場で直す感じが壊れる */
+                                      style={{ fontSize: 16, borderColor: persona.accentColor, minHeight: 44 }}
+                                      autoFocus
+                                    />
+                                    {canEditBody(item) && (
+                                      <>
+                                        <p className="text-fg-muted text-[10px] tracking-wider uppercase pt-1">本文</p>
+                                        <textarea
+                                          value={editBody}
+                                          onChange={e => { setEditBody(e.target.value); setEditError(null); }}
+                                          className="w-full bg-transparent text-fg font-light outline-none resize-none leading-relaxed rounded-lg p-2"
+                                          style={{ fontSize: 16, minHeight: 160, border: '1px solid rgba(255,255,255,0.12)' }}
+                                          rows={8}
+                                        />
+                                      </>
+                                    )}
+                                    {!canEditBody(item) && (
+                                      <p className="text-fg-muted text-[11px] leading-relaxed">
+                                        取り込んだ資料の本文は、元のファイルから取り出した文字です。ここでは直せません（見出しだけ直せます）。
+                                      </p>
+                                    )}
+                                    {editError && (
+                                      <p className="text-xs text-red-400" style={{ overflowWrap: 'break-word' }}>
+                                        <span aria-hidden>⚠️ </span>{editError}
+                                      </p>
+                                    )}
+                                    <div className="flex items-center gap-2 pt-1">
+                                      <button
+                                        onClick={(e) => { e.stopPropagation(); commitEdit(item); }}
+                                        className="text-sm px-4 rounded-lg font-medium"
+                                        style={{ background: persona.accentColor, color: onAccentInk(persona.accentColor), minHeight: 44 }}
+                                      >
+                                        保存する
+                                      </button>
+                                      <button
+                                        onClick={(e) => { e.stopPropagation(); cancelEdit(); }}
+                                        className="text-sm px-4 rounded-lg text-fg-muted"
+                                        style={{ border: '1px solid rgba(255,255,255,0.12)', minHeight: 44 }}
+                                      >
+                                        やめる
+                                      </button>
+                                    </div>
+                                    <p className="text-fg-muted text-[11px]">
+                                      {canEditBody(item)
+                                        ? '本文を直すと、AI が読む文章もその場で入れ替わります。'
+                                        : '見出しだけが変わります。中身と要約はそのままです。'}
+                                    </p>
+                                  </div>
+                                ) : (
+                                  <>
+                                    {/* 自分で書いたものは、開いた場で中身がそのまま読める（読むために別画面へ飛ばさない） */}
+                                    {canEditBody(item) && item.content && (
+                                      <div
+                                        className="text-fg-muted text-xs leading-relaxed whitespace-pre-wrap mt-3 rounded-lg p-2"
+                                        style={{ maxHeight: 180, overflowY: 'auto', background: 'rgba(255,255,255,0.03)' }}
+                                      >
+                                        {item.content}
+                                      </div>
+                                    )}
+                                    {savedId === item.id && (
+                                      <p className="text-xs" style={{ color: persona.accentColor }}>✓ 直しました</p>
+                                    )}
+                                    {item.updatedAt && (
+                                      <p className="text-fg-muted text-[10px]">
+                                        {new Date(item.updatedAt).toLocaleDateString('ja-JP', { month: 'short', day: 'numeric' })}
+                                        {' に直しました'}
+                                      </p>
+                                    )}
+                                    {/* 直したあとの要約は「直す前の文章」から作ったもの。黙って出すと嘘になる */}
+                                    {item.analysisStale && item.analysis && (
+                                      <p className="text-[11px] leading-relaxed" style={{ color: '#fbbf24' }}>
+                                        <span aria-hidden>⚠️ </span>
+                                        下の要約は、本文を直す前の文章から作ったものです。下の「もう一度読み込む」で作り直せます。
+                                      </p>
+                                    )}
+                                  </>
+                                )}
                                 {item.analysis ? (
                                   <>
                                     {item.analysis.insights.length > 0 && (
@@ -1123,6 +1246,15 @@ export default function KnowledgeBase({ persona, settings, items, onAddFile, onA
                                   </div>
                                 )}
                                 <div className="flex items-center gap-2 pt-2 flex-wrap">
+                                  {onUpdate && editingId !== item.id && (
+                                    <button
+                                      onClick={(e) => { e.stopPropagation(); startEdit(item); }}
+                                      className="text-xs px-3 py-1.5 rounded-lg text-fg transition-all"
+                                      style={{ border: '1px solid rgba(255,255,255,0.12)' }}
+                                    >
+                                      ✏️ {canEditBody(item) ? 'ここで直す' : '見出しを直す'}
+                                    </button>
+                                  )}
                                   {onReanalyze && (
                                     <button
                                       onClick={(e) => { e.stopPropagation(); onReanalyze(item.id); }}

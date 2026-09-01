@@ -676,7 +676,7 @@ function AppRoutes() {
   // プロダクト（人格を横断する箱）。未選択なら従来どおり人格ごとに閉じて動く。
   const productsApi = useProducts();
   const { activeProduct } = productsApi;
-  const { items: knowledgeItems, getForPersona, addFromFile, addFilesBulk, addNote, deleteItem, reanalyze, recomputeCashflow } = useKnowledge(
+  const { items: knowledgeItems, getForPersona, addFromFile, addFilesBulk, addNote, updateNote, deleteItem, reanalyze, recomputeCashflow } = useKnowledge(
     settings,
     useCallback(() => activePersona, [activePersona]),
     updateCashflow,
@@ -1092,6 +1092,7 @@ function AppRoutes() {
             onRenamePersona={(id, updates) => updatePersona(id, updates)}
             onAddKnowledgeFile={handleAddKnowledgeFile}
             onAddKnowledgeNote={handleAddKnowledgeNote}
+            onUpdateKnowledge={updateNote}
             onDeleteKnowledge={deleteItem}
             onReanalyzeKnowledge={reanalyze}
             onToggleTask={toggleTask}

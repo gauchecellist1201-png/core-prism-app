@@ -15,6 +15,7 @@ import PwaInstallPrompt from './PwaInstallPrompt';
 import FeedbackWidget from './FeedbackWidget';
 import PrismCoCreateCard from './PrismCoCreateCard';
 import KnowledgeBase from './KnowledgeBase';
+import type { KnowledgeEditPatch, KnowledgeEditResult } from '../lib/knowledgeEdit';
 import StudioOpeningSheet from './StudioOpeningSheet';
 const MeetingHub = lazy(() => import('./MeetingHub'));
 const HealthHub = lazy(() => import('./health/HealthHub'));
@@ -140,6 +141,8 @@ interface Props {
   onRenamePersona?: (id: string, updates: { name?: string; subtitle?: string }) => void;
   onAddKnowledgeFile: (file: File, batchId?: string) => Promise<KnowledgeItem>;
   onAddKnowledgeNote: (title: string, content: string) => KnowledgeItem;
+  /** ナレッジをその場で直す（見出し・本文）。結果をそのまま返して、失敗理由を画面に出せるようにする */
+  onUpdateKnowledge?: (id: string, patch: KnowledgeEditPatch) => KnowledgeEditResult;
   onDeleteKnowledge: (id: string) => void;
   onReanalyzeKnowledge: (id: string) => Promise<void>;
   onToggleTask: (personaId: string, taskId: string) => void;
@@ -252,6 +255,7 @@ export default function IdentityDashboard({
   onRenamePersona,
   onAddKnowledgeFile,
   onAddKnowledgeNote,
+  onUpdateKnowledge,
   onDeleteKnowledge,
   onReanalyzeKnowledge,
   onToggleTask,
@@ -667,6 +671,7 @@ export default function IdentityDashboard({
             items={personaKnowledge}
             onAddFile={onAddKnowledgeFile}
             onAddNote={onAddKnowledgeNote}
+            onUpdate={onUpdateKnowledge}
             onDelete={onDeleteKnowledge}
             onReanalyze={onReanalyzeKnowledge}
             onClose={() => setShowKnowledge(false)}
@@ -2086,6 +2091,7 @@ export default function IdentityDashboard({
             items={personaKnowledge}
             onAddFile={onAddKnowledgeFile}
             onAddNote={onAddKnowledgeNote}
+            onUpdate={onUpdateKnowledge}
             onDelete={onDeleteKnowledge}
             onReanalyze={onReanalyzeKnowledge}
             onClose={() => setShowKnowledge(false)}

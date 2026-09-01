@@ -13,6 +13,10 @@ import { useCloudSync } from './useCloudSync';
 import { useEmailBlobSync } from './useEmailBlobSync';
 import { safeSetJSON } from '../lib/storage';
 import { idbGet, idbSet } from '../lib/idbStore';
+// チャンク分割・タグ推定・「その場で直す」の判定は純粋関数として lib 側に置いている
+// （React を通さずテストできる形にするため）。
+import { chunkText, inferTags, applyKnowledgeEdit } from '../lib/knowledgeEdit';
+import type { KnowledgeEditPatch, KnowledgeEditResult } from '../lib/knowledgeEdit';
 import { useBillingUser, getEffectivePlan, getEffectivePlanPriceJpy, checkFeature, isMasterAuth } from '../lib/billing';
 
 const STORAGE_KEY = 'core_knowledge';
@@ -20,27 +24,6 @@ const STORAGE_KEY = 'core_knowledge';
 // 大量データの取込（統合ナレッジ脳）は最上位＝¥29,800 以上のプラン限定。
 // それ未満は少量（プレビュー用途）に制限し、明確にアップグレードへ誘導する。
 export const FREE_KNOWLEDGE_CAP = 30;
-const CHUNK_SIZE = 400; // characters per chunk
-
-// ── テキストをチャンクに分割 ─────────────────────────────
-function chunkText(text: string): KnowledgeChunk[] {
-  const sentences = text.split(/(?<=[。！？\n])\s*/);
-  const chunks: KnowledgeChunk[] = [];
-  let current = '';
-
-  for (const sentence of sentences) {
-    if ((current + sentence).length > CHUNK_SIZE && current.length > 0) {
-      chunks.push({ id: uuidv4(), content: current.trim() });
-      current = sentence;
-    } else {
-      current += sentence;
-    }
-  }
-  if (current.trim()) {
-    chunks.push({ id: uuidv4(), content: current.trim() });
-  }
-  return chunks;
-}
 
 // ── キーワードベースRAG検索 ───────────────────────────────
 export function searchKnowledge(query: string, items: KnowledgeItem[], topK = 4): KnowledgeChunk[] {
@@ -79,23 +62,6 @@ export async function readFileAsText(file: File): Promise<string> {
 }
 
 // ── AIによる自動タグ生成（ローカル推定）────────────────────
-function inferTags(text: string): string[] {
-  const patterns: [RegExp, string][] = [
-    [/医療|歯科|患者|診断|治療|薬|手術/i, '医療'],
-    [/不動産|物件|賃料|テナント|投資|収益|利回り/i, '不動産'],
-    [/音楽|楽譜|演奏|チェロ|バイオリン|ピアノ|楽器/i, '音楽'],
-    [/売上|収支|財務|キャッシュフロー|利益|コスト/i, '財務'],
-    [/会議|ミーティング|議事録|アジェンダ/i, '会議'],
-    [/contract|契約|法律|条項|合意/i, '法務'],
-    [/AI|機械学習|データ|プログラム|コード/i, 'テクノロジー'],
-    [/スケジュール|予定|カレンダー|日程/i, '予定'],
-  ];
-  return patterns
-    .filter(([re]) => re.test(text))
-    .map(([, tag]) => tag)
-    .slice(0, 4);
-}
-
 function friendlyError(raw: string): string {
   if (/concurrent connections|rate limit|429|too many requests/i.test(raw)) {
     return 'AI が混雑しています。少し時間をおいて「🔄 再分析」を押してください。';
@@ -379,7 +345,8 @@ export function useKnowledge(
     updateAnalysis(id, { analysisStatus: 'summarizing', analysisError: undefined });
     try {
       const analysis = await analyzeKnowledge(settings, persona, item.title, item.content, item.imageBase64);
-      updateAnalysis(id, { analysis, analysisStatus: 'done' });
+      // 直した本文で読み直したので「古い要約」の印は必ず外す
+      updateAnalysis(id, { analysis, analysisStatus: 'done', analysisStale: false });
     } catch (err) {
       const raw = err instanceof Error ? err.message : String(err);
       updateAnalysis(id, { analysisStatus: 'error', analysisError: friendlyError(raw) });
@@ -479,6 +446,18 @@ export function useKnowledge(
     setItems(prev => prev.filter(i => i.id !== id));
   }, []);
 
+  // その場で直す（見出し・本文）。別画面へ飛ばさず、押した瞬間に一覧へ反映する。
+  // 本文を直した時は chunks とタグも作り直す（applyKnowledgeEdit 側）＝AI が古い文章を根拠にしない。
+  const updateNote = useCallback((id: string, patch: KnowledgeEditPatch): KnowledgeEditResult => {
+    const target = items.find(i => i.id === id);
+    if (!target) return { ok: false, reason: 'この資料はもう見つかりません（消された可能性があります）。' };
+    const res = applyKnowledgeEdit(target, patch);
+    if (res.ok && res.changed) {
+      setItems(prev => prev.map(i => (i.id === id ? res.item : i)));
+    }
+    return res;
+  }, [items]);
+
   // AIが推奨ペルソナを推定（簡易）
   const suggestPersona = useCallback((text: string, personas: { id: string; name: string; description: string }[]): string | null => {
     let bestScore = 0;
@@ -502,6 +481,7 @@ export function useKnowledge(
     addFilesBulk,
     addNote,
     addFromUrl,
+    updateNote,
     deleteItem,
     reanalyze,
     recomputeCashflow,
