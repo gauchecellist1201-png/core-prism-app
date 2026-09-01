@@ -94,17 +94,19 @@ function useSpotlight<T extends HTMLElement>() {
 // ---- タブごとの title / description (映像は検索の入口が別なので分ける) ----
 // 正本は studio.html / studio-film.html の静的メタ。ここを変えたら向こうも合わせる。
 const SEO = {
-  // v3 (2026-08-22): v2は価格修正のみの黒背景版。起動画面ロゴ (2026-08-21支給) を
-  // 切り抜き・反転した実ロゴへ差し替え、サイト本体と同じ白基調のカードに刷新。
+  // v4 (2026-09-01): ロゴを大きく置いた黒地のカードへ刷新 (scripts/generateStudioOgV4.mjs)。
   // ファイル名を変えないと X/Facebook/LINE のキャッシュが差し替わらないので版番号を上げる。
-  ogImage: 'https://core-prism-app.vercel.app/og-studio-film-v3.png',
+  // ★タブごとに別のカードを出す。v3までは1枚を共用していたので、映像のページを共有しても
+  //   会社紹介のカードが出ていた。
   // 2026-08-31 訂正: ここが studio.html (正本) の title/description を上書きして、
   // 「映像制作」を落とした古い文言に戻していた。主力は映像制作なので正本に合わせる。
   default: {
+    ogImage: 'https://core-prism-app.vercel.app/og-studio-v4.png',
     title: 'CORE Studio — 映像制作・ウェブ制作・受託開発',
     description: 'COREは、AIプロダクトを自社で開発・運営する制作スタジオです。AIショートドラマなどの映像制作から、ウェブサイト制作、システム受託開発まで。戦略設計から公開後の運用改善まで一貫体制で担当します。',
   },
   film: {
+    ogImage: 'https://core-prism-app.vercel.app/og-studio-film-v4.png',
     title: 'AI動画制作・ショートドラマ制作代行 — CORE Studio',
     description: 'ショートドラマ、ブランドムービー、SNS縦型動画、CMまで。企画・脚本・映像制作・編集・字幕・SNS最適化までを一貫制作するAIクリエイティブスタジオ。初回1本(20秒)¥49,800、毎月継続は月4本¥228,000から。初期費用0円・最低契約期間なし。',
   },
@@ -140,11 +142,11 @@ export default function StudioSite() {
     setProp('og:description', seo.description);
     setProp('og:url', url);
     setProp('og:site_name', 'CORE Studio');
-    setProp('og:image', SEO.ogImage);
+    setProp('og:image', seo.ogImage);
     setProp('og:image:alt', seo.title);
     setMeta('twitter:title', seo.title);
     setMeta('twitter:description', seo.description);
-    setMeta('twitter:image', SEO.ogImage);
+    setMeta('twitter:image', seo.ogImage);
     let canonical = document.querySelector('link[rel="canonical"]');
     if (!canonical) { canonical = document.createElement('link'); canonical.setAttribute('rel', 'canonical'); document.head.appendChild(canonical); }
     canonical.setAttribute('href', url);
