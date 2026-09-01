@@ -143,11 +143,9 @@ export default function FilmTab() {
         @media (min-width: 700px) { .fm-grid3 { grid-template-columns: repeat(3, 1fr); } }
         .fm-tag { display: inline-flex; align-items: center; min-height: 34px; padding: 6px 13px; border-radius: 999px;
           border: 1px solid ${D.goldLine}; color: ${D.gold}; font-size: 12.5px; letter-spacing: 0.06em; }
-        .fm-btn-light { background: #06C755; color: ${C.ink}; border: 1px solid #06C755; }
-        .fm-btn-light:hover { opacity: 0.86; }
-        /* ヒーローの主ボタン = 料金表へ。LINE(緑)と並べても役割が混ざらない色にする。
-           2026-08-27: 1画面目で最初に押させたいのは相談ではなく金額の確認なので、
-           こちらを主(塗り)、LINEを副(枠線)に入れ替えた */
+        /* 2026-08-27: 1画面目で最初に押させたいのは相談ではなく金額の確認なので、こちらを主(塗り)にした。
+           LINEは2026-09-01からブランド色(緑・塗り)固定のため、隣に並べても互いの塗りが喧嘩しないよう
+           金は暖色・LINEは緑の配色差だけで役割を分けている */
         .fm-btn-gold { background: ${D.gold}; color: #17130A; border: 1px solid ${D.gold}; font-weight: 700; }
         .fm-btn-gold:hover { opacity: 0.88; }
         .fm-btn-outline { background: transparent; color: #FFFFFF; border: 1px solid rgba(255,255,255,0.5); font-weight: 600; }
@@ -629,7 +627,7 @@ function MobileStickyCta() {
 
   return (
     <div className="fm-sticky-cta">
-      <a className="st-btn fm-btn-light" href={CONTACT.lineUrl} target="_blank" rel="noopener noreferrer"
+      <a className="st-btn st-btn-line" href={CONTACT.lineUrl} target="_blank" rel="noopener noreferrer"
         style={{ width: '100%', boxSizing: 'border-box', minHeight: 46, padding: '11px 20px' }}
         onClick={() => track('studio_film_sticky_cta', { to: 'line' })}>
         <IconChat /> {CONTACT.lineLabel}
@@ -728,7 +726,7 @@ function FilmHero() {
           <button className="st-btn fm-btn-gold" onClick={() => { track('studio_film_hero_cta', { to: 'menu' }); scrollToId('film-menu'); }}>
             {FILM.heroCtaSub}
           </button>
-          <a className="st-btn fm-btn-outline" href={CONTACT.lineUrl} target="_blank" rel="noopener noreferrer"
+          <a className="st-btn st-btn-line" href={CONTACT.lineUrl} target="_blank" rel="noopener noreferrer"
             onClick={() => track('studio_film_hero_cta', { to: 'line' })}>
             <IconChat /> {FILM.heroCta}
           </a>
@@ -1311,7 +1309,7 @@ function PlanPickCards({ onDetail }: { onDetail: (id: string) => void }) {
             {p.checkout ? (
               <FilmCheckoutButton plan={p.id} mode="payment" label={p.cta} />
             ) : (
-              <a className="st-btn st-btn-primary" style={{ width: '100%', boxSizing: 'border-box' }}
+              <a className="st-btn st-btn-line" style={{ width: '100%', boxSizing: 'border-box' }}
                 href={CONTACT.lineUrl} target="_blank" rel="noopener noreferrer"
                 onClick={() => track('studio_film_pricing_cta', { plan: p.id, to: 'line' })}>
                 <IconChat /> {p.cta}
@@ -1470,7 +1468,7 @@ function PlanDetail({ p, open, onToggle }: { p: FilmPlan; open: boolean; onToggl
                 </a>
               </>
             ) : (
-              <a className="st-btn st-btn-primary" style={{ width: '100%', boxSizing: 'border-box' }}
+              <a className="st-btn st-btn-line" style={{ width: '100%', boxSizing: 'border-box' }}
                 href={CONTACT.lineUrl} target="_blank" rel="noopener noreferrer"
                 onClick={() => track('studio_film_pricing_cta', { plan: p.id, to: 'line' })}>
                 <IconChat /> {p.cta}
@@ -1663,7 +1661,7 @@ function Pricing({ mode, onMode, openPlan, onOpenPlan }: {
       </div>
 
       <div style={{ marginTop: 28, textAlign: 'center' }}>
-        <a className="st-btn st-btn-ghost" href={CONTACT.lineUrl} target="_blank" rel="noopener noreferrer"
+        <a className="st-btn st-btn-line" href={CONTACT.lineUrl} target="_blank" rel="noopener noreferrer"
           onClick={() => track('studio_film_pricing_cta', { plan: mode, to: 'line' })}>
           <IconChat /> どれを選ぶか相談する
         </a>
@@ -1919,7 +1917,7 @@ function FinalCta() {
           ))}
 
           <div style={{ display: 'grid', gap: 10, marginTop: 4 }}>
-            <a className="st-btn fm-btn-light" href={CONTACT.lineUrl} target="_blank" rel="noopener noreferrer"
+            <a className="st-btn st-btn-line" href={CONTACT.lineUrl} target="_blank" rel="noopener noreferrer"
               style={{ width: '100%', boxSizing: 'border-box' }} onClick={openLine}>
               <IconChat /> {CONTACT.lineLabel}
             </a>

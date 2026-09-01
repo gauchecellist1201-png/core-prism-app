@@ -219,6 +219,10 @@ export default function StudioSite() {
         .st-btn-primary:hover { opacity: 0.88; }
         .st-btn-ghost { background: #FFFFFF; color: ${C.ink}; border: 1px solid #C9CDD4; font-weight: 600; }
         .st-btn-ghost:hover { border-color: ${C.gold}; color: ${C.ink}; }
+        /* LINEの相談・見積り導線は必ずこのクラス。実際のLINEブランド色(#06C755)。
+           白文字は実測2.3:1で読めないので、地の濃色 #111827 を固定で使う */
+        .st-btn-line { background: #06C755; color: #111827; border: 1px solid #06C755; font-weight: 700; }
+        .st-btn-line:hover { opacity: 0.88; }
         .st-chip { display: inline-flex; align-items: center; min-height: 46px; padding: 11px 16px; border-radius: 8px;
           border: 1px solid #C9CDD4; background: #FFFFFF; color: ${C.body}; font-size: 14px; cursor: pointer; font-family: ${SANS}; text-align: left;
           transition: border-color 140ms ease; }
@@ -264,6 +268,8 @@ export default function StudioSite() {
           .st-btn-primary:active { transform: translateY(0); box-shadow: 0 6px 14px -10px rgba(17,24,39,0.5); }
           .st-btn-ghost:hover { transform: translateY(-2px); box-shadow: 0 12px 24px -18px rgba(17,24,39,0.4); }
           .st-btn-ghost:active { transform: translateY(0); }
+          .st-btn-line:hover { opacity: 1; transform: translateY(-2px); box-shadow: 0 14px 26px -14px rgba(6,199,85,0.55); }
+          .st-btn-line:active { transform: translateY(0); box-shadow: 0 6px 14px -10px rgba(6,199,85,0.5); }
           .st-chip { transition: border-color 160ms ease, transform 160ms cubic-bezier(.2,.7,.3,1); }
           .st-chip:hover { transform: translateY(-1px); }
           /* タブ。金の下線が中央から伸びる。今どこを見ているかが、
@@ -367,11 +373,17 @@ export default function StudioSite() {
            ここでは映像は再生せず静止画で見せ、押すと映像タブへ運ぶ
            (再生できない絵に再生の印を付けない)。 */
         .st-fw { display: grid; grid-template-columns: 1fr; gap: 20px; align-items: center; }
-        @media (min-width: 860px) { .st-fw { grid-template-columns: minmax(0, 268px) minmax(0, 1fr); gap: 40px; } }
+        /* 2026-09-01: 元は2列grid (画像268px + 残り全部1fr) で、右列が文字量より広くstretchし、
+           結果として画像だけ画面の左端に寄って見えた (行自体は中央でも、画像の視覚重心が中央からズレる)。
+           中身の実寸で並べてからクラスタごと中央寄せする */
+        @media (min-width: 860px) { .st-fw { display: flex; justify-content: center; align-items: center; gap: 40px; } }
         .st-fw-shot { position: relative; width: min(66vw, 258px); margin: 0 auto; aspect-ratio: 9 / 16;
           border-radius: 12px; overflow: hidden; border: 1px solid ${D.line}; background: #000; padding: 0;
           cursor: pointer; box-shadow: 0 34px 70px -44px rgba(0,0,0,0.9); }
-        @media (min-width: 860px) { .st-fw-shot { width: 100%; margin: 0; } }
+        @media (min-width: 860px) { .st-fw-shot { width: 268px; margin: 0; flex: 0 0 auto; } }
+        /* flex-basis:auto な文字量依存の箱は、中身が折り返せる文章だと残り幅いっぱいまで
+           伸びてしまう(shrink-to-fitが効かない既知の挙動)。幅を固定値で明示して回避する */
+        @media (min-width: 860px) { .st-fw-info { width: 400px; max-width: 400px; flex: 0 0 auto; } }
         .st-fw-shot img, .st-fw-thumb img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
         .st-fw-row { display: flex; gap: 11px; overflow-x: auto; -webkit-overflow-scrolling: touch;
           scrollbar-width: none; padding: 2px 20px 12px; scroll-snap-type: x mandatory; }
@@ -446,7 +458,7 @@ export default function StudioSite() {
 
 // ---- 相談導線 (どのタブでも入口はLINEに統一する) ----
 const LineCta = ({ label = CONTACT.lineLabel, where }: { label?: string; where: string }) => (
-  <a className="st-btn st-btn-primary" href={CONTACT.lineUrl} target="_blank" rel="noopener noreferrer"
+  <a className="st-btn st-btn-line" href={CONTACT.lineUrl} target="_blank" rel="noopener noreferrer"
     onClick={() => track('studio_line_cta', { where })}>
     <IconChat /> {label}
   </a>
@@ -930,10 +942,10 @@ function FilmWorksBand({ go }: { go: (t: TabId) => void }) {
             aria-label={`${lead.client} の制作事例を映像制作のページで見る`}>
             {lead.poster && <img src={lead.poster} alt={`${lead.client} の制作事例`} loading="lazy" />}
           </button>
-          <div>
+          <div className="st-fw-info">
             <span className="st-label" style={{ color: D.gold, fontSize: 10.5 }}>{lead.category}</span>
             <h3 className="st-serif" style={{ fontSize: 'clamp(20px, 5vw, 27px)', fontWeight: 700, color: D.ink, lineHeight: 1.5, margin: '11px 0 0' }}>{lead.client}</h3>
-            <p style={{ fontSize: 13.5, lineHeight: 2.05, color: D.body, margin: '12px 0 18px', maxWidth: 560 }}>{lead.purpose}</p>
+            <p style={{ fontSize: 13.5, lineHeight: 2.05, color: D.body, margin: '12px 0 18px', maxWidth: 460 }}>{lead.purpose}</p>
             <button className="st-btn" onClick={openFilm}
               style={{ background: D.gold, color: '#17130A', border: `1px solid ${D.gold}`, fontWeight: 700 }}>
               映像を再生して見る
@@ -1266,7 +1278,7 @@ function ContactTab() {
           <p style={{ fontSize: 13, lineHeight: 1.9, color: C.body, margin: '16px 0 0', textAlign: 'left', background: C.alt, borderLeft: `3px solid ${C.gold}`, borderRadius: 4, padding: '12px 14px' }}>{result.note}</p>
         </div>
         <div style={{ display: 'grid', gap: 10, marginTop: 20 }}>
-          <a className="st-btn st-btn-primary" href={CONTACT.lineUrl} target="_blank" rel="noopener noreferrer"
+          <a className="st-btn st-btn-line" href={CONTACT.lineUrl} target="_blank" rel="noopener noreferrer"
             style={{ width: '100%', boxSizing: 'border-box' }} onClick={openLine}>
             <IconChat /> この内容でLINE相談する
           </a>
