@@ -3315,7 +3315,6 @@ body[data-prism-chat-dock] [data-tour-id="kpi-sparkline"] {
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
   padding: 0 0.9rem 0.6rem;
-  border-top: 1px solid rgba(201, 169, 110, 0.1);
 }
 .lp-tabs::-webkit-scrollbar { display: none; }
 

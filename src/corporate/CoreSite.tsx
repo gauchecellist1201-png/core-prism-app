@@ -406,32 +406,47 @@ export default function CoreSite() {
             href="#top"
             onClick={e => { e.preventDefault(); goTab('home'); }}
             style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', minHeight: 44 }}
-            aria-label="CORE"
+            aria-label="株式会社CORE"
             className="lp-tap-link"
           >
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 12, lineHeight: 1 }}>
               <img
                 src="/core-logo-mark.png"
-                alt="CORE"
+                alt="株式会社CORE"
                 width={396}
                 height={240}
                 style={{ height: 36, width: 'auto', flexShrink: 0 }}
               />
-              <span
-                aria-hidden
-                style={{
-                  fontFamily: '"Cinzel", "Noto Serif JP", serif',
-                  fontSize: 22.32,
-                  fontWeight: 700,
-                  letterSpacing: '0.42em',
-                  color: '#E0F2FE',
-                  background: 'linear-gradient(135deg, #FFFFFF, #BAE6FD, #38BDF8)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  lineHeight: 1,
-                }}
-              >
-                CORE
+              <span style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'flex-start', gap: 3 }}>
+                <span
+                  aria-hidden
+                  style={{
+                    fontFamily: '"Noto Serif JP", serif',
+                    fontSize: 10,
+                    fontWeight: 600,
+                    letterSpacing: '0.3em',
+                    color: 'rgba(224,242,254,0.58)',
+                    lineHeight: 1,
+                  }}
+                >
+                  株式会社
+                </span>
+                <span
+                  aria-hidden
+                  style={{
+                    fontFamily: '"Cinzel", "Noto Serif JP", serif',
+                    fontSize: 22.32,
+                    fontWeight: 700,
+                    letterSpacing: '0.42em',
+                    color: '#E0F2FE',
+                    background: 'linear-gradient(135deg, #FFFFFF, #BAE6FD, #38BDF8)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    lineHeight: 1,
+                  }}
+                >
+                  CORE
+                </span>
               </span>
             </span>
           </a>
@@ -2252,7 +2267,9 @@ function HeroVideo({ onAnchor }: { onAnchor?: (e: ReactMouseEvent<HTMLAnchorElem
           color: '#F5EAD4', lineHeight: 1.8, letterSpacing: '0.04em', margin: '0 0 0.7rem',
           textShadow: '0 2px 16px rgba(0,0,0,0.8)',
         }}>
-          AIとテクノロジーで、企業の仕組みそのものを変える。
+          AIとテクノロジーで、企業の仕組み
+          <br />
+          そのものを変える。
         </p>
         <p className="corp-hero-lede" style={{
           fontFamily: FONT_SERIF_JA, fontSize: 'clamp(0.78rem, 1.4vw, 0.92rem)',
