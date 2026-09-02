@@ -232,8 +232,6 @@ export default function StudioSite() {
         .st-chip[data-on="true"] { border: 1.5px solid ${C.gold}; background: #FBF8F2; color: ${C.ink}; font-weight: 600; }
         .st-grid2 { display: grid; grid-template-columns: 1fr; gap: 14px; }
         @media (min-width: 640px) { .st-grid2 { grid-template-columns: 1fr 1fr; } }
-        .st-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: ${C.line}; border: 1px solid ${C.line}; border-radius: 12px; overflow: hidden; }
-        @media (min-width: 640px) { .st-stats { grid-template-columns: repeat(4, 1fr); } }
         .st-worklink { color: ${C.ink}; }
         .st-worklink:hover { color: ${C.gold}; }
         a { -webkit-tap-highlight-color: rgba(168,130,60,0.15); }
@@ -339,36 +337,134 @@ export default function StudioSite() {
           .st-strip-dup { display: none; }
         }
 
-        /* ── ホームのヒーロー = 自社リール (2026-08-31 新設) ────────────────
-           制作スタジオのトップページなのに、作ったものが1画面目に1つも動いていなかった。
-           自社の実績5本から1.6秒ずつ抜いた8秒 (628KB) を1画面目に敷く。
-           高さを dvh で取るのは、iOS のアドレスバーが出入りしても
-           「映像 + 見出し + ボタン」が1画面に収まる関係を崩さないため。
-           文字は映像の上に重ねるので、下側の暗幕は必ず濃く敷く (白文字で 4.5:1 を割らせない)。 */
-        .st-reel { position: relative; width: 100%; height: min(58dvh, 430px); overflow: hidden;
-          background: ${D.bg}; isolation: isolate; }
-        @media (min-width: 900px) { .st-reel { height: min(64dvh, 560px); } }
+        /* ── 幅の広い章 (ホームだけ) ────────────────────────────────────
+           本文中心のタブは 760px の1段組のままでよいが、ホームは制作会社の顔。
+           パソコンで 760px に畳むと「スマホの画面を真ん中に置いただけ」に見え、
+           両脇の空白が広いほど小さな会社に見えた。ホームの章だけ 1160px まで広げる。 */
+        .st-inner.st-wide { max-width: 1160px; }
+
+        /* ── ホームのヒーロー = 自社リール (2026-09-02 第2版) ────────────────
+           旧版は 540x960 の縦型1本を画面幅いっぱいに引き伸ばしていた。iPhone では
+           ほぼ等倍なので気にならないが、パソコン (1440px) では横 2.7倍に拡大され、
+           1画面目が一番ぼやけていた。縦型の素材を横長の画面に敷く発想そのものが誤り。
+           ・狭い画面: 縦型1本を全面に (等倍に近いので鮮明)
+           ・広い画面: 縦型のまま 3 枚を「スマホの画面」の大きさで立てる。表示幅は
+             最大でも 262px なので、540〜720px の素材が拡大されることは無い。
+             両脇は同じ画をぼかして敷き、黒い空き地ではなく「その映像の中に居る」画面にする
+             (映像タブの fm-hero と同じ考え方)。
+           ・脇の2枚は広い画面でしか描かない (狭い画面では DOM に置かず、通信も発生させない) */
+        .st-hero { position: relative; background: ${D.bg}; color: #FFFFFF; overflow: hidden; isolation: isolate; }
+        .st-hero-amb { position: absolute; inset: -12%; z-index: 0; pointer-events: none;
+          background-position: center; background-size: cover;
+          filter: blur(64px) saturate(1.15) brightness(0.34); transform: scale(1.1); }
+        .st-hero::before { content: ''; position: absolute; inset: 0; z-index: 0; pointer-events: none;
+          background: linear-gradient(180deg, rgba(11,11,12,0.5) 0%, rgba(11,11,12,0.1) 40%, rgba(11,11,12,0.92) 100%); }
+        .st-hero-grid { position: relative; z-index: 1; display: grid; grid-template-columns: 1fr; }
+        /* 狭い画面: 映像が先、文字はその裾に重ねる (見出しと相談ボタンを1画面目に収める) */
+        .st-hero-copy { order: 2; position: relative; z-index: 2; margin-top: -136px; padding: 0 0 36px; }
+        .st-hero-reels { order: 1; position: relative; margin: 0 -20px; }
+        .st-reel { position: relative; overflow: hidden; background: #000; }
         .st-reel video, .st-reel img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-        /* 上は少しだけ (白いヘッダーとの境目)、下は文字が乗るので濃く */
-        .st-reel::after { content: ''; position: absolute; inset: 0; pointer-events: none;
-          background: linear-gradient(180deg, rgba(8,8,9,0.44) 0%, rgba(8,8,9,0.16) 30%,
-            rgba(8,8,9,0.62) 66%, rgba(8,8,9,0.93) 100%); }
-        .st-reel-copy { position: absolute; left: 0; right: 0; bottom: 0; z-index: 1;
-          max-width: 760px; margin: 0 auto; padding: 0 20px 20px; }
-        .st-reel-h1 { font-size: clamp(25px, 6.8vw, 44px); font-weight: 700; line-height: 1.45;
-          letter-spacing: 0.02em; color: #FFFFFF; margin: 9px 0 0; text-shadow: 0 2px 20px rgba(0,0,0,0.45); }
-        /* 「これは自社が作った映像である」を、映像の中で名乗る。
-           他所の素材を敷いているのではないことが、この1行で伝わる */
-        .st-reel-cap { position: absolute; top: 14px; right: 20px; z-index: 1;
+        .st-reel-main { height: min(58dvh, 520px); }
+        /* 下は文字が乗るので地の色まで落とし切る (白文字で 4.5:1 を割らせない) */
+        .st-reel-main::after { content: ''; position: absolute; inset: 0; pointer-events: none;
+          background: linear-gradient(180deg, rgba(11,11,12,0.38) 0%, rgba(11,11,12,0) 30%, rgba(11,11,12,0.5) 62%, ${D.bg} 100%); }
+        .st-reel-side { display: none; }
+        .st-reel-name { display: none; }
+        /* 「これは自社が作った映像である」を、映像の中で名乗る */
+        .st-reel-cap { position: absolute; top: 14px; right: 14px; z-index: 2;
           display: inline-flex; align-items: center; gap: 7px; padding: 6px 12px; border-radius: 999px;
           border: 1px solid rgba(255,255,255,0.3); background: rgba(8,8,9,0.5);
           backdrop-filter: blur(7px); -webkit-backdrop-filter: blur(7px);
-          color: #FFFFFF; font-size: 10.5px; letter-spacing: 0.1em; line-height: 1; }
+          color: #FFFFFF; font-size: 10.5px; letter-spacing: 0.1em; line-height: 1; white-space: nowrap; }
         .st-reel-dot { width: 5px; height: 5px; border-radius: 999px; background: ${D.gold}; flex: 0 0 auto; }
         @media (prefers-reduced-motion: no-preference) {
           .st-reel-dot { animation: st-reel-pulse 2.4s ease-in-out infinite; }
           @keyframes st-reel-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }
         }
+        .st-hero-h1 { font-size: clamp(27px, 7vw, 46px); font-weight: 700; line-height: 1.38; letter-spacing: 0.02em;
+          color: #FFFFFF; margin: 10px 0 0; text-shadow: 0 2px 24px rgba(0,0,0,0.5); }
+        .st-hero-sub { font-size: 14.5px; line-height: 2; color: ${D.body}; margin: 16px 0 0; max-width: 520px; }
+        .st-hero-cta { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 22px; }
+        .st-btn-dark { background: rgba(255,255,255,0.06); color: #FFFFFF; border: 1px solid rgba(255,255,255,0.36); font-weight: 600; }
+        .st-btn-dark:hover { border-color: ${D.gold}; color: ${D.gold}; }
+        .st-hero-note { font-size: 12px; color: ${D.mute}; margin: 12px 0 0; line-height: 1.8; letter-spacing: 0.02em; }
+        /* 数字は白い帯で別に置いていたが、ヒーローの中で名乗った方が「何者か」が1画面で分かる */
+        .st-hero-stats { list-style: none; margin: 26px 0 0; padding: 20px 0 0; border-top: 1px solid ${D.line};
+          display: grid; grid-template-columns: 1fr 1fr; gap: 14px 18px; }
+        .st-hero-stat b { display: block; font-family: ${SERIF}; font-size: 21px; font-weight: 700; color: #FFFFFF; letter-spacing: 0.02em; line-height: 1.3; }
+        .st-hero-stat span { display: block; font-size: 11.5px; color: ${D.mute}; letter-spacing: 0.04em; margin-top: 3px; }
+        @media (min-width: 960px) {
+          .st-hero-grid { grid-template-columns: minmax(0, 1fr) auto; align-items: center;
+            min-height: min(calc(100dvh - 112px), 760px); padding-top: 52px; padding-bottom: 60px; column-gap: 32px; }
+          .st-hero-copy { order: 1; margin-top: 0; padding: 0; }
+          .st-hero-reels { order: 2; margin: 0; display: flex; align-items: center; justify-content: flex-end; }
+          .st-reel { border-radius: 22px; border: 1px solid rgba(255,255,255,0.16); aspect-ratio: 9 / 16;
+            box-shadow: 0 44px 90px -40px rgba(0,0,0,0.95), 0 0 0 1px rgba(0,0,0,0.6); }
+          /* 表示幅は素材 (540〜720px) より必ず小さい = 拡大されない */
+          .st-reel-main { width: clamp(214px, 17.6vw, 252px); height: auto; z-index: 2; }
+          .st-reel-main::after { background: linear-gradient(180deg, rgba(11,11,12,0.22) 0%, rgba(11,11,12,0) 26%, rgba(11,11,12,0) 66%, rgba(11,11,12,0.78) 100%); }
+          .st-reel-side { display: block; width: clamp(172px, 14.2vw, 200px); transform: translateY(36px); z-index: 1; }
+          .st-reel-side::after { content: ''; position: absolute; inset: 0; pointer-events: none;
+            background: linear-gradient(180deg, rgba(11,11,12,0) 60%, rgba(11,11,12,0.78) 100%); }
+          .st-reel-l { margin-right: -26px; }
+          .st-reel-r { margin-left: -26px; }
+          /* 右の1枚は左端 26px が中央の1枚の下に潜るので、名前をその分だけ右へ寄せる */
+          .st-reel-r .st-reel-name { left: 44px; }
+          /* 見出しは左の列 (1440px で約 476px) に 9 文字を1行で収める。54px だと「ウェブ|も、」で折れた */
+          .st-hero-h1 { font-size: clamp(28px, 3.2vw, 38px); }
+          .st-reel-name { display: block; position: absolute; left: 14px; right: 14px; bottom: 14px; z-index: 2; line-height: 1.5; }
+          .st-reel-name b { display: block; font-family: ${SERIF}; font-size: 13px; font-weight: 700; color: #FFFFFF; }
+          .st-reel-name span { display: block; font-size: 10.5px; letter-spacing: 0.14em; color: ${D.gold}; text-transform: uppercase; }
+          .st-hero::before { background: linear-gradient(90deg, rgba(11,11,12,0.88) 0%, rgba(11,11,12,0.55) 48%, rgba(11,11,12,0.22) 100%); }
+        }
+        /* 数字4つを1行に並べるのは左の列が十分に広い時だけ (960px では「1営業|日」で折れた) */
+        @media (min-width: 1200px) {
+          .st-hero-stats { grid-template-columns: repeat(4, auto); justify-content: start; gap: 14px 36px; }
+        }
+        @media (hover: hover) and (pointer: fine) {
+          .st-reel { transition: transform 460ms cubic-bezier(.2,.7,.3,1); }
+          .st-reel-side:hover { transform: translateY(26px); }
+        }
+
+        /* ── 映像の実績 (ホーム) — カーソルを乗せると再生 ─────────────────
+           ホームには映像制作の実績が1つも並んでいなかった (サイトの画像3枚だけ)。
+           映像は poster を敷き、動画は preload="none" で置いておく。hover / focus で
+           play() を呼び、動き出したら poster の上に重ねる。触る端末では hover が無いので
+           押すと映像タブへ運ぶ (そこで再生できる)。 */
+        .st-peek-row { display: flex; gap: 12px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none;
+          margin: 0 -20px; padding: 2px 20px 8px; scroll-snap-type: x mandatory; }
+        .st-peek-row::-webkit-scrollbar { display: none; }
+        .st-peek { flex: 0 0 auto; width: min(62vw, 220px); scroll-snap-align: center; position: relative; aspect-ratio: 9 / 16;
+          border-radius: 16px; overflow: hidden; border: 1px solid ${D.line}; background: #000; padding: 0; cursor: pointer;
+          text-align: left; font-family: ${SANS}; -webkit-tap-highlight-color: rgba(212,169,79,0.18); }
+        .st-peek img, .st-peek video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+        .st-peek video { opacity: 0; transition: opacity 320ms ease; }
+        .st-peek[data-playing="true"] video { opacity: 1; }
+        .st-peek::after { content: ''; position: absolute; inset: 0; pointer-events: none;
+          background: linear-gradient(180deg, rgba(11,11,12,0) 55%, rgba(11,11,12,0.86) 100%); }
+        .st-peek-meta { position: absolute; left: 14px; right: 14px; bottom: 14px; z-index: 1; }
+        .st-peek-cat { display: block; font-size: 10px; letter-spacing: 0.2em; color: ${D.gold}; text-transform: uppercase; margin-bottom: 5px; }
+        .st-peek-client { display: block; font-family: ${SERIF}; font-size: 13.5px; font-weight: 700; color: #FFFFFF; line-height: 1.5; }
+        @media (min-width: 860px) {
+          .st-peek-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin: 0; padding: 0; overflow: visible; }
+          .st-peek { width: auto; }
+        }
+        @media (hover: hover) and (pointer: fine) {
+          .st-peek { transition: transform 420ms cubic-bezier(.2,.7,.3,1), border-color 240ms ease; }
+          .st-peek:hover { transform: translateY(-6px); border-color: ${D.goldLine}; }
+        }
+
+        /* ── 選ばれる理由 / 制作の流れ / 実績 — 広い画面では横に並べる ── */
+        .st-reasons { display: grid; gap: 14px; }
+        @media (min-width: 860px) { .st-reasons { grid-template-columns: repeat(3, 1fr); } }
+        .st-process { display: grid; gap: 12px; list-style: none; padding: 0; margin: 0; counter-reset: none; }
+        @media (min-width: 640px) { .st-process { grid-template-columns: repeat(2, 1fr); } }
+        @media (min-width: 960px) { .st-process { grid-template-columns: repeat(3, 1fr); } }
+        .st-step { display: flex; flex-direction: column; gap: 8px; background: #FFFFFF; border: 1px solid ${C.line}; border-radius: 14px; padding: 20px 20px 22px; }
+        .st-step-no { font-family: ${SERIF}; font-size: 24px; font-weight: 700; color: ${C.goldText}; letter-spacing: 0.04em; line-height: 1; }
+        .st-webworks { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)); }
+        @media (min-width: 860px) { .st-webworks { grid-template-columns: repeat(3, 1fr); gap: 18px; } }
 
         /* ── 実績タブの先頭に置く映像実績 (2026-08-31 新設) ────────────────
            主力は映像制作なのに、実績タブにはサイトの画像しか無かった。
@@ -416,13 +512,13 @@ export default function StudioSite() {
 
       {/* ヘッダー */}
       <header style={{ position: 'sticky', top: 0, zIndex: 20, background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', borderBottom: `1px solid ${C.line}`, paddingTop: 'env(safe-area-inset-top)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', maxWidth: 760, margin: '0 auto', padding: '15px 20px 9px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', maxWidth: 1160, margin: '0 auto', padding: '15px 20px 9px' }}>
           <button onClick={() => go('home')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, textAlign: 'left', display: 'inline-flex' }}>
             <img src="/core-studio-logo.png" alt="CORE Studio" style={{ height: 22, width: 'auto', display: 'block' }} />
           </button>
           <a href="/corp" style={{ fontSize: 12, color: C.mute, textDecoration: 'none', letterSpacing: '0.05em', minHeight: 44, display: 'inline-flex', alignItems: 'center' }}>CORE公式サイト</a>
         </div>
-        <nav className="st-tabbar" style={{ maxWidth: 760, margin: '0 auto' }} aria-label="スタジオ内メニュー">
+        <nav className="st-tabbar" style={{ maxWidth: 1160, margin: '0 auto' }} aria-label="スタジオ内メニュー">
           {TABS.map(t => (
             <button key={t.id} className="st-tab" data-on={tab === t.id} onClick={() => go(t.id)}>{t.label}</button>
           ))}
@@ -568,63 +664,124 @@ function WorksStrip({ go }: { go: (t: TabId) => void }) {
   );
 }
 
+// ---- ヒーローの映像 (3本とも当社の制作。名前はどれも実際のクライアント) ----
+// a: 自社リール (1080p の原本から 720x1280 に切り出した 16 秒・8 カット)。狭い画面ではこれ1本を全面に出す
+// b / c: 広い画面の両脇。540x960 で十分 (表示幅は最大 212px = 2倍画面でも 424px)
+const HERO_REELS = {
+  main: { src: '/studio/film/hero-a.mp4', poster: '/studio/film/hero-a.jpg', name: 'CORE Studio Showreel', note: 'Showreel' },
+  left: { src: '/studio/film/hero-b.mp4', poster: '/studio/film/hero-b.jpg', name: 'Laguna Beauté', note: 'Product' },
+  right: { src: '/studio/film/hero-c.mp4', poster: '/studio/film/hero-c.jpg', name: 'JRC 日本記録協会', note: 'Brand Film' },
+} as const;
+
+// 広い画面かどうか。脇の2枚を「CSS で隠す」のではなく「描かない」ために使う
+// (display:none でも <video> は preload の分を取りに行く)。
+function useWide(min = 960) {
+  const [wide, setWide] = useState(() => typeof window !== 'undefined' && !!window.matchMedia?.(`(min-width: ${min}px)`).matches);
+  useEffect(() => {
+    const mq = window.matchMedia?.(`(min-width: ${min}px)`);
+    if (!mq) return;
+    const on = () => setWide(mq.matches);
+    mq.addEventListener('change', on);
+    return () => mq.removeEventListener('change', on);
+  }, [min]);
+  return wide;
+}
+
+function HeroReel({ r, kind, autoplay }: { r: { src: string; poster: string; name: string; note: string }; kind: 'main' | 'l' | 'r'; autoplay: boolean }) {
+  const cls = kind === 'main' ? 'st-reel st-reel-main' : `st-reel st-reel-side st-reel-${kind}`;
+  return (
+    <div className={cls}>
+      <video src={r.src} poster={r.poster} autoPlay={autoplay} muted loop playsInline preload="metadata" aria-hidden />
+      {kind === 'main' && <span className="st-reel-cap"><span className="st-reel-dot" aria-hidden />CORE STUDIO 制作実績より</span>}
+      <span className="st-reel-name"><span>{r.note}</span><b>{r.name}</b></span>
+    </div>
+  );
+}
+
+// ---- 映像の実績 1枚 (hover / focus で再生) ----
+function FilmPeek({ w, onOpen }: { w: (typeof FILM_WORKS)[number]; onOpen: () => void }) {
+  const v = useRef<HTMLVideoElement>(null);
+  const [playing, setPlaying] = useState(false);
+  const play = () => { const el = v.current; if (!el) return; void el.play().catch(() => {}); };
+  const stop = () => { const el = v.current; if (!el) return; el.pause(); el.currentTime = 0; setPlaying(false); };
+  return (
+    <button type="button" className="st-peek" data-playing={playing} onClick={onOpen}
+      onPointerEnter={e => { if (e.pointerType === 'mouse') play(); }} onPointerLeave={stop} onFocus={play} onBlur={stop}
+      aria-label={`${w.client} の映像を見る`}>
+      {w.poster && <img src={w.poster} alt="" loading="lazy" decoding="async" />}
+      {w.videoUrl && <video ref={v} src={w.videoUrl} muted loop playsInline preload="none" aria-hidden onPlaying={() => setPlaying(true)} />}
+      <span className="st-peek-meta">
+        <span className="st-peek-cat">{w.category}</span>
+        <span className="st-peek-client">{w.client}</span>
+      </span>
+    </button>
+  );
+}
+
 // ============================================================
 // ホーム
 // ============================================================
 function HomeTab({ go }: { go: (t: TabId) => void }) {
   const spotRef = useSpotlight<HTMLElement>();
+  const wide = useWide();
+  // 動きを減らす設定の端末では自動再生しない (poster が出たままになる)
+  const autoplay = useMemo(() => !(typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches), []);
   return (
     <div>
-      {/* ヒーロー = 自社リール (2026-08-31)。
-          旧版は文字だけの1画面目で、制作スタジオなのに作ったものが1つも見えていなかった。
-          しかも本文3行が長く、iPhone では相談ボタンが1画面目の外 (実測 y≈990 / 812) にあった。
-          映像を敷いて見出しをその上に重ね、本文を1文に畳んだことで、
-          見出しも相談ボタンも1画面目に収まる。 */}
-      <section className="st-reel" aria-label="CORE Studio の制作実績より">
-        <video
-          src="/studio/film/studio-showreel.mp4"
-          poster="/studio/film/studio-showreel.jpg"
-          autoPlay muted loop playsInline preload="metadata" aria-hidden
-        />
-        <span className="st-reel-cap"><span className="st-reel-dot" aria-hidden />CORE STUDIO 制作実績より</span>
-        <div className="st-reel-copy">
-          <div className="st-label" style={{ color: D.gold }}>Film / Web / Development</div>
-          <h1 className="st-serif st-reel-h1">映像も、ウェブも、<br />成果から逆算してつくる。</h1>
+      {/* ヒーロー (2026-09-02 第2版)。設計の理由は上の CSS (.st-hero) に書いた。 */}
+      <section className="st-hero" aria-label="CORE Studio の制作実績より">
+        <div className="st-hero-amb" style={{ backgroundImage: `url(${HERO_REELS.main.poster})` }} aria-hidden />
+        <div className="st-inner st-wide st-hero-grid">
+          <div className="st-hero-copy">
+            <div className="st-label" style={{ color: D.gold }}>Film / Web / Development</div>
+            <h1 className="st-serif st-hero-h1">映像も、ウェブも、<br />成果から逆算してつくる。</h1>
+            <p className="st-hero-sub">
+              AIプロダクトを自社で開発・運営する制作スタジオです。映像制作・ウェブ制作・受託開発・公開後の運用まで、ひとつの体制で担当します。
+            </p>
+            <div className="st-hero-cta">
+              <LineCta where="home-hero" />
+              <button className="st-btn st-btn-dark" onClick={() => go('contact')}>6つの質問で概算を出す</button>
+            </div>
+            <p className="st-hero-note">{CONTACT.lineNote}</p>
+            <ul className="st-hero-stats">
+              {STATS.map(s => (
+                <li key={s.label} className="st-hero-stat"><b>{s.value}</b><span>{s.label}</span></li>
+              ))}
+            </ul>
+          </div>
+          <div className="st-hero-reels">
+            {wide && <HeroReel r={HERO_REELS.left} kind="l" autoplay={autoplay} />}
+            <HeroReel r={HERO_REELS.main} kind="main" autoplay={autoplay} />
+            {wide && <HeroReel r={HERO_REELS.right} kind="r" autoplay={autoplay} />}
+          </div>
         </div>
       </section>
 
-      <Band pad="26px 0 44px">
-        <p style={{ fontSize: 15, lineHeight: 2.1, color: C.body, margin: 0, maxWidth: 600 }}>
-          COREは、AIプロダクトを自社で開発・運営する制作スタジオです。
-          映像制作・ウェブ制作・受託開発・公開後の運用まで、ひとつの体制で担当します。
-        </p>
-        <div style={{ display: 'flex', gap: 12, marginTop: 24, flexWrap: 'wrap' }}>
-          <LineCta where="home-hero" />
-          {/* 実績は真下の帯で見えているので、2つ目のボタンは「相場を知る」に充てる */}
-          <button className="st-btn st-btn-ghost" onClick={() => go('contact')}>6つの質問で概算を出す</button>
-        </div>
-
-        {/* 実績の帯 — 「制作します」と書く代わりに、公開中のサイトの実物を1画面目に置く */}
-        <WorksStrip go={go} />
-
-        {/* 数字バー */}
-        <div className="st-stats" style={{ marginTop: 28 }}>
-          {STATS.map(s => (
-            <div key={s.label} style={{ background: '#FFFFFF', padding: '18px 14px', textAlign: 'center' }}>
-              <div className="st-serif" style={{ fontSize: 22, fontWeight: 700, color: C.ink, letterSpacing: '0.02em' }}>{s.value}</div>
-              <div style={{ fontSize: 12.5, color: C.mute, marginTop: 5, letterSpacing: '0.03em', lineHeight: 1.6 }}>{s.label}</div>
-            </div>
+      {/* 映像の実績 — ヒーローの黒地をそのまま続けて、作ったものを先に見せる */}
+      <Band dark wide pad="clamp(48px, 6vw, 80px) 0">
+        <H2 dark en="Film Works" sub="商品広告、ブランドムービー、イベント告知、ショートドラマまで。いずれも当社の制作です。カーソルを乗せると再生します。">映像の制作実績</H2>
+        <div className="st-peek-row">
+          {FILM_WORKS.slice(0, 4).map(w => (
+            <FilmPeek key={w.id} w={w} onOpen={() => { track('studio_home_film_peek', { id: w.id }); go('film'); }} />
           ))}
         </div>
+        <div style={{ marginTop: 22, display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
+          <button className="st-btn st-btn-dark" onClick={() => go('film')}>映像制作の料金と実績を見る <IconArrow color={D.gold} /></button>
+        </div>
+      </Band>
+
+      {/* 公開中のサイト・システムの帯 — 「制作します」と書く代わりに実物を流す */}
+      <Band wide pad="30px 0 44px">
+        <WorksStrip go={go} />
       </Band>
 
       {/* ご依頼いただけること — 白基調のサイトの中で、ここだけ暗部に落として章の違いを見せる。
           以前はここが映像制作だけの帯で、サイト制作・受託開発・運用はタブを開くまで存在が分からず、
           ホーム全体で価格が1円も出ていなかった。4つの領域と「いくらから」をこの1章にまとめる。 */}
-      <section ref={spotRef} className="st-spot" style={{ background: D.bg, padding: '48px 0' }}>
-        <Reveal className="st-inner">
+      <section ref={spotRef} className="st-spot" style={{ background: D.bg, padding: 'clamp(48px, 6vw, 84px) 0' }}>
+        <Reveal className="st-inner st-wide">
           <div className="st-label" style={{ color: D.gold, marginBottom: 14 }}>Services</div>
-          <h2 className="st-serif" style={{ fontSize: 'clamp(23px, 6.2vw, 32px)', fontWeight: 700, lineHeight: 1.55, color: D.ink, margin: 0 }}>
+          <h2 className="st-serif" style={{ fontSize: 'clamp(23px, 6.2vw, 36px)', fontWeight: 700, lineHeight: 1.55, color: D.ink, margin: 0 }}>
             映像から、サイト、システム、<br />そのあとの運用まで。
           </h2>
           <p style={{ fontSize: 14.5, lineHeight: 2.05, color: D.body, margin: '18px 0 26px', maxWidth: 580 }}>
@@ -663,44 +820,38 @@ function HomeTab({ go }: { go: (t: TabId) => void }) {
       </section>
 
       {/* 選ばれる理由 */}
-      <Band alt>
+      <Band alt wide pad="clamp(52px, 6vw, 84px) 0">
         <H2 en="Why CORE" sub="自社プロダクトの開発・運営で培った実践知を、貴社の案件に投入します。">COREが選ばれる理由</H2>
-        <div style={{ display: 'grid', gap: 14 }}>
+        <div className="st-reasons">
           {REASONS.map((r, i) => (
             <div key={r.id} className="st-card">
-              <div style={{ display: 'flex', gap: 14, alignItems: 'baseline' }}>
-                <span className="st-serif" style={{ fontSize: 15, fontWeight: 700, color: C.goldText, flexShrink: 0 }}>{String(i + 1).padStart(2, '0')}</span>
-                <div>
-                  <div className="st-serif" style={{ fontSize: 17, fontWeight: 700, color: C.ink, lineHeight: 1.6 }}>{r.title}</div>
-                  <p style={{ fontSize: 14, lineHeight: 2, color: C.body, margin: '8px 0 0' }}>{r.body}</p>
-                </div>
-              </div>
+              <span className="st-serif" style={{ display: 'block', fontSize: 15, fontWeight: 700, color: C.goldText, marginBottom: 10 }}>{String(i + 1).padStart(2, '0')}</span>
+              <div className="st-serif" style={{ fontSize: 17, fontWeight: 700, color: C.ink, lineHeight: 1.6 }}>{r.title}</div>
+              <p style={{ fontSize: 14, lineHeight: 2, color: C.body, margin: '8px 0 0' }}>{r.body}</p>
             </div>
           ))}
         </div>
       </Band>
 
       {/* 制作の流れ */}
-      <Band>
+      <Band wide pad="clamp(52px, 6vw, 84px) 0">
         <H2 en="Process" sub="お見積り時に金額を確定し、以後の追加費用はいただきません。各工程の進捗は随時ご報告します。">制作の流れ</H2>
-        <ol style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-          {PROCESS.map((p, i) => (
-            <li key={p.no} style={{ display: 'flex', gap: 16, padding: '16px 0', borderBottom: i < PROCESS.length - 1 ? `1px solid ${C.line}` : 'none' }}>
-              <span className="st-serif" style={{ fontSize: 14, fontWeight: 700, color: C.goldText, flexShrink: 0, minWidth: 26, paddingTop: 2 }}>{p.no}</span>
-              <div>
-                <div style={{ fontSize: 15, fontWeight: 700, color: C.ink }}>{p.title}</div>
-                <p style={{ fontSize: 13.5, lineHeight: 1.9, color: C.body, margin: '4px 0 0' }}>{p.body}</p>
-              </div>
+        <ol className="st-process">
+          {PROCESS.map(p => (
+            <li key={p.no} className="st-step">
+              <span className="st-step-no">{p.no}</span>
+              <div style={{ fontSize: 15.5, fontWeight: 700, color: C.ink }}>{p.title}</div>
+              <p style={{ fontSize: 13.5, lineHeight: 1.9, color: C.body, margin: 0 }}>{p.body}</p>
             </li>
           ))}
         </ol>
       </Band>
 
       {/* 実績ダイジェスト */}
-      <Band alt>
-        <H2 en="Works" sub="いずれも公開中のサイト・システムです。実物をご確認いただけます。">制作実績</H2>
+      <Band alt wide pad="clamp(52px, 6vw, 84px) 0">
+        <H2 en="Web Works" sub="いずれも公開中のサイト・システムです。実物をご確認いただけます。">サイト・システムの制作実績</H2>
         {/* 実物のトップページで語る (文字カード廃止) */}
-        <div style={{ display: 'grid', gap: 14, gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 260px), 1fr))' }}>
+        <div className="st-webworks">
           {WORKS.slice(0, 3).map(w => (
             <a key={w.id} href={w.url} target="_blank" rel="noopener noreferrer" className="st-card st-workcard" style={{ textDecoration: 'none', padding: 0, overflow: 'hidden' }}>
               <div style={{ position: 'relative', aspectRatio: '16 / 10', overflow: 'hidden', borderBottom: `1px solid ${C.line}` }}>
@@ -708,28 +859,33 @@ function HomeTab({ go }: { go: (t: TabId) => void }) {
                   style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top' }} />
               </div>
               <div style={{ padding: '12px 14px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                <div className="st-serif" style={{ fontSize: 14.5, fontWeight: 700, color: C.ink }}>{w.name}</div>
+                <div>
+                  <div className="st-label" style={{ fontSize: 10, marginBottom: 4 }}>{w.category}</div>
+                  <div className="st-serif" style={{ fontSize: 14.5, fontWeight: 700, color: C.ink }}>{w.name}</div>
+                </div>
                 <IconArrow color={C.gold} />
               </div>
             </a>
           ))}
         </div>
-        <div style={{ marginTop: 16 }}>
-          <button className="st-btn st-btn-ghost" onClick={() => go('works')}>実績をすべて見る</button>
+        <div style={{ marginTop: 18 }}>
+          <button className="st-btn st-btn-ghost" onClick={() => go('works')}>{WORKS.length}件の実績をすべて見る</button>
         </div>
       </Band>
 
       {/* よくあるご質問 — 相談ボタンの直前に置く。
           発注前に確認したいこと (無料の範囲・実費・支払い・NDA) は、
           これまでサイト制作のプランカードを開かないと読めなかった。 */}
-      <Band alt>
-        <H2 en="FAQ" sub="ご相談の前に多くいただくご質問です。ここに無いことも、そのままお尋ねください。">よくあるご質問</H2>
-        <FaqList items={STUDIO_FAQ} />
+      <Band wide pad="clamp(52px, 6vw, 84px) 0">
+        <div style={{ maxWidth: 820, margin: '0 auto' }}>
+          <H2 en="FAQ" sub="ご相談の前に多くいただくご質問です。ここに無いことも、そのままお尋ねください。">よくあるご質問</H2>
+          <FaqList items={STUDIO_FAQ} />
+        </div>
       </Band>
 
       {/* CTA */}
-      <Band>
-        <div style={{ border: `1px solid ${C.goldLine}`, borderRadius: 14, padding: '36px 22px', textAlign: 'center', background: '#FFFFFF' }}>
+      <Band alt wide pad="clamp(52px, 6vw, 84px) 0">
+        <div style={{ border: `1px solid ${C.goldLine}`, borderRadius: 14, padding: 'clamp(36px, 5vw, 56px) 22px', textAlign: 'center', background: '#FFFFFF', maxWidth: 820, margin: '0 auto' }}>
           <div className="st-label" style={{ marginBottom: 12 }}>Contact</div>
           <div className="st-serif" style={{ fontSize: 21, fontWeight: 700, color: C.ink, lineHeight: 1.7 }}>まずは、お気軽にご相談ください。</div>
           <p style={{ fontSize: 13.5, color: C.body, margin: '10px 0 22px', lineHeight: 2 }}>

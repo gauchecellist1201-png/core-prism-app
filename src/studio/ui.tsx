@@ -9,13 +9,15 @@ import { C, D } from './theme';
 // 2026-08-31: 既定でスクロール入場 (Reveal) を掛ける。章がひとつずつ立ち上がるので、
 // 20画面ある1枚ものが「終わらない本文」ではなく「章のある読み物」になる。
 // 演出を入れたくない帯 (中身が自前で動く等) だけ flat を渡す。
-export const Band = ({ alt, dark, children, pad = '52px 0', id, flat }: {
+export const Band = ({ alt, dark, children, pad = '52px 0', id, flat, wide }: {
   alt?: boolean; dark?: boolean; children: ReactNode; pad?: string; id?: string; flat?: boolean;
+  /** ホームの章だけ 1160px まで広げる (本文中心のタブは 760px の1段組のまま) */
+  wide?: boolean;
 }) => (
   // 固定ヘッダーの下に見出しが潜らないよう、アンカー着地位置を下げる
   <section id={id} style={{ background: dark ? D.bg : alt ? C.alt : C.bg, padding: pad, scrollMarginTop: id ? 96 : undefined }}>
 
-    <div className="st-inner">{flat ? children : <Reveal>{children}</Reveal>}</div>
+    <div className={wide ? 'st-inner st-wide' : 'st-inner'}>{flat ? children : <Reveal>{children}</Reveal>}</div>
   </section>
 );
 
@@ -33,7 +35,7 @@ export const H2 = ({ children, en, sub, dark }: {
         <span className="st-label" style={{ color: dark ? D.gold : C.goldText }}>{en}</span>
       </div>
     )}
-    <h2 className="st-serif" style={{ fontSize: 'clamp(23px, 5.6vw, 30px)', fontWeight: 700, lineHeight: 1.5, letterSpacing: '0.03em', color: dark ? D.ink : C.ink, margin: 0 }}>{children}</h2>
+    <h2 className="st-serif" style={{ fontSize: 'clamp(23px, 5.6vw, 34px)', fontWeight: 700, lineHeight: 1.5, letterSpacing: '0.03em', color: dark ? D.ink : C.ink, margin: 0 }}>{children}</h2>
     {sub && <p style={{ fontSize: 14, color: dark ? D.body : C.body, margin: '12px 0 0', lineHeight: 2, maxWidth: 620 }}>{sub}</p>}
   </div>
 );
