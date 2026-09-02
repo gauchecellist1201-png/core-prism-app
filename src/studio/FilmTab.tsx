@@ -165,9 +165,13 @@ export default function FilmTab() {
         .fm-faq-btn { width: 100%; min-height: 52px; background: none; border: none; cursor: pointer; text-align: left;
           padding: 14px 2px; font-size: 14px; font-weight: 600; color: ${C.ink}; font-family: ${SANS};
           display: flex; justify-content: space-between; align-items: center; gap: 10px; }
-        /* 章の目次。長い1枚ものを上から順に読ませない (法人は必要な章だけ見る) */
-        .fm-nav { display: flex; gap: 8px; overflow-x: auto; -webkit-overflow-scrolling: touch;
-          scrollbar-width: none; padding: 2px 20px 0; }
+        /* 章の目次。長い1枚ものを上から順に読ませない (法人は必要な章だけ見る)
+           2026-09-02: 幅に収まる画面では中央揃え。収まらない狭い画面では左詰めのまま横スクロールさせる
+           (inline-flexだと中央揃えのまま自然に切り替わる。justify-content:centerだと
+           はみ出た時に左側の項目が画面外へ隠れてスクロールで戻れなくなる) */
+        .fm-nav-wrap { text-align: center; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+        .fm-nav-wrap::-webkit-scrollbar { display: none; }
+        .fm-nav { display: inline-flex; gap: 8px; padding: 2px 20px 0; }
         .fm-nav::-webkit-scrollbar { display: none; }
         /* 目次の項目は44px。7項目あり、指で押し損ねると別の章へ飛ばされる */
         .fm-nav-item { flex: 0 0 auto; min-height: 44px; display: inline-flex; align-items: center; padding: 11px 14px;
@@ -764,17 +768,19 @@ const NAV_ITEMS: Array<{ id: string; label: string; mode?: PricingMode }> = [
 function SectionNav({ onPricing }: { onPricing: (m: PricingMode) => void }) {
   return (
     <nav aria-label="このページの目次" style={{ background: D.bg, paddingBottom: 30 }}>
-      <div className="fm-nav">
-        {NAV_ITEMS.map(n => (
-          <button key={n.label} type="button" className="fm-nav-item"
-            onClick={() => {
-              track('studio_film_nav', { to: n.id, mode: n.mode });
-              if (n.mode) onPricing(n.mode);
-              else scrollToId(n.id);
-            }}>
-            {n.label}
-          </button>
-        ))}
+      <div className="fm-nav-wrap">
+        <div className="fm-nav">
+          {NAV_ITEMS.map(n => (
+            <button key={n.label} type="button" className="fm-nav-item"
+              onClick={() => {
+                track('studio_film_nav', { to: n.id, mode: n.mode });
+                if (n.mode) onPricing(n.mode);
+                else scrollToId(n.id);
+              }}>
+              {n.label}
+            </button>
+          ))}
+        </div>
       </div>
     </nav>
   );
