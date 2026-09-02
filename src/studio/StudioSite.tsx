@@ -759,7 +759,7 @@ function HomeTab({ go }: { go: (t: TabId) => void }) {
 
       {/* 映像の実績 — ヒーローの黒地をそのまま続けて、作ったものを先に見せる */}
       <Band dark wide pad="clamp(48px, 6vw, 80px) 0">
-        <H2 dark en="Film Works" sub="商品広告、ブランドムービー、イベント告知、ショートドラマまで。いずれも当社の制作です。カーソルを乗せると再生します。">映像の制作実績</H2>
+        <H2 dark en="Film Works" sub="商品広告、ブランドムービー、イベント告知、ショートドラマまで。いずれも当社の制作です。カーソルを乗せると再生、押すと映像制作のページへ進みます。">映像の制作実績</H2>
         <div className="st-peek-row">
           {FILM_WORKS.slice(0, 4).map(w => (
             <FilmPeek key={w.id} w={w} onOpen={() => { track('studio_home_film_peek', { id: w.id }); go('film'); }} />
