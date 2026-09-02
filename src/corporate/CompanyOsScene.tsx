@@ -470,12 +470,12 @@ export default function CompanyOsScene({ variant = 'full', onUnavailable }: Prop
           >
             <span style={{
               fontFamily: FONT_SERIF_JA, fontSize: '0.95rem', fontWeight: 600,
-              color: '#F1E6CE', letterSpacing: '0.06em', lineHeight: 1.4,
+              color: '#EEF2F7', letterSpacing: '0.06em', lineHeight: 1.4,
             }}>
               {n.label}
             </span>
             <span style={{
-              fontFamily: FONT_SANS, fontSize: '0.64rem', color: 'rgba(240,233,216,0.7)',
+              fontFamily: FONT_SANS, fontSize: '0.64rem', color: 'rgba(226,232,240,0.7)',
               letterSpacing: '0.04em', lineHeight: 1.4,
             }}>
               {n.sub}
@@ -486,13 +486,13 @@ export default function CompanyOsScene({ variant = 'full', onUnavailable }: Prop
         <div ref={centerRef} className="corp-os3d-center">
           <span style={{
             fontFamily: FONT_DISPLAY, fontSize: full ? '1.5rem' : '1.15rem', fontWeight: 700,
-            letterSpacing: '0.26em', color: '#F5EAD4', paddingLeft: '0.26em', lineHeight: 1.2,
+            letterSpacing: '0.26em', color: '#F3F6FB', paddingLeft: '0.26em', lineHeight: 1.2,
           }}>
             CORE
           </span>
           <span style={{
             fontFamily: FONT_DISPLAY, fontSize: full ? '0.6rem' : '0.55rem', fontWeight: 600,
-            letterSpacing: '0.28em', color: 'rgba(201,169,110,0.92)', paddingLeft: '0.28em', marginTop: 6,
+            letterSpacing: '0.28em', color: 'rgba(125,211,252,0.92)', paddingLeft: '0.28em', marginTop: 6,
           }}>
             AI COMPANY OS
           </span>

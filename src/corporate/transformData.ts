@@ -31,7 +31,7 @@ export const SERVICE_LAYERS: ServiceLayer[] = [
     copy: '何を作るかではなく、何を変えるべきかから考える。',
     body: '経営課題からAI活用方法を設計します。AIを導入すること自体は目的にしません。どの業務に時間とお金が消えているのかを分解し、変えれば効くところだけを選びます。',
     items: ['業務分析', 'AI活用戦略', 'DXロードマップ', 'ROI試算', '新規事業設計'],
-    accent: '#E7C987',
+    accent: '#BAE6FD',
   },
   {
     no: '02',
@@ -43,7 +43,7 @@ export const SERVICE_LAYERS: ServiceLayer[] = [
       'AIエージェント', 'CRM', '営業支援システム', '顧客管理', 'AIチャット',
       '社内検索', '業務自動化', 'データ分析', 'SaaS開発', 'API連携', 'Webアプリケーション',
     ],
-    accent: '#C9A96E',
+    accent: '#7DD3FC',
   },
   {
     no: '03',
@@ -52,7 +52,7 @@ export const SERVICE_LAYERS: ServiceLayer[] = [
     copy: 'AIは、導入してからが始まり。',
     body: '納品して終わる会社ではありません。使われ方を見て、モデルと業務の両方を直し続けます。組織の側が変わらなければ、AIは効きません。',
     items: ['AI改善', 'モデル更新', '新機能開発', 'データ分析', '業務改善', 'AI研修', '経営会議', 'KPI分析'],
-    accent: '#B9975B',
+    accent: '#38BDF8',
   },
   {
     no: '04',
@@ -114,7 +114,7 @@ export const USE_CASES: UseCaseFlow[] = [
     headline: '商談のあとの2時間を、なくす。',
     steps: ['商談記録', 'AI要約', '提案書作成', 'CRM入力', 'フォローアップ'],
     body: '話した内容がそのまま要約になり、提案書の下書きと顧客台帳の更新まで進みます。営業が手で書き写す作業が消え、追いかけるべき相手だけが残ります。',
-    accent: '#E7C987',
+    accent: '#BAE6FD',
   },
   {
     domainEn: 'Customer Support',
@@ -122,7 +122,7 @@ export const USE_CASES: UseCaseFlow[] = [
     headline: '一次対応を、待たせない。',
     steps: ['問い合わせ', 'AI一次対応', '担当者振り分け', '顧客DB更新', '分析'],
     body: 'メール・LINE・フォームのどこから来ても、まずAIが受けます。人が要る用件だけが担当者に届き、やり取りは顧客台帳に残り、何が多いのかが数字で見えます。',
-    accent: '#C9A96E',
+    accent: '#7DD3FC',
   },
   {
     domainEn: 'Management',
@@ -138,7 +138,7 @@ export const USE_CASES: UseCaseFlow[] = [
     headline: '広告費の行き先を、売上まで追う。',
     steps: ['広告', 'GA4', 'CRM', '売上'],
     body: 'どの広告が、どの問い合わせになり、いくらの売上になったか。分断されがちな4つをつなぎ、AIが次に何を止めて何を増やすかを提案します。',
-    accent: '#B9975B',
+    accent: '#38BDF8',
   },
 ];
 

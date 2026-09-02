@@ -41,7 +41,7 @@ const labelStyle: React.CSSProperties = {
   fontFamily: FONT_SERIF_JA,
   fontSize: '0.82rem',
   letterSpacing: '0.1em',
-  color: 'rgba(240,233,216,0.86)',
+  color: 'rgba(226,232,240,0.86)',
   marginBottom: '0.5rem',
   fontWeight: 600,
 };
@@ -51,9 +51,9 @@ const fieldStyle: React.CSSProperties = {
   minHeight: 48,
   padding: '0.8rem 1rem',
   borderRadius: 12,
-  border: '1px solid rgba(201,169,110,0.28)',
+  border: '1px solid rgba(125,211,252,0.28)',
   background: 'rgba(255,255,255,0.035)',
-  color: '#F1E9D8',
+  color: '#F3F6FB',
   /* iOS は 16px 未満の入力欄で画面を勝手に拡大する */
   fontSize: '16px',
   fontFamily: FONT_SERIF_JA,
@@ -76,9 +76,9 @@ function Chip({ on, children, onClick }: { on: boolean; children: React.ReactNod
         fontSize: '0.86rem',
         letterSpacing: '0.06em',
         fontWeight: on ? 700 : 500,
-        color: on ? '#14100a' : 'rgba(240,233,216,0.82)',
-        background: on ? 'linear-gradient(135deg,#F1DCA7,#E7C987 45%,#C9A96E)' : 'rgba(255,255,255,0.035)',
-        border: on ? '1px solid rgba(201,169,110,0.9)' : '1px solid rgba(201,169,110,0.28)',
+        color: on ? '#0B1220' : 'rgba(226,232,240,0.82)',
+        background: on ? 'linear-gradient(135deg,#E0F2FE,#BAE6FD 45%,#7DD3FC)' : 'rgba(255,255,255,0.035)',
+        border: on ? '1px solid rgba(125,211,252,0.9)' : '1px solid rgba(125,211,252,0.28)',
         transition: 'background 0.22s, color 0.22s, border-color 0.22s',
       }}
     >
@@ -189,13 +189,13 @@ export default function CorpContactForm() {
           maxWidth: 640, margin: '0 auto', textAlign: 'center',
           padding: 'clamp(2.4rem, 5vw, 3.6rem)', borderRadius: 22,
           border: '1px solid rgba(231,180,120,0.5)',
-          background: 'radial-gradient(140% 120% at 50% -20%, #1a1206 0%, #070707 65%)',
+          background: 'radial-gradient(140% 120% at 50% -20%, #1a1206 0%, #080B11 65%)',
         }}
       >
         <p style={{ fontFamily: FONT_DISPLAY, fontSize: '0.72rem', letterSpacing: '0.3em', color: GOLD, marginBottom: '1.2rem' }}>
           NOT DELIVERED
         </p>
-        <p style={{ fontFamily: FONT_SERIF_JA, fontSize: 'clamp(1.15rem, 2.3vw, 1.5rem)', fontWeight: 700, color: '#F5EAD4', lineHeight: 1.9, marginBottom: '1rem' }}>
+        <p style={{ fontFamily: FONT_SERIF_JA, fontSize: 'clamp(1.15rem, 2.3vw, 1.5rem)', fontWeight: 700, color: '#F3F6FB', lineHeight: 1.9, marginBottom: '1rem' }}>
           内容は記録しましたが、
           <br />
           通知メールが送れませんでした。
@@ -210,7 +210,7 @@ export default function CorpContactForm() {
           style={{
             display: 'inline-flex', alignItems: 'center', justifyContent: 'center', minHeight: 52,
             padding: '0 1.8rem', borderRadius: 999, textDecoration: 'none',
-            background: 'linear-gradient(135deg,#F1DCA7,#E7C987 45%,#C9A96E)', color: '#14100a',
+            background: 'linear-gradient(135deg,#E0F2FE,#BAE6FD 45%,#7DD3FC)', color: '#0B1220',
             fontFamily: FONT_SERIF_JA, fontWeight: 800, fontSize: '0.95rem', letterSpacing: '0.06em',
           }}
         >
@@ -230,14 +230,14 @@ export default function CorpContactForm() {
         style={{
           maxWidth: 640, margin: '0 auto', textAlign: 'center',
           padding: 'clamp(2.4rem, 5vw, 3.6rem)', borderRadius: 22,
-          border: '1px solid rgba(201,169,110,0.45)',
-          background: 'radial-gradient(140% 120% at 50% -20%, #17120a 0%, #070707 65%)',
+          border: '1px solid rgba(125,211,252,0.45)',
+          background: 'radial-gradient(140% 120% at 50% -20%, #101826 0%, #080B11 65%)',
         }}
       >
         <p style={{ fontFamily: FONT_DISPLAY, fontSize: '0.72rem', letterSpacing: '0.3em', color: GOLD, marginBottom: '1.2rem' }}>
           RECEIVED
         </p>
-        <p style={{ fontFamily: FONT_SERIF_JA, fontSize: 'clamp(1.2rem, 2.4vw, 1.6rem)', fontWeight: 700, color: '#F5EAD4', lineHeight: 1.9, marginBottom: '1rem' }}>
+        <p style={{ fontFamily: FONT_SERIF_JA, fontSize: 'clamp(1.2rem, 2.4vw, 1.6rem)', fontWeight: 700, color: '#F3F6FB', lineHeight: 1.9, marginBottom: '1rem' }}>
           お預かりしました。
         </p>
         <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.92rem', color: TEXT_BODY, lineHeight: 2.1 }}>
@@ -335,10 +335,10 @@ export default function CorpContactForm() {
           style={{
             width: '100%', maxWidth: 420, minHeight: 56, borderRadius: 999, border: 'none',
             cursor: valid && phase !== 'sending' ? 'pointer' : 'not-allowed',
-            background: valid ? 'linear-gradient(135deg,#F1DCA7,#E7C987 45%,#C9A96E)' : 'rgba(201,169,110,0.18)',
-            color: valid ? '#14100a' : 'rgba(240,233,216,0.5)',
+            background: valid ? 'linear-gradient(135deg,#E0F2FE,#BAE6FD 45%,#7DD3FC)' : 'rgba(125,211,252,0.18)',
+            color: valid ? '#0B1220' : 'rgba(226,232,240,0.5)',
             fontFamily: FONT_SERIF_JA, fontSize: '1rem', fontWeight: 800, letterSpacing: '0.1em',
-            boxShadow: valid ? '0 14px 42px -8px rgba(201,169,110,0.55)' : 'none',
+            boxShadow: valid ? '0 14px 42px -8px rgba(125,211,252,0.55)' : 'none',
             transition: 'background 0.25s, color 0.25s',
           }}
         >
@@ -362,7 +362,7 @@ export function ContactSection({ children }: { children?: React.ReactNode }) {
       className="lp-section-pad"
       style={{
         padding: '7rem 1.5rem',
-        background: 'radial-gradient(ellipse at center, rgba(201,169,110,0.10) 0%, #050505 72%)',
+        background: 'radial-gradient(ellipse at center, rgba(125,211,252,0.10) 0%, #070A10 72%)',
         position: 'relative',
         scrollMarginTop: 70,
       }}

@@ -30,8 +30,8 @@ export default function CorpStickyCta() {
       sub={pick ? '税込・いつでも解約できます' : '相談は無料です'}
       cta={pick ? `${pick.name} を見る →` : 'AI・DXについて相談する'}
       href={pick ? pick.url : '#contact'}
-      accent1="#e9cd8a"
-      accent2="#c9a24b"
+      accent1="#E0F2FE"
+      accent2="#38BDF8"
     />
   );
 }

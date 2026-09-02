@@ -36,7 +36,7 @@ function getInitialTab(): StrategyTab {
   return 'overview';
 }
 
-const FONT_DISPLAY = '"Cinzel", "Noto Serif JP", serif';
+const FONT_DISPLAY = '"Inter", "Noto Sans JP", sans-serif';
 const FONT_SERIF_JA = '"Noto Serif JP", "游明朝", serif';
 const FONT_SANS = '"Noto Sans JP", "Inter", sans-serif';
 
@@ -347,8 +347,8 @@ export default function StrategyDashboard() {
       {/* TAB: Crystal (第6プロダクト) */}
       {tab === 'crystal' && <>
         <section className="lp-section-pad" style={{ padding: '4rem 1.5rem 2rem', textAlign: 'center', background: 'radial-gradient(120% 90% at 50% -10%, #28354c 0%, #1b2333 45%, #0b0f18 100%)' }}>
-          <p style={{ fontFamily: FONT_DISPLAY, fontSize: '0.7rem', letterSpacing: '0.45em', color: '#C9A96E', fontWeight: 600, marginBottom: '1rem' }}>THE 6TH PRODUCT</p>
-          <h1 style={{ fontFamily: '"Cinzel", serif', fontSize: 'clamp(2rem, 5vw, 3.2rem)', fontWeight: 500, letterSpacing: '0.3em', textIndent: '0.3em', marginBottom: '0.75rem', color: '#F4F7FC' }}>CRYSTAL</h1>
+          <p style={{ fontFamily: FONT_DISPLAY, fontSize: '0.7rem', letterSpacing: '0.45em', color: '#7DD3FC', fontWeight: 600, marginBottom: '1rem' }}>THE 6TH PRODUCT</p>
+          <h1 style={{ fontFamily: '"Inter", sans-serif', fontSize: 'clamp(2rem, 5vw, 3.2rem)', fontWeight: 500, letterSpacing: '0.3em', textIndent: '0.3em', marginBottom: '0.75rem', color: '#F4F7FC' }}>CRYSTAL</h1>
           <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '1rem', color: 'rgba(244,247,252,0.75)', lineHeight: 1.9, maxWidth: 640, margin: '0 auto 1.5rem' }}>
             話しかけるだけの、専属AIコンシェルジュ。3日間の無料トライアル（カード必須）→ 月額。<br />
             iPhoneのポケットに住む「美しいClaude Code」。
@@ -364,9 +364,9 @@ export default function StrategyDashboard() {
             {[
               { t: 'ChatGPT (月¥3,000)', d: '汎用チャット。知識は古く、あなたを覚えない。', tone: 'rgba(255,255,255,0.5)' },
               { t: 'オンライン秘書 (月¥5〜15万)', d: '人が対応。日中のみ・月10〜50時間・納品は日単位。', tone: 'rgba(255,255,255,0.5)' },
-              { t: 'Crystal (月¥29,800〜)', d: '24時間365日・数秒応答・成果物その場納品・専属の記憶。秘書の半額以下。', tone: '#C9A96E' },
+              { t: 'Crystal (月¥29,800〜)', d: '24時間365日・数秒応答・成果物その場納品・専属の記憶。秘書の半額以下。', tone: '#7DD3FC' },
             ].map((c, i) => (
-              <div key={i} style={{ padding: '1.5rem', background: i === 2 ? 'rgba(201,169,110,0.08)' : 'rgba(255,255,255,0.03)', border: `1px solid ${i === 2 ? 'rgba(201,169,110,0.35)' : 'rgba(255,255,255,0.08)'}`, borderRadius: 14 }}>
+              <div key={i} style={{ padding: '1.5rem', background: i === 2 ? 'rgba(125,211,252,0.08)' : 'rgba(255,255,255,0.03)', border: `1px solid ${i === 2 ? 'rgba(125,211,252,0.35)' : 'rgba(255,255,255,0.08)'}`, borderRadius: 14 }}>
                 <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.95rem', fontWeight: 700, color: c.tone, marginBottom: 8 }}>{c.t}</p>
                 <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.82rem', color: 'rgba(255,255,255,0.65)', lineHeight: 1.9 }}>{c.d}</p>
               </div>
@@ -415,7 +415,7 @@ export default function StrategyDashboard() {
                   <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, minWidth: 22 }}>
                     <span style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.65)', fontFamily: 'monospace' }}>{fmtShort(d.mrr).replace('¥', '')}</span>
                     <motion.div initial={{ height: 0 }} animate={{ height: h }} transition={{ duration: 0.5, delay: i * 0.04 }}
-                      style={{ width: '100%', background: 'linear-gradient(180deg,#D9E4F5,#C9A96E)', borderRadius: '4px 4px 0 0', minHeight: 4 }} />
+                      style={{ width: '100%', background: 'linear-gradient(180deg,#D9E4F5,#7DD3FC)', borderRadius: '4px 4px 0 0', minHeight: 4 }} />
                     <span style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.4)' }}>M{d.month}</span>
                   </div>
                 );
@@ -423,7 +423,7 @@ export default function StrategyDashboard() {
             </div>
           </div>
 
-          <div style={{ marginTop: '1.5rem', padding: '1.25rem', background: 'rgba(201,169,110,0.08)', border: '1px solid rgba(201,169,110,0.25)', borderRadius: 12 }}>
+          <div style={{ marginTop: '1.5rem', padding: '1.25rem', background: 'rgba(125,211,252,0.08)', border: '1px solid rgba(125,211,252,0.25)', borderRadius: 12 }}>
             <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.85rem', color: 'rgba(255,255,255,0.85)', lineHeight: 1.9 }}>
               <strong style={{ color: '#E8CF9A' }}>前提:</strong> 初月トライアル {CRYSTAL_PARAMS[scenario].startTrials} 件 / トライアル月次成長 {((CRYSTAL_PARAMS[scenario].trialGrowth - 1) * 100).toFixed(0)}% / 課金転換 {(CRYSTAL_PARAMS[scenario].conversion * 100).toFixed(0)}% / 月次解約 {(CRYSTAL_PARAMS[scenario].churnRate * 100).toFixed(1)}% / プレミアム比率 {(CRYSTAL_PARAMS[scenario].premiumMix * 100).toFixed(0)}%。
             </p>

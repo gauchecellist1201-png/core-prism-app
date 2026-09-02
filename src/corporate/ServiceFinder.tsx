@@ -16,13 +16,13 @@ import { useEffect, useState } from 'react';
 import { PrismLogo, IrisLogo, ResonanceLogo, LumeLogo, GuildLogo, CrystalLogo, PulseLogo, NexusLogo } from '../components/Logo';
 import { setFinderPick } from './finderStore';
 
-const FONT_DISPLAY = '"Cinzel", "Noto Serif JP", serif';
+const FONT_DISPLAY = '"Inter", "Noto Sans JP", sans-serif';
 const FONT_SERIF_JA = '"Noto Serif JP", "游明朝", "Yu Mincho", serif';
 const FONT_SANS = '"Noto Sans JP", "Inter", "游ゴシック", sans-serif';
 
 /* 記号文字（◆）は環境ごとに字形も太さも変わり、フォント未搭載だと豆腐になる。
    選択肢の目印は線画アイコンで描く（恒久ルール）。 */
-function MarkSelect({ size = 15, color = '#C9A96E' }: { size?: number; color?: string }) {
+function MarkSelect({ size = 15, color = '#7DD3FC' }: { size?: number; color?: string }) {
   return (
     <svg aria-hidden width={size} height={size} viewBox="0 0 16 16" fill="none"
       stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
@@ -32,7 +32,7 @@ function MarkSelect({ size = 15, color = '#C9A96E' }: { size?: number; color?: s
   );
 }
 
-function MarkStep({ size = 15, color = '#C9A96E' }: { size?: number; color?: string }) {
+function MarkStep({ size = 15, color = '#7DD3FC' }: { size?: number; color?: string }) {
   return (
     <svg aria-hidden width={size} height={size} viewBox="0 0 16 16" fill="none"
       stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
@@ -92,7 +92,7 @@ export const SERVICES: Service[] = [
     can: '7人の専属AIが、経営の調べもの・書きもの・段取りを引き受ける',
     price: '¥2,980', priceNote: '〜 / 月（税込）',
     firstStep: '事業の情報を貼ると、AI役員が最初の一手を返します',
-    accent: '#C9A96E', url: '/pricing', Logo: PrismLogo,
+    accent: '#7DD3FC', url: '/pricing', Logo: PrismLogo,
   },
   {
     key: 'iris', name: 'Iris',
@@ -124,7 +124,7 @@ export const SERVICES: Service[] = [
     can: 'サイトに1行入れるだけで、24時間 AI がお客様に応対する',
     price: '¥29,800', priceNote: '〜 / 月（税込）・¥49,800 のプランもあります',
     firstStep: 'お店の情報を貼ると、その場で AI が質問に答え始めます',
-    accent: '#C9A96E', url: 'https://crystal-nine-self.vercel.app/', Logo: CrystalLogo,
+    accent: '#7DD3FC', url: 'https://crystal-nine-self.vercel.app/', Logo: CrystalLogo,
   },
 ];
 
@@ -205,7 +205,7 @@ export function recommend(a1: string, a2: string, a3: string) {
 
 const cardBase: React.CSSProperties = {
   borderRadius: 20,
-  border: '1px solid rgba(201,169,110,0.28)',
+  border: '1px solid rgba(125,211,252,0.28)',
   background: 'linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0.012))',
 };
 
@@ -241,21 +241,21 @@ export default function ServiceFinder() {
         paddingLeft: '1.25rem',
         paddingRight: '1.25rem',
         background: 'radial-gradient(120% 100% at 50% 0%, #0E0E0E 0%, #060606 72%)',
-        borderTop: '1px solid rgba(201,169,110,0.16)',
-        borderBottom: '1px solid rgba(201,169,110,0.16)',
+        borderTop: '1px solid rgba(125,211,252,0.16)',
+        borderBottom: '1px solid rgba(125,211,252,0.16)',
         // 追従ヘッダー(約72px)に見出しが隠れないよう、他セクションより深くとる
         scrollMarginTop: 104,
       }}
     >
       <div style={{ maxWidth: 700, margin: '0 auto' }}>
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          <p style={{ fontFamily: FONT_DISPLAY, fontSize: '0.72rem', letterSpacing: '0.32em', color: '#C9A96E', textTransform: 'uppercase', marginBottom: '0.9rem' }}>
+          <p style={{ fontFamily: FONT_DISPLAY, fontSize: '0.72rem', letterSpacing: '0.32em', color: '#7DD3FC', textTransform: 'uppercase', marginBottom: '0.9rem' }}>
             Which one is yours
           </p>
           <h2
             style={{
               fontFamily: FONT_SERIF_JA, fontSize: 'clamp(1.4rem, 5vw, 2.2rem)', fontWeight: 700, lineHeight: 1.6, letterSpacing: '0.03em',
-              background: 'linear-gradient(120deg, #F7EAD0, #C9A96E)', WebkitBackgroundClip: 'text', backgroundClip: 'text', WebkitTextFillColor: 'transparent',
+              background: 'linear-gradient(120deg, #FFFFFF, #7DD3FC)', WebkitBackgroundClip: 'text', backgroundClip: 'text', WebkitTextFillColor: 'transparent',
               marginBottom: '0.8rem',
             }}
           >
@@ -299,11 +299,11 @@ function QuestionView({ q, step, onAnswer, onBack, onCompare }: {
             aria-hidden
             style={{
               height: 3, flex: 1, borderRadius: 999,
-              background: i <= step ? 'linear-gradient(90deg,#E7C987,#C9A96E)' : 'rgba(255,255,255,0.12)',
+              background: i <= step ? 'linear-gradient(90deg,#BAE6FD,#7DD3FC)' : 'rgba(255,255,255,0.12)',
             }}
           />
         ))}
-        <span style={{ fontFamily: FONT_SANS, fontSize: '0.7rem', fontWeight: 700, color: '#C9A96E', fontVariantNumeric: 'tabular-nums', marginLeft: 4 }}>
+        <span style={{ fontFamily: FONT_SANS, fontSize: '0.7rem', fontWeight: 700, color: '#7DD3FC', fontVariantNumeric: 'tabular-nums', marginLeft: 4 }}>
           {step + 1} / 3
         </span>
       </div>
@@ -352,8 +352,8 @@ function ResultView({ result, onReset, onCompare }: {
   const external = top.url.startsWith('http');
   const secondExternal = second.url.startsWith('http');
   return (
-    <div style={{ ...cardBase, padding: '1.6rem 1.15rem 1.3rem', borderColor: 'rgba(201,169,110,0.55)', boxShadow: '0 34px 80px -40px rgba(201,169,110,0.5)' }}>
-      <p style={{ fontFamily: FONT_SANS, fontSize: '0.74rem', letterSpacing: '0.1em', color: '#C9A96E', fontWeight: 800, marginBottom: '1rem' }}>
+    <div style={{ ...cardBase, padding: '1.6rem 1.15rem 1.3rem', borderColor: 'rgba(125,211,252,0.55)', boxShadow: '0 34px 80px -40px rgba(125,211,252,0.5)' }}>
+      <p style={{ fontFamily: FONT_SANS, fontSize: '0.74rem', letterSpacing: '0.1em', color: '#7DD3FC', fontWeight: 800, marginBottom: '1rem' }}>
         あなたには、これを
       </p>
 
@@ -362,19 +362,19 @@ function ResultView({ result, onReset, onCompare }: {
           <TopLogo size={56} withWordmark={false} />
         </span>
         <div style={{ minWidth: 0 }}>
-          <p style={{ fontFamily: FONT_DISPLAY, fontSize: '1.5rem', fontWeight: 700, letterSpacing: '0.08em', color: '#F1E6CE', lineHeight: 1.3 }}>
+          <p style={{ fontFamily: FONT_DISPLAY, fontSize: '1.5rem', fontWeight: 700, letterSpacing: '0.08em', color: '#EEF2F7', lineHeight: 1.3 }}>
             {top.name}
           </p>
           <p style={{ fontFamily: FONT_SANS, fontVariantNumeric: 'tabular-nums', marginTop: 2 }}>
-            <span style={{ fontSize: '1.1rem', fontWeight: 800, color: '#E7C987' }}>{top.price}</span>
+            <span style={{ fontSize: '1.1rem', fontWeight: 800, color: '#BAE6FD' }}>{top.price}</span>
             <span style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.55)', marginLeft: 5 }}>{top.priceNote}</span>
           </p>
         </div>
       </div>
 
       {/* なぜこれなのか（選んだ答えから作る） */}
-      <div style={{ borderRadius: 14, background: 'rgba(201,169,110,0.08)', border: '1px solid rgba(201,169,110,0.22)', padding: '0.95rem 1rem', marginBottom: '1rem' }}>
-        <p style={{ fontFamily: FONT_SANS, fontSize: '0.72rem', fontWeight: 800, letterSpacing: '0.08em', color: '#C9A96E', marginBottom: 6 }}>なぜ、これなのか</p>
+      <div style={{ borderRadius: 14, background: 'rgba(125,211,252,0.08)', border: '1px solid rgba(125,211,252,0.22)', padding: '0.95rem 1rem', marginBottom: '1rem' }}>
+        <p style={{ fontFamily: FONT_SANS, fontSize: '0.72rem', fontWeight: 800, letterSpacing: '0.08em', color: '#7DD3FC', marginBottom: 6 }}>なぜ、これなのか</p>
         <p style={{ fontFamily: FONT_SANS, fontSize: '0.86rem', color: 'rgba(255,255,255,0.82)', lineHeight: 1.95 }}>
           「{painLabel}」——{top.name} は、そこを解くために作りました。
           <br />
@@ -385,7 +385,7 @@ function ResultView({ result, onReset, onCompare }: {
       <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'flex-start', marginBottom: '1.2rem' }}>
         <span style={{ marginTop: 5, display: 'inline-flex', flexShrink: 0 }}><MarkStep /></span>
         <p style={{ fontFamily: FONT_SANS, fontSize: '0.84rem', color: 'rgba(255,255,255,0.74)', lineHeight: 1.9 }}>
-          <strong style={{ color: '#F1E6CE', fontWeight: 700 }}>はじめの一歩：</strong>{top.firstStep}
+          <strong style={{ color: '#EEF2F7', fontWeight: 700 }}>はじめの一歩：</strong>{top.firstStep}
         </p>
       </div>
 
@@ -397,7 +397,7 @@ function ResultView({ result, onReset, onCompare }: {
           display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 54,
           borderRadius: 999, textDecoration: 'none',
           fontFamily: FONT_SANS, fontSize: '0.92rem', fontWeight: 800, letterSpacing: '0.03em',
-          background: 'linear-gradient(90deg,#E7C987,#C9A96E)', color: '#141414',
+          background: 'linear-gradient(90deg,#BAE6FD,#7DD3FC)', color: '#141414',
         }}
       >
         {top.name} を見る →
@@ -415,7 +415,7 @@ function ResultView({ result, onReset, onCompare }: {
       >
         <p style={{ fontFamily: FONT_SANS, fontSize: '0.78rem', color: 'rgba(255,255,255,0.62)', lineHeight: 1.9 }}>
           {channelPhrase}。であれば、
-          <strong style={{ color: '#F1E6CE', fontWeight: 700 }}>次に足すなら {second.name}。</strong>
+          <strong style={{ color: '#EEF2F7', fontWeight: 700 }}>次に足すなら {second.name}。</strong>
           {second.can}（{second.price}{second.priceNote}）。
           <br />
           CORE の8つは、あとからつなげます。最初から全部そろえる必要はありません。
@@ -429,8 +429,8 @@ function ResultView({ result, onReset, onCompare }: {
             marginTop: '0.85rem',
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.55rem', minHeight: 48,
             borderRadius: 999, textDecoration: 'none',
-            border: '1px solid rgba(201,169,110,0.45)', background: 'rgba(201,169,110,0.08)',
-            color: '#F1E6CE', fontFamily: FONT_SANS, fontSize: '0.84rem', fontWeight: 700,
+            border: '1px solid rgba(125,211,252,0.45)', background: 'rgba(125,211,252,0.08)',
+            color: '#EEF2F7', fontFamily: FONT_SANS, fontSize: '0.84rem', fontWeight: 700,
           }}
         >
           <span style={{ lineHeight: 0, flexShrink: 0 }}><SecondLogo size={20} withWordmark={false} /></span>
@@ -456,7 +456,7 @@ function CompareView({ onBack }: { onBack: () => void }) {
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.9rem' }}>
-        <p style={{ fontFamily: FONT_SANS, fontSize: '0.78rem', fontWeight: 800, color: '#C9A96E', letterSpacing: '0.06em' }}>8つ、すべて</p>
+        <p style={{ fontFamily: FONT_SANS, fontSize: '0.78rem', fontWeight: 800, color: '#7DD3FC', letterSpacing: '0.06em' }}>8つ、すべて</p>
         <button type="button" onClick={onBack} style={subtleBtn}>← 3問で選ぶ</button>
       </div>
 
@@ -470,8 +470,8 @@ function CompareView({ onBack }: { onBack: () => void }) {
                 <span style={{ flexShrink: 0, lineHeight: 0, filter: `drop-shadow(0 6px 16px ${s.accent}55)` }}>
                   <Logo size={34} withWordmark={false} />
                 </span>
-                <p style={{ fontFamily: FONT_DISPLAY, fontSize: '1.05rem', fontWeight: 700, letterSpacing: '0.07em', color: '#F1E6CE' }}>{s.name}</p>
-                <span style={{ marginLeft: 'auto', fontFamily: FONT_SANS, fontVariantNumeric: 'tabular-nums', fontSize: '0.95rem', fontWeight: 800, color: '#E7C987', whiteSpace: 'nowrap' }}>
+                <p style={{ fontFamily: FONT_DISPLAY, fontSize: '1.05rem', fontWeight: 700, letterSpacing: '0.07em', color: '#EEF2F7' }}>{s.name}</p>
+                <span style={{ marginLeft: 'auto', fontFamily: FONT_SANS, fontVariantNumeric: 'tabular-nums', fontSize: '0.95rem', fontWeight: 800, color: '#BAE6FD', whiteSpace: 'nowrap' }}>
                   {s.price}
                 </span>
               </div>
@@ -487,8 +487,8 @@ function CompareView({ onBack }: { onBack: () => void }) {
                 rel={external ? 'noopener' : undefined}
                 style={{
                   marginTop: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 46,
-                  borderRadius: 999, textDecoration: 'none', border: '1px solid rgba(201,169,110,0.45)',
-                  background: 'rgba(201,169,110,0.08)', color: '#F1E6CE',
+                  borderRadius: 999, textDecoration: 'none', border: '1px solid rgba(125,211,252,0.45)',
+                  background: 'rgba(125,211,252,0.08)', color: '#EEF2F7',
                   fontFamily: FONT_SANS, fontSize: '0.82rem', fontWeight: 700,
                 }}
               >
@@ -512,7 +512,7 @@ function CompareView({ onBack }: { onBack: () => void }) {
 function CompareRow({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <p style={{ fontFamily: FONT_SANS, fontSize: '0.72rem', fontWeight: 800, letterSpacing: '0.1em', color: 'rgba(201,169,110,0.85)', marginBottom: 3 }}>{label}</p>
+      <p style={{ fontFamily: FONT_SANS, fontSize: '0.72rem', fontWeight: 800, letterSpacing: '0.1em', color: 'rgba(125,211,252,0.85)', marginBottom: 3 }}>{label}</p>
       <p style={{ fontFamily: FONT_SANS, fontSize: '0.82rem', color: 'rgba(255,255,255,0.78)', lineHeight: 1.85 }}>{value}</p>
     </div>
   );

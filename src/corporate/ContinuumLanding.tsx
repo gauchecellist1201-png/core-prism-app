@@ -13,14 +13,14 @@ import { PrismLogo, IrisLogo, ResonanceLogo, LumeLogo, GuildLogo, CoreLogo, Crys
 import { CONTINUUM_PLANS, CONTINUUM_CONTACT_EMAIL } from './continuumPlans';
 import { SUITE_COUNT, SUITE_BEST_TOTAL, formatYen } from './suiteData';
 
-const FONT_DISPLAY = '"Cinzel", "Noto Serif JP", serif';
+const FONT_DISPLAY = '"Inter", "Noto Sans JP", sans-serif';
 const FONT_SERIF_JA = '"Noto Serif JP", "游明朝", "Yu Mincho", serif';
 const FONT_SERIF_EN = '"EB Garamond", "Cormorant Garamond", "Noto Serif JP", serif';
 const FONT_SANS = '"Noto Sans JP", "Inter", "游ゴシック", sans-serif';
 
-const GOLD = '#C9A96E';
-const GOLD_HI = '#E7C987';
-const GOLD_PALE = '#F7EAD0';
+const GOLD = '#7DD3FC';
+const GOLD_HI = '#BAE6FD';
+const GOLD_PALE = '#FFFFFF';
 
 // 環に乗るサービス（角度は上から時計回りに等間隔）。
 // 2026-07-26: 本文「7つ」に対して環が6つしか無かったので Pulse を足した。
@@ -75,19 +75,19 @@ export default function ContinuumLanding() {
     document.title = 'CORE Continuum — あなたが働かなくても、事業が回り続ける。';
     const html = document.documentElement;
     const prevBg = html.style.background;
-    html.style.background = '#050505';
+    html.style.background = '#070A10';
     return () => { document.title = prevTitle; html.style.background = prevBg; };
   }, []);
 
   return (
-    <div style={{ background: '#050505', color: GOLD_PALE, fontFamily: FONT_SANS, overflowX: 'hidden' }}>
+    <div style={{ background: '#070A10', color: GOLD_PALE, fontFamily: FONT_SANS, overflowX: 'hidden' }}>
       <style>{CSS}</style>
 
       {/* ───────── HERO ───────── */}
       <section style={{ position: 'relative', minHeight: '100svh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '5rem 1.25rem 4.5rem', textAlign: 'center', overflow: 'hidden' }}>
         {/* 回る黄金のオーロラ（派手さの土台） */}
         <div aria-hidden className="ct-aurora" />
-        <div aria-hidden style={{ position: 'absolute', inset: 0, background: `radial-gradient(70% 50% at 50% 38%, rgba(201,169,110,0.18), transparent 70%), radial-gradient(120% 80% at 50% 110%, rgba(201,169,110,0.1), transparent 60%)` }} />
+        <div aria-hidden style={{ position: 'absolute', inset: 0, background: `radial-gradient(70% 50% at 50% 38%, rgba(125,211,252,0.18), transparent 70%), radial-gradient(120% 80% at 50% 110%, rgba(125,211,252,0.1), transparent 60%)` }} />
         {/* 金粒（多め） */}
         {[
           { l: '10%', t: '20%', d: '0s' }, { l: '86%', t: '16%', d: '1.2s' }, { l: '6%', t: '64%', d: '2.1s' },
@@ -138,7 +138,7 @@ export default function ContinuumLanding() {
           <a href="#vanish" className="ct-cta-ghost">何を任せられる？</a>
         </div>
 
-        <div aria-hidden style={{ position: 'absolute', bottom: 'calc(18px + env(safe-area-inset-bottom))', left: '50%', transform: 'translateX(-50%)', color: 'rgba(231,201,135,0.55)', fontFamily: FONT_DISPLAY, fontSize: 10, letterSpacing: '0.4em' }}>
+        <div aria-hidden style={{ position: 'absolute', bottom: 'calc(18px + env(safe-area-inset-bottom))', left: '50%', transform: 'translateX(-50%)', color: 'rgba(186,230,253,0.55)', fontFamily: FONT_DISPLAY, fontSize: 10, letterSpacing: '0.4em' }}>
           SCROLL
         </div>
       </section>
@@ -161,8 +161,8 @@ export default function ContinuumLanding() {
                 {v.chore}
               </p>
               <p style={{ fontFamily: FONT_SANS, fontSize: '0.8rem', lineHeight: 1.95, color: 'rgba(247,234,208,0.62)' }}>{v.detail}</p>
-              <p style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 'auto', paddingTop: '0.5rem', borderTop: '1px solid rgba(201,169,110,0.18)' }}>
-                <span style={{ width: 30, height: 30, borderRadius: 9, display: 'grid', placeItems: 'center', background: 'rgba(201,169,110,0.08)', border: '1px solid rgba(201,169,110,0.35)' }}>
+              <p style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 'auto', paddingTop: '0.5rem', borderTop: '1px solid rgba(125,211,252,0.18)' }}>
+                <span style={{ width: 30, height: 30, borderRadius: 9, display: 'grid', placeItems: 'center', background: 'rgba(125,211,252,0.08)', border: '1px solid rgba(125,211,252,0.35)' }}>
                   <v.Logo size={18} withWordmark={false} />
                 </span>
                 <span style={{ fontFamily: FONT_SANS, fontSize: '0.74rem', fontWeight: 700, color: GOLD_HI }}>→ {v.ai} がやります</span>
@@ -186,8 +186,8 @@ export default function ContinuumLanding() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
           {DAY.map((d, i) => (
             <div key={d.time} style={{ display: 'grid', gridTemplateColumns: '52px 1fr', gap: '1rem', position: 'relative', paddingBottom: i === DAY.length - 1 ? 0 : '1.9rem' }}>
-              {i < DAY.length - 1 && <span aria-hidden style={{ position: 'absolute', left: 25, top: 30, bottom: 0, width: 1, background: 'linear-gradient(180deg, rgba(201,169,110,0.45), rgba(201,169,110,0.08))' }} />}
-              <div style={{ width: 52, height: 30, display: 'grid', placeItems: 'center', borderRadius: 999, border: `1px solid rgba(201,169,110,0.45)`, fontFamily: FONT_SERIF_EN, fontSize: '0.78rem', color: GOLD_HI, background: '#0a0a0a', zIndex: 1 }}>{d.time}</div>
+              {i < DAY.length - 1 && <span aria-hidden style={{ position: 'absolute', left: 25, top: 30, bottom: 0, width: 1, background: 'linear-gradient(180deg, rgba(125,211,252,0.45), rgba(125,211,252,0.08))' }} />}
+              <div style={{ width: 52, height: 30, display: 'grid', placeItems: 'center', borderRadius: 999, border: `1px solid rgba(125,211,252,0.45)`, fontFamily: FONT_SERIF_EN, fontSize: '0.78rem', color: GOLD_HI, background: '#0a0a0a', zIndex: 1 }}>{d.time}</div>
               <div>
                 <p style={{ fontFamily: FONT_SANS, fontSize: '0.8rem', lineHeight: 1.9, color: 'rgba(247,234,208,0.55)' }}>
                   <span style={{ color: GOLD, fontWeight: 700, marginRight: 8 }}>AI</span>{d.ai}
@@ -217,7 +217,7 @@ export default function ContinuumLanding() {
           {SIX.map(s => (
             <div key={s.name} className="ct-six-card">
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
-                <span style={{ width: 46, height: 46, borderRadius: 13, display: 'grid', placeItems: 'center', flexShrink: 0, background: 'radial-gradient(circle at 50% 30%, rgba(201,169,110,0.16), rgba(0,0,0,0.4))', border: `1px solid rgba(201,169,110,0.4)` }}>
+                <span style={{ width: 46, height: 46, borderRadius: 13, display: 'grid', placeItems: 'center', flexShrink: 0, background: 'radial-gradient(circle at 50% 30%, rgba(125,211,252,0.16), rgba(0,0,0,0.4))', border: `1px solid rgba(125,211,252,0.4)` }}>
                   <s.Logo size={28} withWordmark={false} />
                 </span>
                 <span>
@@ -248,8 +248,8 @@ export default function ContinuumLanding() {
             <div key={pl.name} className={pl.featured ? 'ct-plan-featured' : undefined} style={{
               display: 'flex', flexDirection: 'column', gap: '0.9rem', position: 'relative',
               borderRadius: 20, padding: pl.featured ? '2.1rem 1.7rem' : '1.8rem 1.6rem',
-              background: pl.featured ? 'linear-gradient(165deg, rgba(201,169,110,0.16), rgba(201,169,110,0.03))' : 'rgba(255,255,255,0.03)',
-              border: pl.featured ? `1px solid rgba(201,169,110,0.65)` : '1px solid rgba(255,255,255,0.1)',
+              background: pl.featured ? 'linear-gradient(165deg, rgba(125,211,252,0.16), rgba(125,211,252,0.03))' : 'rgba(255,255,255,0.03)',
+              border: pl.featured ? `1px solid rgba(125,211,252,0.65)` : '1px solid rgba(255,255,255,0.1)',
             }}>
               {pl.featured && (
                 <span style={{ position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)', whiteSpace: 'nowrap', fontFamily: FONT_SANS, fontSize: '0.64rem', fontWeight: 800, letterSpacing: '0.16em', color: '#141414', background: `linear-gradient(90deg,${GOLD_HI},${GOLD})`, borderRadius: 999, padding: '5px 14px' }}>
@@ -257,7 +257,7 @@ export default function ContinuumLanding() {
                 </span>
               )}
               <div>
-                <p style={{ fontFamily: FONT_SERIF_EN, fontSize: '1.2rem', letterSpacing: '0.1em', color: '#F1E6CE' }}>{pl.name}</p>
+                <p style={{ fontFamily: FONT_SERIF_EN, fontSize: '1.2rem', letterSpacing: '0.1em', color: '#EEF2F7' }}>{pl.name}</p>
                 <p style={{ fontFamily: FONT_SANS, fontSize: '0.76rem', color: 'rgba(255,255,255,0.5)', marginTop: 4, lineHeight: 1.8 }}>{pl.tag}</p>
               </div>
               <p style={{ fontFamily: FONT_SANS, fontVariantNumeric: 'tabular-nums' }}>
@@ -307,7 +307,7 @@ export default function ContinuumLanding() {
 
       {/* ───────── FINAL ───────── */}
       <section style={{ position: 'relative', textAlign: 'center', padding: 'clamp(5rem, 10vw, 8rem) 1.5rem calc(6rem + env(safe-area-inset-bottom))', overflow: 'hidden' }}>
-        <div aria-hidden style={{ position: 'absolute', inset: 0, background: `radial-gradient(60% 60% at 50% 100%, rgba(201,169,110,0.16), transparent 70%)` }} />
+        <div aria-hidden style={{ position: 'absolute', inset: 0, background: `radial-gradient(60% 60% at 50% 100%, rgba(125,211,252,0.16), transparent 70%)` }} />
         <p style={{ fontFamily: FONT_DISPLAY, fontSize: '0.7rem', letterSpacing: '0.44em', color: GOLD, textTransform: 'uppercase', marginBottom: '1.4rem', position: 'relative' }}>
           Your Time, Back
         </p>
@@ -330,34 +330,34 @@ export default function ContinuumLanding() {
 }
 
 function GoldLine() {
-  return <div aria-hidden style={{ height: 1, maxWidth: 1080, margin: '0 auto', background: 'linear-gradient(90deg, transparent, rgba(201,169,110,0.4), transparent)' }} />;
+  return <div aria-hidden style={{ height: 1, maxWidth: 1080, margin: '0 auto', background: 'linear-gradient(90deg, transparent, rgba(125,211,252,0.4), transparent)' }} />;
 }
 
 const CSS = `
   /* ── 回る黄金のオーロラ（ヒーロー背景・派手さの土台）── */
   .ct-aurora { position: absolute; left: 50%; top: 34%; width: 170vmax; height: 170vmax; transform: translate(-50%, -50%);
-    background: conic-gradient(from 0deg, transparent 0deg, rgba(201,169,110,0.10) 40deg, transparent 90deg, rgba(231,201,135,0.07) 160deg, transparent 210deg, rgba(201,169,110,0.09) 300deg, transparent 360deg);
+    background: conic-gradient(from 0deg, transparent 0deg, rgba(125,211,252,0.10) 40deg, transparent 90deg, rgba(186,230,253,0.07) 160deg, transparent 210deg, rgba(125,211,252,0.09) 300deg, transparent 360deg);
     animation: ctAurora 36s linear infinite; pointer-events: none; }
   @keyframes ctAurora { to { transform: translate(-50%, -50%) rotate(360deg); } }
 
   /* ── 黄金の環（6ロゴが CORE を巡る）── */
   .ct-orbit-wrap { position: relative; width: min(76vw, 340px); height: min(76vw, 340px); }
   .ct-beam { position: absolute; inset: -14%; border-radius: 50%;
-    background: conic-gradient(from 0deg, transparent 0deg, rgba(231,201,135,0.22) 24deg, transparent 60deg);
+    background: conic-gradient(from 0deg, transparent 0deg, rgba(186,230,253,0.22) 24deg, transparent 60deg);
     animation: ctSpin 9s linear infinite; filter: blur(6px); }
-  .ct-ring { position: absolute; inset: 0; border-radius: 50%; border: 1px solid rgba(201,169,110,0.4); box-shadow: 0 0 70px rgba(201,169,110,0.16), inset 0 0 44px rgba(201,169,110,0.07); animation: ctRingPulse 5.5s ease-in-out infinite; }
-  .ct-ring2 { inset: 12%; border-color: rgba(201,169,110,0.18); box-shadow: none; animation: none; }
-  .ct-core { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 96px; height: 96px; border-radius: 50%; display: grid; place-items: center; background: radial-gradient(circle at 50% 32%, rgba(201,169,110,0.24), rgba(5,5,5,0.9)); border: 1px solid rgba(201,169,110,0.6); box-shadow: 0 0 48px rgba(201,169,110,0.34); animation: ctCoreBreath 4.5s ease-in-out infinite; z-index: 2; }
+  .ct-ring { position: absolute; inset: 0; border-radius: 50%; border: 1px solid rgba(125,211,252,0.4); box-shadow: 0 0 70px rgba(125,211,252,0.16), inset 0 0 44px rgba(125,211,252,0.07); animation: ctRingPulse 5.5s ease-in-out infinite; }
+  .ct-ring2 { inset: 12%; border-color: rgba(125,211,252,0.18); box-shadow: none; animation: none; }
+  .ct-core { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 96px; height: 96px; border-radius: 50%; display: grid; place-items: center; background: radial-gradient(circle at 50% 32%, rgba(125,211,252,0.24), rgba(5,5,5,0.9)); border: 1px solid rgba(125,211,252,0.6); box-shadow: 0 0 48px rgba(125,211,252,0.34); animation: ctCoreBreath 4.5s ease-in-out infinite; z-index: 2; }
   .ct-orbit { position: absolute; inset: 0; animation: ctSpin 46s linear infinite; }
   .ct-sat { position: absolute; left: 50%; top: 50%; transform: rotate(var(--deg)) translateY(calc(min(38vw, 170px) * -1)) rotate(calc(var(--deg) * -1)); }
-  .ct-sat-inner { width: 56px; height: 56px; margin: -28px 0 0 -28px; border-radius: 50%; display: grid; place-items: center; background: radial-gradient(circle at 50% 30%, rgba(201,169,110,0.16), rgba(8,8,8,0.92)); border: 1px solid rgba(201,169,110,0.46); box-shadow: 0 6px 22px rgba(0,0,0,0.55), 0 0 20px rgba(201,169,110,0.18); animation: ctSpinRev 46s linear infinite; }
+  .ct-sat-inner { width: 56px; height: 56px; margin: -28px 0 0 -28px; border-radius: 50%; display: grid; place-items: center; background: radial-gradient(circle at 50% 30%, rgba(125,211,252,0.16), rgba(8,8,8,0.92)); border: 1px solid rgba(125,211,252,0.46); box-shadow: 0 6px 22px rgba(0,0,0,0.55), 0 0 20px rgba(125,211,252,0.18); animation: ctSpinRev 46s linear infinite; }
   @keyframes ctSpin { to { transform: rotate(360deg); } }
   @keyframes ctSpinRev { to { transform: rotate(-360deg); } }
-  @keyframes ctCoreBreath { 0%,100% { box-shadow: 0 0 48px rgba(201,169,110,0.34); } 50% { box-shadow: 0 0 84px rgba(201,169,110,0.56); } }
-  @keyframes ctRingPulse { 0%,100% { box-shadow: 0 0 70px rgba(201,169,110,0.16), inset 0 0 44px rgba(201,169,110,0.07); } 50% { box-shadow: 0 0 100px rgba(201,169,110,0.28), inset 0 0 60px rgba(201,169,110,0.12); } }
+  @keyframes ctCoreBreath { 0%,100% { box-shadow: 0 0 48px rgba(125,211,252,0.34); } 50% { box-shadow: 0 0 84px rgba(125,211,252,0.56); } }
+  @keyframes ctRingPulse { 0%,100% { box-shadow: 0 0 70px rgba(125,211,252,0.16), inset 0 0 44px rgba(125,211,252,0.07); } 50% { box-shadow: 0 0 100px rgba(125,211,252,0.28), inset 0 0 60px rgba(125,211,252,0.12); } }
 
   /* 金粒 */
-  .ct-dust { position: absolute; width: 3px; height: 3px; border-radius: 50%; background: rgba(231,201,135,0.85); box-shadow: 0 0 9px rgba(231,201,135,0.95); animation: ctFloat 6s ease-in-out infinite; }
+  .ct-dust { position: absolute; width: 3px; height: 3px; border-radius: 50%; background: rgba(186,230,253,0.85); box-shadow: 0 0 9px rgba(186,230,253,0.95); animation: ctFloat 6s ease-in-out infinite; }
   @keyframes ctFloat { 0%,100% { opacity: 0.25; transform: translateY(0); } 50% { opacity: 1; transform: translateY(-16px); } }
 
   /* きらめく金文字（H1/決めの見出し） */
@@ -375,16 +375,16 @@ const CSS = `
   @keyframes ctStrike { from { transform: scaleX(0); opacity: 0; } to { transform: scaleX(1); opacity: 0.85; } }
 
   /* CTA */
-  .ct-cta-main { display: inline-flex; align-items: center; justify-content: center; min-height: 52px; padding: 0 34px; border-radius: 999px; text-decoration: none; font-family: ${FONT_SANS.replace(/"/g, "'")}; font-size: 0.92rem; font-weight: 800; letter-spacing: 0.05em; color: #141414; background: linear-gradient(90deg, ${GOLD_HI}, ${GOLD}); box-shadow: 0 14px 44px -12px rgba(201,169,110,0.75); animation: ctCtaGlow 3.4s ease-in-out infinite; }
-  @keyframes ctCtaGlow { 0%,100% { box-shadow: 0 14px 44px -12px rgba(201,169,110,0.75); } 50% { box-shadow: 0 14px 58px -8px rgba(231,201,135,0.95); } }
-  .ct-cta-ghost { display: inline-flex; align-items: center; justify-content: center; min-height: 52px; padding: 0 26px; border-radius: 999px; text-decoration: none; font-family: ${FONT_SANS.replace(/"/g, "'")}; font-size: 0.88rem; font-weight: 700; letter-spacing: 0.04em; color: ${GOLD_PALE}; border: 1px solid rgba(201,169,110,0.5); background: rgba(201,169,110,0.06); }
+  .ct-cta-main { display: inline-flex; align-items: center; justify-content: center; min-height: 52px; padding: 0 34px; border-radius: 999px; text-decoration: none; font-family: ${FONT_SANS.replace(/"/g, "'")}; font-size: 0.92rem; font-weight: 800; letter-spacing: 0.05em; color: #141414; background: linear-gradient(90deg, ${GOLD_HI}, ${GOLD}); box-shadow: 0 14px 44px -12px rgba(125,211,252,0.75); animation: ctCtaGlow 3.4s ease-in-out infinite; }
+  @keyframes ctCtaGlow { 0%,100% { box-shadow: 0 14px 44px -12px rgba(125,211,252,0.75); } 50% { box-shadow: 0 14px 58px -8px rgba(186,230,253,0.95); } }
+  .ct-cta-ghost { display: inline-flex; align-items: center; justify-content: center; min-height: 52px; padding: 0 26px; border-radius: 999px; text-decoration: none; font-family: ${FONT_SANS.replace(/"/g, "'")}; font-size: 0.88rem; font-weight: 700; letter-spacing: 0.04em; color: ${GOLD_PALE}; border: 1px solid rgba(125,211,252,0.5); background: rgba(125,211,252,0.06); }
 
-  .ct-six-card { padding: 1.4rem 1.3rem; border-radius: 18px; border: 1px solid rgba(201,169,110,0.26); background: linear-gradient(170deg, rgba(201,169,110,0.06), rgba(255,255,255,0.01)); transition: border-color 0.3s ease, transform 0.3s ease; }
-  .ct-six-card:hover { border-color: rgba(201,169,110,0.6); transform: translateY(-2px); }
+  .ct-six-card { padding: 1.4rem 1.3rem; border-radius: 18px; border: 1px solid rgba(125,211,252,0.26); background: linear-gradient(170deg, rgba(125,211,252,0.06), rgba(255,255,255,0.01)); transition: border-color 0.3s ease, transform 0.3s ease; }
+  .ct-six-card:hover { border-color: rgba(125,211,252,0.6); transform: translateY(-2px); }
 
   /* 推奨プランの光る枠 */
-  .ct-plan-featured { box-shadow: 0 34px 80px -36px rgba(201,169,110,0.55); animation: ctPlanGlow 4.2s ease-in-out infinite; }
-  @keyframes ctPlanGlow { 0%,100% { box-shadow: 0 34px 80px -36px rgba(201,169,110,0.55); } 50% { box-shadow: 0 34px 96px -30px rgba(231,201,135,0.8); } }
+  .ct-plan-featured { box-shadow: 0 34px 80px -36px rgba(125,211,252,0.55); animation: ctPlanGlow 4.2s ease-in-out infinite; }
+  @keyframes ctPlanGlow { 0%,100% { box-shadow: 0 34px 80px -36px rgba(125,211,252,0.55); } 50% { box-shadow: 0 34px 96px -30px rgba(186,230,253,0.8); } }
 
   @media (prefers-reduced-motion: reduce) {
     .ct-orbit, .ct-sat-inner, .ct-core, .ct-dust, .ct-aurora, .ct-beam, .ct-shimmer, .ct-cta-main, .ct-plan-featured, .ct-ring { animation: none !important; }

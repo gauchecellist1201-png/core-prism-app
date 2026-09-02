@@ -11,7 +11,7 @@ import { PrismLogo, IrisLogo } from '../components/Logo';
 import { isPlanV2Enabled } from '../lib/billing';
 import LegalModal, { type LegalKind } from '../components/LegalModal';
 
-const FONT_DISPLAY = '"Cinzel", "Noto Serif JP", serif';
+const FONT_DISPLAY = '"Inter", "Noto Sans JP", sans-serif';
 const FONT_SERIF_JA = '"Noto Serif JP", "游明朝", serif';
 const FONT_SERIF_EN = '"EB Garamond", "Noto Serif JP", serif';
 const FONT_SANS = '"Noto Sans JP", "Inter", sans-serif';

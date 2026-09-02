@@ -89,7 +89,7 @@ function onAnchor(e: React.MouseEvent<HTMLAnchorElement>, href: string) {
 export default function SierLanding() {
   useSierMeta();
   return (
-    <div style={{ background: INK, color: '#F1E9D8', fontFamily: FONT_SANS, minHeight: '100dvh', overflowX: 'clip' }}>
+    <div style={{ background: INK, color: '#F3F6FB', fontFamily: FONT_SANS, minHeight: '100dvh', overflowX: 'clip' }}>
       <TopBar />
       <Hero />
       <PainSection />
@@ -112,7 +112,7 @@ export default function SierLanding() {
         href="#sier-contact"
         accent1={GOLD_LIGHT}
         accent2={GOLD}
-        ctaColor="#14100a"
+        ctaColor="#0B1220"
       />
     </div>
   );
@@ -124,13 +124,13 @@ function TopBar() {
     <div style={{
       position: 'sticky', top: 0, zIndex: 30,
       background: 'rgba(5,5,5,0.82)', backdropFilter: 'blur(10px)',
-      borderBottom: '1px solid rgba(201,169,110,0.16)',
+      borderBottom: '1px solid rgba(125,211,252,0.16)',
       padding: '0.9rem 1.5rem',
       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
     }}>
       <a href="/corp" style={{
         fontFamily: FONT_DISPLAY, fontSize: '0.95rem', letterSpacing: '0.22em',
-        color: '#F1E6CE', textDecoration: 'none', fontWeight: 700,
+        color: '#EEF2F7', textDecoration: 'none', fontWeight: 700,
         display: 'inline-flex', alignItems: 'center', minHeight: 44,
       }}>
         CORE
@@ -155,7 +155,7 @@ function Hero() {
       <div aria-hidden style={{
         position: 'absolute', top: -160, left: '50%', transform: 'translateX(-50%)',
         width: 780, height: 780, borderRadius: '50%',
-        background: 'radial-gradient(circle, rgba(201,169,110,0.18) 0%, transparent 62%)',
+        background: 'radial-gradient(circle, rgba(125,211,252,0.18) 0%, transparent 62%)',
         filter: 'blur(70px)', pointerEvents: 'none',
       }} />
       <div style={{ maxWidth: 880, margin: '0 auto', position: 'relative' }}>
@@ -211,7 +211,7 @@ function PainSection() {
   return (
     <Section
       id="pain"
-      background="#070604"
+      background="#080B11"
       labelJa="よくある状況"
       labelEn="SIER PAIN POINTS"
       title={<>こんな状況、ありませんか。</>}
@@ -236,7 +236,7 @@ function PainSection() {
       <p style={{
         marginTop: '2.6rem', textAlign: 'center',
         fontFamily: FONT_SERIF_JA, fontSize: 'clamp(1.15rem, 2.4vw, 1.5rem)', fontWeight: 700,
-        color: '#F5EAD4', letterSpacing: '0.04em',
+        color: '#F3F6FB', letterSpacing: '0.04em',
       }}>
         その案件、COREが裏側から支援します。
       </p>
@@ -249,7 +249,7 @@ function StructureSection() {
   return (
     <Section
       id="structure"
-      background="radial-gradient(120% 95% at 50% 0%, #0e0b06 0%, #050505 70%)"
+      background="radial-gradient(120% 95% at 50% 0%, #0C1119 0%, #070A10 70%)"
       labelJa="座組み"
       labelEn="HOW WE FIT IN"
       title={<>「外注先」ではなく、<br />御社の裏にいるAI開発チーム。</>}
@@ -275,36 +275,36 @@ function StructureDiagram() {
     >
       <defs>
         <linearGradient id="sierGold" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#F7EAD0" />
-          <stop offset="55%" stopColor="#E7C987" />
-          <stop offset="100%" stopColor="#C9A96E" />
+          <stop offset="0%" stopColor="#FFFFFF" />
+          <stop offset="55%" stopColor="#BAE6FD" />
+          <stop offset="100%" stopColor="#7DD3FC" />
         </linearGradient>
       </defs>
 
       {/* SIer 箱 */}
-      <rect x="20" y="30" width="200" height="160" rx="16" fill="rgba(255,255,255,0.045)" stroke="rgba(201,169,110,0.4)" />
-      <text x="120" y="70" textAnchor="middle" fill="#F1E6CE" fontSize="17" fontWeight="700" fontFamily={FONT_SERIF_JA}>SIer</text>
-      <text x="120" y="94" textAnchor="middle" fill="rgba(240,233,216,0.6)" fontSize="11" fontFamily={FONT_SERIF_JA}>営業・PM</text>
+      <rect x="20" y="30" width="200" height="160" rx="16" fill="rgba(255,255,255,0.045)" stroke="rgba(125,211,252,0.4)" />
+      <text x="120" y="70" textAnchor="middle" fill="#EEF2F7" fontSize="17" fontWeight="700" fontFamily={FONT_SERIF_JA}>SIer</text>
+      <text x="120" y="94" textAnchor="middle" fill="rgba(226,232,240,0.6)" fontSize="11" fontFamily={FONT_SERIF_JA}>営業・PM</text>
 
       {/* CORE 箱（SIer の中に半分めり込ませて「内側にいる」ことを示す） */}
-      <rect x="150" y="60" width="200" height="100" rx="14" fill="rgba(201,169,110,0.12)" stroke="url(#sierGold)" strokeWidth="1.4" />
-      <text x="250" y="102" textAnchor="middle" fill="#F5EAD4" fontSize="14" fontWeight="700" fontFamily={FONT_SERIF_JA}>CORE</text>
-      <text x="250" y="122" textAnchor="middle" fill="rgba(240,233,216,0.72)" fontSize="10.5" fontFamily={FONT_SERIF_JA}>AI Development Team</text>
+      <rect x="150" y="60" width="200" height="100" rx="14" fill="rgba(125,211,252,0.12)" stroke="url(#sierGold)" strokeWidth="1.4" />
+      <text x="250" y="102" textAnchor="middle" fill="#F3F6FB" fontSize="14" fontWeight="700" fontFamily={FONT_SERIF_JA}>CORE</text>
+      <text x="250" y="122" textAnchor="middle" fill="rgba(226,232,240,0.72)" fontSize="10.5" fontFamily={FONT_SERIF_JA}>AI Development Team</text>
 
       {/* 矢印: SIer+CORE → エンドクライアント */}
       <line x1="360" y1="110" x2="460" y2="110" stroke="url(#sierGold)" strokeWidth="1.6" markerEnd="url(#sierArrow)" />
       <defs>
         <marker id="sierArrow" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
-          <path d="M0,0 L9,4.5 L0,9 Z" fill="#E7C987" />
+          <path d="M0,0 L9,4.5 L0,9 Z" fill="#BAE6FD" />
         </marker>
       </defs>
 
       {/* エンドクライアント箱 */}
-      <rect x="470" y="55" width="230" height="110" rx="16" fill="rgba(255,255,255,0.03)" stroke="rgba(201,169,110,0.28)" />
-      <text x="585" y="100" textAnchor="middle" fill="#F1E6CE" fontSize="15" fontWeight="700" fontFamily={FONT_SERIF_JA}>エンドクライアント</text>
-      <text x="585" y="122" textAnchor="middle" fill="rgba(240,233,216,0.6)" fontSize="10.5" fontFamily={FONT_SERIF_JA}>契約は御社のまま</text>
+      <rect x="470" y="55" width="230" height="110" rx="16" fill="rgba(255,255,255,0.03)" stroke="rgba(125,211,252,0.28)" />
+      <text x="585" y="100" textAnchor="middle" fill="#EEF2F7" fontSize="15" fontWeight="700" fontFamily={FONT_SERIF_JA}>エンドクライアント</text>
+      <text x="585" y="122" textAnchor="middle" fill="rgba(226,232,240,0.6)" fontSize="10.5" fontFamily={FONT_SERIF_JA}>契約は御社のまま</text>
 
-      <text x="360" y="200" textAnchor="middle" fill="rgba(240,233,216,0.5)" fontSize="10.5" letterSpacing="0.08em" fontFamily={FONT_SERIF_JA}>
+      <text x="360" y="200" textAnchor="middle" fill="rgba(226,232,240,0.5)" fontSize="10.5" letterSpacing="0.08em" fontFamily={FONT_SERIF_JA}>
         SIer ＋ CORE（内側） → エンドクライアント
       </text>
     </svg>
@@ -324,40 +324,40 @@ function StructureDiagramMobile() {
     >
       <defs>
         <linearGradient id="sierGoldM" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#F7EAD0" />
-          <stop offset="55%" stopColor="#E7C987" />
-          <stop offset="100%" stopColor="#C9A96E" />
+          <stop offset="0%" stopColor="#FFFFFF" />
+          <stop offset="55%" stopColor="#BAE6FD" />
+          <stop offset="100%" stopColor="#7DD3FC" />
         </linearGradient>
         {/* orient="auto" は marker のローカル +x 軸をパスの進行方向へ回転させる。
             この矢印は縦線(下向き)に付くので、横向き矢印(sierArrow)と同じ
             「+x を指す」形のまま使う(down 用に描き直すと二重に回転して逆を向く)。 */}
         <marker id="sierArrowM" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
-          <path d="M0,0 L9,4.5 L0,9 Z" fill="#E7C987" />
+          <path d="M0,0 L9,4.5 L0,9 Z" fill="#BAE6FD" />
         </marker>
       </defs>
 
       {/* SIer 箱 */}
-      <rect x="20" y="16" width="280" height="86" rx="16" fill="rgba(255,255,255,0.045)" stroke="rgba(201,169,110,0.4)" />
-      <text x="160" y="52" textAnchor="middle" fill="#F1E6CE" fontSize="18" fontWeight="700" fontFamily={FONT_SERIF_JA}>SIer</text>
-      <text x="160" y="76" textAnchor="middle" fill="rgba(240,233,216,0.6)" fontSize="12" fontFamily={FONT_SERIF_JA}>営業・PM</text>
+      <rect x="20" y="16" width="280" height="86" rx="16" fill="rgba(255,255,255,0.045)" stroke="rgba(125,211,252,0.4)" />
+      <text x="160" y="52" textAnchor="middle" fill="#EEF2F7" fontSize="18" fontWeight="700" fontFamily={FONT_SERIF_JA}>SIer</text>
+      <text x="160" y="76" textAnchor="middle" fill="rgba(226,232,240,0.6)" fontSize="12" fontFamily={FONT_SERIF_JA}>営業・PM</text>
 
       {/* CORE 箱（SIer に半分めり込ませて「内側にいる」ことを示す） */}
-      <rect x="45" y="70" width="230" height="70" rx="14" fill="rgba(201,169,110,0.12)" stroke="url(#sierGoldM)" strokeWidth="1.4" />
-      <text x="160" y="105" textAnchor="middle" fill="#F5EAD4" fontSize="15" fontWeight="700" fontFamily={FONT_SERIF_JA}>CORE</text>
-      <text x="160" y="124" textAnchor="middle" fill="rgba(240,233,216,0.72)" fontSize="11" fontFamily={FONT_SERIF_JA}>AI Development Team</text>
+      <rect x="45" y="70" width="230" height="70" rx="14" fill="rgba(125,211,252,0.12)" stroke="url(#sierGoldM)" strokeWidth="1.4" />
+      <text x="160" y="105" textAnchor="middle" fill="#F3F6FB" fontSize="15" fontWeight="700" fontFamily={FONT_SERIF_JA}>CORE</text>
+      <text x="160" y="124" textAnchor="middle" fill="rgba(226,232,240,0.72)" fontSize="11" fontFamily={FONT_SERIF_JA}>AI Development Team</text>
 
       {/* 矢印: 下向き */}
       <line x1="160" y1="160" x2="160" y2="228" stroke="url(#sierGoldM)" strokeWidth="1.8" markerEnd="url(#sierArrowM)" />
 
       {/* エンドクライアント箱 */}
-      <rect x="20" y="238" width="280" height="86" rx="16" fill="rgba(255,255,255,0.03)" stroke="rgba(201,169,110,0.28)" />
-      <text x="160" y="274" textAnchor="middle" fill="#F1E6CE" fontSize="16" fontWeight="700" fontFamily={FONT_SERIF_JA}>エンドクライアント</text>
-      <text x="160" y="296" textAnchor="middle" fill="rgba(240,233,216,0.6)" fontSize="11.5" fontFamily={FONT_SERIF_JA}>契約は御社のまま</text>
+      <rect x="20" y="238" width="280" height="86" rx="16" fill="rgba(255,255,255,0.03)" stroke="rgba(125,211,252,0.28)" />
+      <text x="160" y="274" textAnchor="middle" fill="#EEF2F7" fontSize="16" fontWeight="700" fontFamily={FONT_SERIF_JA}>エンドクライアント</text>
+      <text x="160" y="296" textAnchor="middle" fill="rgba(226,232,240,0.6)" fontSize="11.5" fontFamily={FONT_SERIF_JA}>契約は御社のまま</text>
 
-      <text x="160" y="360" textAnchor="middle" fill="rgba(240,233,216,0.5)" fontSize="11.5" letterSpacing="0.04em" fontFamily={FONT_SERIF_JA}>
+      <text x="160" y="360" textAnchor="middle" fill="rgba(226,232,240,0.5)" fontSize="11.5" letterSpacing="0.04em" fontFamily={FONT_SERIF_JA}>
         SIer ＋ CORE（内側）
       </text>
-      <text x="160" y="380" textAnchor="middle" fill="rgba(240,233,216,0.5)" fontSize="11.5" letterSpacing="0.04em" fontFamily={FONT_SERIF_JA}>
+      <text x="160" y="380" textAnchor="middle" fill="rgba(226,232,240,0.5)" fontSize="11.5" letterSpacing="0.04em" fontFamily={FONT_SERIF_JA}>
         → エンドクライアント
       </text>
     </svg>
@@ -369,7 +369,7 @@ function CapabilitiesSection() {
   return (
     <Section
       id="capabilities"
-      background="#070604"
+      background="#080B11"
       labelJa="対応可能なAI開発"
       labelEn="WHAT WE BUILD"
       title={<>できることを、具体的に。</>}
@@ -381,14 +381,14 @@ function CapabilitiesSection() {
             <p style={{ fontFamily: FONT_DISPLAY, fontSize: '0.72rem', letterSpacing: '0.22em', color: GOLD, fontWeight: 700, marginBottom: '0.5rem' }}>
               {c.sub}
             </p>
-            <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '1.05rem', fontWeight: 700, color: '#F5EAD4', marginBottom: '0.9rem' }}>
+            <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '1.05rem', fontWeight: 700, color: '#F3F6FB', marginBottom: '0.9rem' }}>
               {c.title}
             </p>
             <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
               {c.items.map(item => (
                 <li key={item} style={{
-                  fontFamily: FONT_SERIF_JA, fontSize: '0.8rem', color: 'rgba(240,233,216,0.82)',
-                  border: '1px solid rgba(201,169,110,0.26)', borderRadius: 8, padding: '5px 11px',
+                  fontFamily: FONT_SERIF_JA, fontSize: '0.8rem', color: 'rgba(226,232,240,0.82)',
+                  border: '1px solid rgba(125,211,252,0.26)', borderRadius: 8, padding: '5px 11px',
                 }}>
                   {item}
                 </li>
@@ -406,7 +406,7 @@ function ConsultCasesSection() {
   return (
     <Section
       id="consult-cases"
-      background="radial-gradient(120% 95% at 50% 0%, #0e0b06 0%, #050505 70%)"
+      background="radial-gradient(120% 95% at 50% 0%, #0C1119 0%, #070A10 70%)"
       labelJa="こんな案件をご相談ください"
       labelEn="WHEN TO CALL US"
       title={<>いま持っている、あの案件です。</>}
@@ -421,7 +421,7 @@ function ConsultCasesSection() {
             style={{
               display: 'flex', alignItems: 'flex-start', gap: '0.8rem',
               padding: '0.9rem 1.1rem', borderRadius: 12,
-              background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(201,169,110,0.18)',
+              background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(125,211,252,0.18)',
             }}
           >
             <span aria-hidden style={{ color: GOLD, fontFamily: FONT_DISPLAY, fontSize: '0.9rem', flexShrink: 0 }}>✓</span>
@@ -438,7 +438,7 @@ function SizeBandsSection() {
   return (
     <Section
       id="size-bands"
-      background="#070604"
+      background="#080B11"
       labelJa="案件規模の目安"
       labelEn="PROJECT SIZE"
       title={<>ご相談いただきやすい規模感。</>}
@@ -447,7 +447,7 @@ function SizeBandsSection() {
       <div className="corp-grid-3">
         {SIZE_BANDS.map((b, i) => (
           <motion.div key={b.name} {...reveal} transition={{ ...reveal.transition, delay: i * 0.06 }} style={{ ...quietCard, textAlign: 'center' }}>
-            <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.92rem', fontWeight: 700, color: '#F5EAD4', marginBottom: '0.6rem' }}>
+            <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.92rem', fontWeight: 700, color: '#F3F6FB', marginBottom: '0.6rem' }}>
               {b.name}
             </p>
             <p style={{
@@ -472,7 +472,7 @@ function FlowSection() {
   return (
     <Section
       id="flow"
-      background="radial-gradient(120% 95% at 50% 0%, #0e0b06 0%, #050505 70%)"
+      background="radial-gradient(120% 95% at 50% 0%, #0C1119 0%, #070A10 70%)"
       labelJa="進め方"
       labelEn="HOW IT WORKS"
       title={<>相談から提供まで、5ステップ。</>}
@@ -482,7 +482,7 @@ function FlowSection() {
         {ENGAGEMENT_FLOW.map((s, i) => (
           <motion.div key={s.no} {...reveal} transition={{ ...reveal.transition, delay: i * 0.06 }} className="corp-step">
             <span style={{ ...stepNumber, fontSize: '1.3rem', display: 'block', marginBottom: '0.6rem' }}>{s.no}</span>
-            <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.98rem', fontWeight: 700, color: '#F1E6CE', marginBottom: '0.5rem' }}>{s.title}</p>
+            <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.98rem', fontWeight: 700, color: '#EEF2F7', marginBottom: '0.5rem' }}>{s.title}</p>
             <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.82rem', color: TEXT_BODY, lineHeight: 1.9 }}>{s.body}</p>
           </motion.div>
         ))}
@@ -497,7 +497,7 @@ function SafetySection() {
   return (
     <Section
       id="safety"
-      background="#070604"
+      background="#080B11"
       labelJa="安心して協業するために"
       labelEn="TERMS FOR PARTNERS"
       title={<>「顧客を取られるのでは」に、<br />先にお答えします。</>}
@@ -506,7 +506,7 @@ function SafetySection() {
       <div className="corp-grid-3">
         {SIER_SAFETY_RULES.map((r, i) => (
           <motion.div key={r.t} {...reveal} transition={{ ...reveal.transition, delay: Math.min(i, 8) * 0.04 }} style={quietCard}>
-            <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.94rem', fontWeight: 700, color: '#F5EAD4', marginBottom: '0.55rem', letterSpacing: '0.03em' }}>
+            <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.94rem', fontWeight: 700, color: '#F3F6FB', marginBottom: '0.55rem', letterSpacing: '0.03em' }}>
               {r.t}
             </p>
             <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.84rem', color: TEXT_BODY, lineHeight: 1.95 }}>{r.d}</p>
@@ -522,7 +522,7 @@ function ProofSection() {
   return (
     <Section
       id="proof"
-      background="radial-gradient(120% 95% at 50% 0%, #0e0b06 0%, #050505 70%)"
+      background="radial-gradient(120% 95% at 50% 0%, #0C1119 0%, #070A10 70%)"
       labelJa="実績・技術・信頼性"
       labelEn="PROOF & TECHNOLOGY"
       title={<>「作れる」ことは、実物で示します。</>}
@@ -533,29 +533,29 @@ function ProofSection() {
           <motion.div key={n.label} {...reveal} transition={{ ...reveal.transition, delay: i * 0.06 }} style={{ ...quietCard, textAlign: 'center' }}>
             <p style={{
               fontFamily: FONT_DISPLAY, fontSize: 'clamp(2.2rem, 5vw, 3rem)', fontWeight: 700, lineHeight: 1,
-              background: 'linear-gradient(120deg,#F7EAD0,#E7C987 55%,#C9A96E)',
+              background: 'linear-gradient(120deg,#FFFFFF,#BAE6FD 55%,#7DD3FC)',
               WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
             }}>
               {n.value}
             </p>
-            <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.86rem', color: '#F1E6CE', marginTop: '0.5rem' }}>{n.labelJa}</p>
+            <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.86rem', color: '#EEF2F7', marginTop: '0.5rem' }}>{n.labelJa}</p>
             <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.74rem', color: TEXT_MUTED, marginTop: '0.3rem', lineHeight: 1.8 }}>{n.note}</p>
           </motion.div>
         ))}
       </div>
 
-      <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.86rem', fontWeight: 700, color: '#F1E6CE', textAlign: 'center', marginBottom: '1.2rem', letterSpacing: '0.05em' }}>
+      <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.86rem', fontWeight: 700, color: '#EEF2F7', textAlign: 'center', marginBottom: '1.2rem', letterSpacing: '0.05em' }}>
         使っている技術
       </p>
       <div className="corp-grid-2" style={{ marginBottom: '2.4rem' }}>
         {SIER_TECH_GROUPS.map((g, i) => (
           <motion.div key={g.purpose} {...reveal} transition={{ ...reveal.transition, delay: i * 0.05 }} style={quietCard}>
-            <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.88rem', fontWeight: 700, color: '#F5EAD4', marginBottom: '0.7rem' }}>{g.purpose}</p>
+            <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.88rem', fontWeight: 700, color: '#F3F6FB', marginBottom: '0.7rem' }}>{g.purpose}</p>
             <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
               {g.tech.map(t => (
                 <li key={t} style={{
                   fontFamily: FONT_SANS, fontSize: '0.74rem', letterSpacing: '0.05em',
-                  color: 'rgba(240,233,216,0.72)', border: '1px solid rgba(201,169,110,0.24)',
+                  color: 'rgba(226,232,240,0.72)', border: '1px solid rgba(125,211,252,0.24)',
                   borderRadius: 6, padding: '5px 10px',
                 }}>
                   {t}
@@ -580,7 +580,7 @@ function FaqSection() {
   return (
     <Section
       id="faq"
-      background="#070604"
+      background="#080B11"
       labelJa="よくあるご質問"
       labelEn="FAQ"
       title={<>聞きにくいことから、先に。</>}
@@ -596,7 +596,7 @@ function FaqSection() {
             style={quietCard}
           >
             <summary className="corp-faq-q">
-              <span style={{ fontFamily: FONT_SERIF_JA, fontSize: 'clamp(0.94rem, 1.6vw, 1.05rem)', fontWeight: 700, color: '#F5EAD4', lineHeight: 1.8 }}>
+              <span style={{ fontFamily: FONT_SERIF_JA, fontSize: 'clamp(0.94rem, 1.6vw, 1.05rem)', fontWeight: 700, color: '#F3F6FB', lineHeight: 1.8 }}>
                 {f.q}
               </span>
               <span aria-hidden className="corp-faq-mark" style={{ color: GOLD }}>＋</span>
@@ -619,7 +619,7 @@ function ContactSection() {
       className="lp-section-pad"
       style={{
         padding: '7rem 1.5rem',
-        background: 'radial-gradient(ellipse at center, rgba(201,169,110,0.10) 0%, #050505 72%)',
+        background: 'radial-gradient(ellipse at center, rgba(125,211,252,0.10) 0%, #070A10 72%)',
         scrollMarginTop: 70,
       }}
     >
@@ -648,12 +648,12 @@ function ContactSection() {
 // ────────────────────────────────────────────────────────
 function Footer() {
   const linkStyle: React.CSSProperties = {
-    color: 'rgba(240,233,216,0.6)', textDecoration: 'none',
+    color: 'rgba(226,232,240,0.6)', textDecoration: 'none',
     display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
     minHeight: 44, padding: '0 4px', fontFamily: FONT_SERIF_JA, fontSize: '0.8rem',
   };
   return (
-    <footer style={{ padding: '3rem 1.5rem', borderTop: '1px solid rgba(201,169,110,0.14)', textAlign: 'center' }}>
+    <footer style={{ padding: '3rem 1.5rem', borderTop: '1px solid rgba(125,211,252,0.14)', textAlign: 'center' }}>
       <div style={{ display: 'flex', justifyContent: 'center', gap: 18, flexWrap: 'wrap', marginBottom: '1rem' }}>
         <a href="/corp" style={linkStyle}>CORE について</a>
         <a href="/corp#security" style={linkStyle}>機密と安全</a>
@@ -661,7 +661,7 @@ function Footer() {
         <a href="/terms" style={linkStyle}>利用規約</a>
         <a href="/tokushoho" style={linkStyle}>特定商取引法</a>
       </div>
-      <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.72rem', color: 'rgba(240,233,216,0.4)', margin: 0 }}>
+      <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.72rem', color: 'rgba(226,232,240,0.4)', margin: 0 }}>
         © 2026 CORE
       </p>
     </footer>
