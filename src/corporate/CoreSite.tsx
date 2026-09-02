@@ -14,7 +14,7 @@ import { useEffect, useState, useRef, type ReactNode, type MouseEvent as ReactMo
 import { motion } from 'framer-motion';
 import LegalModal, { type LegalKind } from '../components/LegalModal';
 import { Mail as MailIcon } from 'lucide-react';
-import { PrismLogo, IrisLogo, ResonanceLogo, LumeLogo, GuildLogo, CoreLogo, CrystalLogo, PulseLogo, UltimaLogo, AnimaLogo, VeritasLogo, SomaLogo, TabittoLogo, NexusLogo } from '../components/Logo';
+import { PrismLogo, IrisLogo, ResonanceLogo, LumeLogo, GuildLogo, CrystalLogo, PulseLogo, UltimaLogo, AnimaLogo, VeritasLogo, SomaLogo, TabittoLogo, NexusLogo } from '../components/Logo';
 import { CONTINUUM_PLANS } from './continuumPlans';
 import ServiceFinder from './ServiceFinder';
 import {
@@ -2001,7 +2001,31 @@ export default function CoreSite() {
           }}
         >
           <div>
-            <CoreLogo size={32} withWordmark />
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 10, lineHeight: 1 }}>
+              <img
+                src="/core-logo-mark-v2.png"
+                alt="CORE"
+                width={396}
+                height={240}
+                style={{ height: 32, width: 'auto', flexShrink: 0 }}
+              />
+              <span
+                aria-hidden
+                style={{
+                  fontFamily: '"Inter", "Noto Sans JP", sans-serif',
+                  fontSize: 19.84,
+                  fontWeight: 700,
+                  letterSpacing: '0.42em',
+                  color: '#E0F2FE',
+                  background: 'linear-gradient(135deg, #FFFFFF, #BAE6FD, #38BDF8)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  lineHeight: 1,
+                }}
+              >
+                CORE
+              </span>
+            </span>
             <p
               style={{
                 fontFamily: FONT_SERIF_JA,
