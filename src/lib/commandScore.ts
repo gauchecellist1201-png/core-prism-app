@@ -20,6 +20,15 @@
  * という今回の狙いそのものなので、これは意図した動き（テストで固定してある）。
  */
 
+import { readingHit } from './commandReading';
+
+/**
+ * 読みがなでだけ当たった時の点数。(2026-09-02)
+ * 「説明文にだけ当たった」(+1) と同じ、いちばん弱い扱い。
+ * 書いてある文字で当たったものを**絶対に追い抜かない**ための 1 点。
+ */
+export const READING_HIT_SCORE = 1;
+
 /** 回数の加点の上限。5 (含む) と 10 (先頭一致) の差より小さいことが要件。 */
 export const USAGE_BONUS_MAX = 4;
 
@@ -33,15 +42,22 @@ export function usageBonus(count: number | undefined): number {
  * 打った言葉に対する当たり方の点数。
  * 語がひとつでも当たらなければ null (= 一覧に出さない)。
  */
-export function matchScore(label: string, subtitle: string | undefined, parts: string[]): number | null {
+export function matchScore(
+  label: string,
+  subtitle: string | undefined,
+  parts: string[],
+  reading?: string,
+): number | null {
   const lab = label.toLowerCase();
   const hay = (label + ' ' + (subtitle ?? '')).toLowerCase();
-  if (!parts.every(p => hay.includes(p))) return null;
+  // 書いてある文字で当たらなかった語だけ、読みがなの側にも当てにいく (足すだけ)
+  if (!parts.every(p => hay.includes(p) || readingHit(p, reading))) return null;
   let score = 0;
   for (const p of parts) {
     if (lab.startsWith(p)) score += 10;
     else if (lab.includes(p)) score += 5;
-    else score += 1;
+    else if (hay.includes(p)) score += 1;
+    else score += READING_HIT_SCORE;
   }
   return score;
 }
@@ -52,8 +68,9 @@ export function rankScore(
   subtitle: string | undefined,
   parts: string[],
   count: number | undefined,
+  reading?: string,
 ): number | null {
-  const base = matchScore(label, subtitle, parts);
+  const base = matchScore(label, subtitle, parts, reading);
   if (base === null) return null;
   return base + usageBonus(count);
 }

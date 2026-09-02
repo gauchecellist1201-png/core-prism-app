@@ -38,6 +38,7 @@ import PersonaGlyph, { isRoleCode } from './PersonaGlyph';
 import { resolveFeatureIcon } from '../lib/featureIcons';
 import { fuzzyScore, FUZZY_MIN_SCORE } from '../lib/commandFuzzy';
 import { rankScore, compareRanked } from '../lib/commandScore';
+import { toReading } from '../lib/commandReading';
 // 「答えが 1 つ返るだけ」の用事で、見ていた画面を失わせないための札。
 import {
   buildKnowledgeResult,
@@ -329,6 +330,24 @@ function recordSavedPrompt(list: SavedPrompt[], prompt: string, mentionId?: stri
       .map(s => savedKey(s.prompt, s.mentionId)),
   );
   return merged.filter(s => keep.has(savedKey(s.prompt, s.mentionId)));
+}
+
+// ────────────────────────────────────────────────────────
+// 読みがなの作り置き (2026-09-02)
+//
+// 打つたびに全項目ぶん作り直すと辞書の置換が何百回も走るので、
+// 同じ文字列は 1 度だけ作って使い回す。項目のラベルは変わらないので
+// 上限を超えたら丸ごと捨てるだけで足りる (ナレッジ 1000 件でも 1 回)。
+// ────────────────────────────────────────────────────────
+const READING_CACHE = new Map<string, string>();
+const READING_CACHE_MAX = 2000;
+function readingOf(text: string): string {
+  const hit = READING_CACHE.get(text);
+  if (hit !== undefined) return hit;
+  const made = toReading(text);
+  if (READING_CACHE.size >= READING_CACHE_MAX) READING_CACHE.clear();
+  READING_CACHE.set(text, made);
+  return made;
 }
 
 function actionId(item: CmdAction): string {
@@ -965,11 +984,14 @@ export default function CommandPalette({
       // スコア: 先頭一致 +10, ラベル一致 +5, それ以外 +1, + 使った回数 (上限 4)
       // 上限 4 は「先頭一致が何回使われた相手にも抜かれない」ための数字 (src/lib/commandScore.ts)
       const count = countById.get(actionId(item)) ?? 0;
+      const sub = 'subtitle' in item && item.subtitle ? item.subtitle : undefined;
       const score = rankScore(
         item.label,
-        'subtitle' in item && item.subtitle ? item.subtitle : undefined,
+        sub,
         parts,
         count,
+        // かなで打っている間も当たるように読みがなを渡す (src/lib/commandReading.ts)
+        readingOf(item.label + ' ' + (sub ?? '')),
       );
       if (score === null) continue;
       scored.push({ entry, score, count });
@@ -1047,7 +1069,8 @@ export default function CommandPalette({
       if (seen.has(id)) continue;
       const hay = item.label + ' ' + ('subtitle' in item && item.subtitle ? item.subtitle : '');
       // 2 文字以上つながって重なった時だけ候補にする (見当違いを出さない = src/lib/commandFuzzy.ts)
-      const score = fuzzyScore(q, hay);
+      // かなの打ち間違い (せいきゆうしょ) も拾えるよう読みがなも渡す
+      const score = fuzzyScore(q, hay, readingOf(hay));
       if (score >= FUZZY_MIN_SCORE) {
         seen.add(id);
         scored.push({ item, score });

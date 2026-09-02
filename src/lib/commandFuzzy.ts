@@ -13,6 +13,8 @@
  * 「ぁぁぁ」「xyz123」「経日」のような当たらない言葉では 0 件になる (実測)。
  */
 
+import { isKanaPart, normalizeKanaPart } from './commandReading';
+
 /** クエリから 2 文字のかたまりを作る (空白をまたぐものは捨てる) */
 export function bigrams(query: string): string[] {
   const q = query.trim().toLowerCase();
@@ -26,11 +28,21 @@ export function bigrams(query: string): string[] {
 }
 
 /** 重なった 2 文字のかたまり 1 つにつき +2。0 なら「近くない」= 出さない。 */
-export function fuzzyScore(query: string, haystack: string): number {
+export function fuzzyScore(query: string, haystack: string, reading?: string): number {
   const hay = haystack.toLowerCase();
   let score = 0;
   for (const g of bigrams(query)) {
     if (hay.includes(g)) score += 2;
+  }
+  // かなで打っている時は、読みがなの側にも当てにいく (2026-09-02)
+  // 「せいきゅうしょ」「うりあけ」のように**変換前の打ち間違い**は、
+  // 書いてある漢字とは 1 文字も重ならないので、読みが無いと一生 0 件になる。
+  if (reading && isKanaPart(query.trim())) {
+    let byReading = 0;
+    for (const g of bigrams(normalizeKanaPart(query))) {
+      if (reading.includes(g)) byReading += 2;
+    }
+    if (byReading > score) score = byReading;
   }
   return score;
 }
