@@ -45,7 +45,7 @@ const SVG = `<?xml version='1.0' encoding='UTF-8'?>
   <rect x='90' y='176' width='56' height='3' rx='1.5' fill='${C.gold}'/>
 
   <!-- 見出し (2行) -->
-  <text x='88' y='282' font-family='Noto Serif JP, serif' font-size='56' font-weight='700' fill='${C.ink}'>撮影をせずに、</text>
+  <text x='88' y='282' font-family='Noto Serif JP, serif' font-size='56' font-weight='700' fill='${C.ink}'>撮影せずに、</text>
   <text x='88' y='352' font-family='Noto Serif JP, serif' font-size='56' font-weight='700' fill='${C.ink}'>広告に出せる映像を。</text>
 
   <!-- サブ -->

@@ -106,7 +106,7 @@ const SEO = {
     description: 'COREは、AIプロダクトを自社で開発・運営する制作スタジオです。AIショートドラマなどの映像制作から、ウェブサイト制作、システム受託開発まで。戦略設計から公開後の運用改善まで一貫体制で担当します。',
   },
   film: {
-    ogImage: 'https://core-prism-app.vercel.app/og-studio-film-v4.png',
+    ogImage: 'https://core-prism-app.vercel.app/og-studio-film-v5.png',
     title: 'AI動画制作・ショートドラマ制作代行 — CORE Studio',
     description: 'ショートドラマ、ブランドムービー、SNS縦型動画、CMまで。企画・脚本・映像制作・編集・字幕・SNS最適化までを一貫制作するAIクリエイティブスタジオ。初回1本(20秒)¥49,800、毎月継続は月4本¥228,000から。初期費用0円・最低契約期間なし。',
   },

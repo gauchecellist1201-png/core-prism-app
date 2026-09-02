@@ -35,7 +35,7 @@ const CHROME = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 
 const CARDS = [
   { src: 'studio-og.html', out: 'og-studio-v4.png' },
-  { src: 'studio-film-og.html', out: 'og-studio-film-v4.png' },
+  { src: 'studio-film-og.html', out: 'og-studio-film-v5.png' },
 ];
 
 if (!existsSync(CHROME)) {
