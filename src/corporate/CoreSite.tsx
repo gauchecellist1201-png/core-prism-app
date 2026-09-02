@@ -398,7 +398,7 @@ export default function CoreSite() {
           >
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 12, lineHeight: 1 }}>
               <img
-                src="/core-logo-mark.png"
+                src="/core-logo-mark-v2.png"
                 alt="株式会社CORE"
                 width={396}
                 height={240}
@@ -1671,9 +1671,9 @@ export default function CoreSite() {
             }}
           >
             <picture>
-              <source srcSet="/ceo-naoki-ide.webp" type="image/webp" />
+              <source srcSet="/ceo-naoki-ide-v2.webp" type="image/webp" />
               <img
-                src="/ceo-naoki-ide.jpg"
+                src="/ceo-naoki-ide-v2.jpg"
                 alt="井出 直毅 / Naoki Ide — Founder & CEO"
                 width={240}
                 height={320}

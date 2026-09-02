@@ -50,7 +50,6 @@ const IMG = {
   kobeNight: '/corp/kobe-night.webp',
   texture: '/corp/texture.webp',
   datacenter: '/corp/datacenter.webp',
-  founderStudio: '/corp/founder-studio.webp',
 } as const;
 
 // ============================================================
@@ -401,7 +400,6 @@ export function AssessmentHome({ onAnchor }: { onAnchor: AnchorHandler }) {
 export function FounderMessage({ onAnchor }: { onAnchor: AnchorHandler }) {
   return (
     <section id="philosophy" className="lp-section-pad" style={{ padding: '7rem 1.5rem', background: INK_2, scrollMarginTop: 70, position: 'relative', overflow: 'hidden' }}>
-      <img src={IMG.founderStudio} alt="" aria-hidden loading="lazy" decoding="async" className="ch-founder-bg" />
       <div className="ch-wrap ch-two" style={{ position: 'relative' }}>
         <div>
           <Kick>Founder’s Message</Kick>
@@ -436,8 +434,8 @@ export function FounderMessage({ onAnchor }: { onAnchor: AnchorHandler }) {
         </div>
         <motion.div {...reveal} className="ch-founder-photo">
           <picture>
-            <source srcSet="/ceo-naoki-ide.webp" type="image/webp" />
-            <img src="/ceo-naoki-ide.jpg" alt={`${COMPANY_INFO.representative} / ${COMPANY_INFO.representativeEn} — Founder & CEO`} width={675} height={900} loading="lazy" decoding="async" />
+            <source srcSet="/ceo-naoki-ide-v2.webp" type="image/webp" />
+            <img src="/ceo-naoki-ide-v2.jpg" alt={`${COMPANY_INFO.representative} / ${COMPANY_INFO.representativeEn} — Founder & CEO`} width={675} height={900} loading="lazy" decoding="async" />
           </picture>
         </motion.div>
       </div>
