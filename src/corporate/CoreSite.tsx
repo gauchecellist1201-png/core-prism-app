@@ -42,6 +42,7 @@ import {
   HomeHero, ProofStrip, WhyCore, ServicesEditorial, ProductsProof,
   ApproachSection, AssessmentHome, FounderMessage, CompanyOverview, FinalCta,
 } from './HomeSections';
+import { Manifesto, Values, PeopleMosaic, CreedBand } from './HomeManifesto';
 import { COMPANY_INFO } from '../data/companyInfo';
 
 const COMPANY = {
@@ -134,7 +135,7 @@ const CORE_TABS: { key: CoreTabKey; label: string; short: string; sub: string }[
 const SECTION_TAB: Record<string, CoreTabKey> = {
   // 変革 — この会社が何をするのか
   top: 'home', philosophy: 'home', whatwedo: 'home', difference: 'home', assessment: 'home',
-  why: 'home', proof: 'home', overview: 'home', cta: 'home',
+  why: 'home', proof: 'home', overview: 'home', cta: 'home', values: 'home',
   // AI COMPANY OS — 中核商品
   companyos: 'os', usecases: 'os', continuum: 'os',
   // connect（座組み）は 2026-08-21 に〈製品〉タブへ移した。
@@ -484,6 +485,9 @@ export default function CoreSite() {
       {tab === 'home' && (
       <>
         {/* 2026-09-02 全面再構築（HomeSections.tsx）。写真主導・事実の帯・実画面・代表の言葉・会社概要 */}
+        <Manifesto onAnchor={handleAnchor} />
+        <Values />
+        <PeopleMosaic />
         <ProofStrip onAnchor={handleAnchor} />
         <WhyCore />
         <ServicesEditorial onAnchor={handleAnchor} />
@@ -1347,125 +1351,10 @@ export default function CoreSite() {
       {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
       {tab === 'company' && (
       <>
+        <CreedBand onAnchor={handleAnchor} />
         <PhilosophyCore />
         <CoreNumbersSection />
       </>
-      )}
-
-      {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
-      {/*  PHILOSOPHY                */}
-      {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
-      {tab === 'company' && (
-      <section
-        id="mission"
-        className="lp-section-pad"
-        style={{
-          padding: '7rem 1.5rem',
-          background: 'linear-gradient(180deg,#080B11 0%,#070A10 100%)',
-          textAlign: 'center',
-          position: 'relative',
-          overflow: 'hidden',
-        }}
-      >
-        {/* 背景の薄い光 */}
-        <div
-          aria-hidden
-          style={{
-            position: 'absolute',
-            top: '50%',
-            left: '50%',
-            width: 600,
-            height: 600,
-            marginLeft: -300,
-            marginTop: -300,
-            borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(125,211,252,0.12) 0%, transparent 70%)',
-            filter: 'blur(40px)',
-            pointerEvents: 'none',
-          }}
-        />
-        <div style={{ maxWidth: 940, margin: '0 auto', position: 'relative', zIndex: 2 }}>
-          <p style={sectionLabel}>
-            <span style={sectionLabelMain}>思&nbsp;想</span>
-            <span style={sectionLabelSub}>PHILOSOPHY</span>
-          </p>
-          <motion.h2
-            initial={{ y: 20 }}
-            whileInView={{ y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.9 }}
-            style={{
-              fontFamily: FONT_SERIF_JA,
-              fontSize: 'clamp(1.85rem, 3.6vw, 2.75rem)',
-              fontWeight: 700,
-              lineHeight: 1.7,
-              marginBottom: '2.25rem',
-              letterSpacing: '0.05em',
-            }}
-          >
-            光は、分かれる。受けとめられる。灯る。
-            <br />
-            そして、
-            <span
-              style={{
-                background: 'linear-gradient(110deg,#FFFFFF,#BAE6FD 55%,#7DD3FC)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                fontWeight: 900,
-              }}
-            >
-              響きあう。
-            </span>
-          </motion.h2>
-
-          <p
-            style={{
-              fontFamily: FONT_SERIF_EN,
-              fontSize: 'clamp(0.85rem, 1.3vw, 1rem)',
-              color: 'rgba(226,232,240,0.52)',
-              fontStyle: 'italic',
-              letterSpacing: '0.1em',
-              marginBottom: '2rem',
-            }}
-          >
-            Light disperses, is received, is kindled — and resonates.
-          </p>
-
-          <p
-            style={{
-              fontFamily: FONT_SERIF_JA,
-              color: 'rgba(226,232,240,0.75)',
-              fontSize: 'clamp(0.95rem, 1.4vw, 1.05rem)',
-              lineHeight: 2.4,
-              maxWidth: 760,
-              margin: '0 auto',
-              fontWeight: 400,
-            }}
-          >
-            すべての事業を束ねる司令塔
-            <strong style={{ color: '#a78bfa', fontWeight: 600 }}> Prism</strong>。
-            Instagram を AI と育てる
-            <strong style={{ color: '#E1306C', fontWeight: 600 }}> Iris</strong>。
-            <br />
-            LINE のご縁を温める
-            <strong style={{ color: '#06C755', fontWeight: 600 }}> Resonance</strong>。
-            すべてのリンクをひとつに束ねる
-            <strong style={{ color: '#FFA42A', fontWeight: 600 }}> Lume</strong>。
-            <br />
-            そして、その全部が息づく場が、貢献で動く組織
-            <strong style={{ color: '#2dd4bf', fontWeight: 600 }}> Guild</strong>〈ギルド〉。
-            <br />
-            <br />
-            四つの道具と、それを使う人々が、ひとつの〈ギルド〉に集う。
-            <br />
-            別々ではなく、ひとつの核でつながり、
-            <br />
-            つくる人も、使う人も、やがてひとつの組織になる。
-            <br />
-            それが、<strong style={{ color: '#F3F6FB', fontWeight: 700, fontFamily: FONT_DISPLAY, letterSpacing: '0.15em' }}>CORE</strong> という会社の核。
-          </p>
-        </div>
-      </section>
       )}
 
       {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}

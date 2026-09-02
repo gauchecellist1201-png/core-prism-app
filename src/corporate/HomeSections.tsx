@@ -41,7 +41,8 @@ function Kick({ children, center }: { children: React.ReactNode; center?: boolea
 
 // ── 写真の一覧（public/corp/*.webp・2026-09-02 生成） ──
 const IMG = {
-  hero: '/corp/hero-kobe.webp',
+  hero: '/corp/people-workshop.webp',
+  heroKobe: '/corp/hero-kobe.webp',
   consulting: '/corp/consulting.webp',
   development: '/corp/development.webp',
   operations: '/corp/operations.webp',
@@ -69,8 +70,8 @@ export function HomeHero({ onAnchor }: { onAnchor: AnchorHandler }) {
         alt=""
         aria-hidden
         className="ch-hero-img"
-        width={2400}
-        height={1029}
+        width={3168}
+        height={1344}
         fetchPriority="high"
         decoding="async"
       />
@@ -83,13 +84,17 @@ export function HomeHero({ onAnchor }: { onAnchor: AnchorHandler }) {
             <br />
             変わらない核を。
           </h1>
+          <p className="ch-hero-answer" style={{ fontFamily: FONT_JA }}>
+            <span style={{ color: ACCENT_LIGHT }}>核とは、人。</span>
+            AIは、人が人にしかできないことに時間を使うための道具です。
+          </p>
           <p style={{
-            fontFamily: FONT_JA, fontSize: 'clamp(1rem, 1.6vw, 1.2rem)', lineHeight: 1.9,
-            color: 'rgba(236,242,250,0.88)', maxWidth: 600, margin: '0 0 2rem', fontWeight: 500,
+            fontFamily: FONT_JA, fontSize: 'clamp(0.95rem, 1.5vw, 1.12rem)', lineHeight: 1.9,
+            color: 'rgba(236,242,250,0.82)', maxWidth: 600, margin: '0 0 2rem', fontWeight: 500,
           }}>
-            AI戦略・業務設計・システム開発・事業開発までを、一気通貫で。
+            AI戦略・業務設計・システム開発・事業開発までを一気通貫で。
             <br className="ch-br" />
-            企業の仕組みそのものを、AI前提でつくり直す会社です。
+            神戸から、人が真ん中にいる会社を、AI前提でつくり直します。
           </p>
           <div className="ch-cta-row">
             <a href="#contact" onClick={e => onAnchor(e, '#contact')} style={ctaHero}>AI・DXについて相談する</a>
@@ -406,18 +411,26 @@ export function FounderMessage({ onAnchor }: { onAnchor: AnchorHandler }) {
           <h2 style={{ ...sectionH2, margin: 0 }}>
             技術は変わる。
             <br />
-            核は、変わらない。
+            人という核は、変わらない。
           </h2>
           <div style={{ fontFamily: FONT_JA, color: TEXT_BODY, fontSize: 'clamp(0.95rem, 1.4vw, 1.05rem)', lineHeight: 2.2, marginTop: '1.6rem', maxWidth: 560 }}>
             <p style={{ margin: '0 0 1.2rem' }}>
               AIも、ツールも、いずれ入れ替わります。五年前に正しかった構成は、五年後には残っていないかもしれません。
+              では、何が残るのか。
             </p>
             <p style={{ margin: '0 0 1.2rem' }}>
-              けれど、人の役に立つこと。企業が価値を生むこと。本質的な問題を解決すること。
-              <strong style={{ color: PAPER, fontWeight: 800 }}>その核だけは、時代が変わっても同じです。</strong>
+              <strong style={{ color: PAPER, fontWeight: 800 }}>核とは、人だと、私は思っています。</strong>
+              人の役に立つこと。人が価値を生むこと。人が人らしく笑っていられること。
+              その核だけは、時代が変わっても同じです。
+            </p>
+            <p style={{ margin: '0 0 1.2rem' }}>
+              私はチェロ奏者として舞台に立ってきました。音楽は、人の手でしか届かない。
+              けれど、その手を空けるためにこそ、技術はある。AIが賢くなるほど、人の温度が価値になる。
+              そう信じて、この会社をつくりました。
             </p>
             <p style={{ margin: 0 }}>
-              CORE は、最新技術を追いかける会社ではなく、変わらない本質のために最新技術を使う会社です。
+              CORE は、儲けるために存在する会社ではありません。人が輝くために、儲ける会社です。
+              最新の技術を、いちばん古い理由のために使い切る。それが、私たちの仕事です。
             </p>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginTop: '2rem' }}>
@@ -499,12 +512,12 @@ export function FinalCta({ onAnchor }: { onAnchor: AnchorHandler }) {
       <div style={{ position: 'relative', maxWidth: 820, margin: '0 auto' }}>
         <Kick center>Let’s talk</Kick>
         <h2 style={{ ...sectionH2, fontSize: 'clamp(1.9rem, 4.2vw, 3.2rem)', margin: 0, color: '#fff' }}>
-          まず、御社のどこを
+          御社の「核」を、
           <br />
-          AI化すべきかを。
+          一緒に守りに行きませんか。
         </h2>
         <p style={{ ...sectionLead, margin: '1.2rem auto 2.2rem', color: 'rgba(236,242,250,0.85)' }}>
-          初回のご相談に費用はいただきません。その場で、AIで変えられる所と変えられない所を切り分けてお返しします。
+          初回のご相談に費用はいただきません。その場で、AIに任せられる所と、人にしか出来ない所を切り分けてお返しします。
         </p>
         <div className="ch-cta-row" style={{ justifyContent: 'center' }}>
           <a href="#contact" onClick={e => onAnchor(e, '#contact')} style={ctaHero}>AI・DXについて相談する</a>

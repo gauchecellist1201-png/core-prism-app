@@ -176,8 +176,9 @@ export function PhilosophyCore() {
             五年前に正しかった構成は、五年後には残っていないかもしれません。
           </p>
           <p style={{ marginBottom: '1.8rem' }}>
-            人の役に立つこと。企業が価値を生むこと。本質的な問題を解決すること。
-            <strong style={{ color: '#EEF2F7', fontWeight: 700 }}>その核だけは、時代が変わっても同じです。</strong>
+            <strong style={{ color: '#EEF2F7', fontWeight: 700 }}>核とは、人です。</strong>
+            人の役に立つこと。人が価値を生むこと。人が人らしく笑っていられること。
+            その核だけは、時代が変わっても同じです。AIが賢くなるほど、人の温度が価値になります。
           </p>
           <p style={{ marginBottom: '1.8rem' }}>
             だから CORE は、御社の事業のどこに無理があり、どこに伸びしろがあるのかから話を始めます。
