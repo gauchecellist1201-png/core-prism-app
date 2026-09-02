@@ -14,6 +14,7 @@ import {
 import { CONTACT } from './plans';
 // 映像の制作実績。film.ts ではなく works.ts が正本 (実績タブと映像タブの両方が使うため)。
 import { FILM_WORKS } from './works';
+import { FILM_PLANS } from './film';
 import { estimate, type EstimateAnswers, type Purpose, type Scale, type Feature, type Timeline, type Budget } from './estimate';
 import { C, D, SERIF, SANS } from './theme';
 import { Reveal, Band, H2, Note, IconCheck, IconArrow, IconChat, IconCopy } from './ui';
@@ -456,6 +457,19 @@ export default function StudioSite() {
         }
 
         /* ── 選ばれる理由 / 制作の流れ / 実績 — 広い画面では横に並べる ── */
+        /* 誰が撮るか。暗地のまま、写真(3:4)と文章の2段組。 */
+        .st-director { background: ${D.bg}; padding: clamp(44px, 6vw, 84px) 0; border-top: 1px solid ${D.line}; }
+        .st-director-grid { display: grid; grid-template-columns: 1fr; gap: 26px; align-items: center; }
+        .st-director-photo { margin: 0; width: min(100%, 320px); aspect-ratio: 3 / 4; border-radius: 12px; overflow: hidden; background: ${D.raise}; border: 1px solid ${D.line}; }
+        .st-director-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .st-director-sig { display: flex; flex-direction: column; gap: 4px; margin-top: 22px; padding-left: 14px; border-left: 2px solid ${D.gold}; font-size: 13px; color: ${D.mute}; }
+        .st-director-sig b { font-size: 17px; color: ${D.ink}; }
+        .st-textlink { background: none; border: 0; padding: 0; margin-top: 8px; color: ${D.gold}; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+        .st-textlink:hover { text-decoration: underline; }
+        @media (min-width: 860px) {
+          .st-director-grid { grid-template-columns: 380px minmax(0, 1fr); gap: 56px; }
+          .st-director-photo { width: 100%; }
+        }
         .st-reasons { display: grid; gap: 14px; }
         @media (min-width: 860px) { .st-reasons { grid-template-columns: repeat(3, 1fr); } }
         .st-process { display: grid; gap: 12px; list-style: none; padding: 0; margin: 0; counter-reset: none; }
@@ -765,10 +779,48 @@ function HomeTab({ go }: { go: (t: TabId) => void }) {
             <FilmPeek key={w.id} w={w} onOpen={() => { track('studio_home_film_peek', { id: w.id }); go('film'); }} />
           ))}
         </div>
-        <div style={{ marginTop: 22, display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
+        <div style={{ marginTop: 22, display: 'flex', gap: '12px 22px', flexWrap: 'wrap', alignItems: 'center' }}>
           <button className="st-btn st-btn-dark" onClick={() => go('film')}>映像制作の料金と実績を見る <IconArrow color={D.gold} /></button>
+          {/* 「いくら・いつ・何回直せるか」を映像の隣で読めるようにする。数字は film.ts の TRIAL からだけ取る (直打ち禁止) */}
+          {FILM_PLANS[0] && (
+            <p style={{ margin: 0, fontSize: 13, lineHeight: 1.9, color: D.body }}>
+              初めての1本は <b style={{ color: D.ink }}>{FILM_PLANS[0].price}</b>（{FILM_PLANS[0].unit}）・初稿まで <b style={{ color: D.ink }}>{FILM_PLANS[0].delivery}</b>・修正 <b style={{ color: D.ink }}>{FILM_PLANS[0].spec.find(x => x.label === '修正')?.value ?? '2回'}</b>
+            </p>
+          )}
         </div>
       </Band>
+
+      {/* 誰が撮るか — 匿名の制作会社に見えないよう、撮る人の顔と理由を置く (2026-09-02) */}
+      <section className="st-director" aria-label="誰が撮るか">
+        <Reveal className="st-inner st-wide st-director-grid">
+          <figure className="st-director-photo">
+            <picture>
+              <source srcSet="/ceo-naoki-ide-v2.webp" type="image/webp" />
+              <img src="/ceo-naoki-ide-v2.jpg" alt={`${COMPANY.repName} — ${COMPANY.repTitle}`} width={675} height={900} loading="lazy" decoding="async" />
+            </picture>
+          </figure>
+          <div className="st-director-copy">
+            <div className="st-label" style={{ color: D.gold, marginBottom: 14 }}>Who makes it</div>
+            <h2 className="st-serif" style={{ fontSize: 'clamp(23px, 5.6vw, 34px)', fontWeight: 700, lineHeight: 1.5, letterSpacing: '0.03em', color: D.ink, margin: 0 }}>
+              神戸で、チェロ弾きが撮る。<br />AIは道具で、判断は人がします。
+            </h2>
+            <p style={{ fontSize: 14.5, lineHeight: 2.1, color: D.body, margin: '18px 0 0', maxWidth: 560 }}>
+              代表の井出は、舞台に立つチェロ奏者です。音楽は、人の手でしか届かない。映像も同じで、
+              どのカットを残し、どの音で始め、どこで黙るかは、AIではなく人が決めます。
+              AIに任せるのは生成と反復だけ。だから、AIっぽくない映像になります。
+            </p>
+            <p style={{ fontSize: 14.5, lineHeight: 2.1, color: D.body, margin: '14px 0 0', maxWidth: 560 }}>
+              納品して終わりにはしません。公開から2週間後に、反応を一緒に見る時間を取ります。
+              映像で何が伝わり、何が伝わらなかったか。その話が、次の一手の材料になります。
+            </p>
+            <div className="st-director-sig">
+              <b className="st-serif">{COMPANY.repName}</b>
+              <span>{COMPANY.repTitle} / チェロ奏者</span>
+              <button type="button" className="st-textlink" onClick={() => go('about')}>会社案内を読む <IconArrow color={D.gold} /></button>
+            </div>
+          </div>
+        </Reveal>
+      </section>
 
       {/* 公開中のサイト・システムの帯 — 「制作します」と書く代わりに実物を流す */}
       <Band wide pad="30px 0 44px">

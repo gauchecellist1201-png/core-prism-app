@@ -86,7 +86,7 @@ export function HomeHero({ onAnchor }: { onAnchor: AnchorHandler }) {
           </h1>
           <p className="ch-hero-answer" style={{ fontFamily: FONT_JA }}>
             <span style={{ color: ACCENT_LIGHT }}>核とは、人。</span>
-            AIは、人が人にしかできないことに時間を使うための道具です。
+            AIは、人にしかできない仕事を、人に返すための道具です。
           </p>
           <p style={{
             fontFamily: FONT_JA, fontSize: 'clamp(0.95rem, 1.5vw, 1.12rem)', lineHeight: 1.9,
@@ -415,6 +415,11 @@ export function FounderMessage({ onAnchor }: { onAnchor: AnchorHandler }) {
           </h2>
           <div style={{ fontFamily: FONT_JA, color: TEXT_BODY, fontSize: 'clamp(0.95rem, 1.4vw, 1.05rem)', lineHeight: 2.2, marginTop: '1.6rem', maxWidth: 560 }}>
             <p style={{ margin: '0 0 1.2rem' }}>
+              私は神戸で、チェロを教えています。生徒が一曲を弾き切った日の顔は、どんな技術にも代えられません。
+              けれど、その教室の裏では、予定の調整や請求書や連絡に、弾く時間より長い時間を使っていました。
+              その時間を返してくれたのが、AIでした。
+            </p>
+            <p style={{ margin: '0 0 1.2rem' }}>
               AIも、ツールも、いずれ入れ替わります。五年前に正しかった構成は、五年後には残っていないかもしれません。
               では、何が残るのか。
             </p>
@@ -441,8 +446,9 @@ export function FounderMessage({ onAnchor }: { onAnchor: AnchorHandler }) {
               </p>
             </div>
           </div>
-          <p style={{ marginTop: '1.6rem' }}>
+          <p style={{ marginTop: '1.6rem', display: 'flex', flexWrap: 'wrap', gap: '0.6rem 1.6rem' }}>
             <a href="#philosophy-core" onClick={e => onAnchor(e, '#philosophy-core')} className="ch-textlink">会社の思想と概要を読む →</a>
+            <a href={`mailto:${COMPANY_INFO.email}`} className="ch-textlink">この手紙には、返信できます →</a>
           </p>
         </div>
         <motion.div {...reveal} className="ch-founder-photo">
@@ -512,12 +518,13 @@ export function FinalCta({ onAnchor }: { onAnchor: AnchorHandler }) {
       <div style={{ position: 'relative', maxWidth: 820, margin: '0 auto' }}>
         <Kick center>Let’s talk</Kick>
         <h2 style={{ ...sectionH2, fontSize: 'clamp(1.9rem, 4.2vw, 3.2rem)', margin: 0, color: '#fff' }}>
-          御社の「核」を、
+          まず、返したい仕事を
           <br />
-          一緒に守りに行きませんか。
+          ひとつ教えてください。
         </h2>
         <p style={{ ...sectionLead, margin: '1.2rem auto 2.2rem', color: 'rgba(236,242,250,0.85)' }}>
-          初回のご相談に費用はいただきません。その場で、AIに任せられる所と、人にしか出来ない所を切り分けてお返しします。
+          初回のご相談に費用はいただきません。その場で、AIに渡せる仕事と、人にしか出来ない仕事を切り分けてお返しします。
+          御社の「核」を、一緒に守りに行きましょう。
         </p>
         <div className="ch-cta-row" style={{ justifyContent: 'center' }}>
           <a href="#contact" onClick={e => onAnchor(e, '#contact')} style={ctaHero}>AI・DXについて相談する</a>

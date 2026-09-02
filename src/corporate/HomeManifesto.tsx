@@ -122,10 +122,10 @@ export function Values() {
 // ============================================================
 export function PeopleMosaic() {
   const tiles: { img: string; alt: string; cap: string; span?: string }[] = [
-    { img: PEOPLE.team, alt: '会議室で笑い合うチーム', cap: '決める人と、作る人が同じ部屋にいる。', span: 'wide' },
-    { img: PEOPLE.clinic, alt: 'クリニックの受付で微笑み合う', cap: '受付の一日が、少し軽くなる。' },
-    { img: PEOPLE.factory, alt: '工場で笑い合う作業者と技術者', cap: '現場の声が、そのまま仕組みになる。' },
-    { img: PEOPLE.arcade, alt: '商店街で談笑する店主たち', cap: '神戸の商いを、次の時代へ。', span: 'wide' },
+    { img: PEOPLE.team, alt: '会議室で笑い合うチーム', cap: '議事録を書く時間が、決める時間に返った。', span: 'wide' },
+    { img: PEOPLE.clinic, alt: 'クリニックの受付で微笑み合う', cap: '予約の電話が減って、目の前の患者さんに返った。' },
+    { img: PEOPLE.factory, alt: '工場で笑い合う作業者と技術者', cap: '日報を写す時間が、現場を見る時間に返った。' },
+    { img: PEOPLE.arcade, alt: '商店街で談笑する店主たち', cap: '請求書の夜が、店先で話す夕方に返った。', span: 'wide' },
   ];
   return (
     <section aria-label="私たちが向き合う人々" style={{ background: INK, padding: '0 0 6rem' }}>
@@ -139,7 +139,7 @@ export function PeopleMosaic() {
           ))}
         </div>
         <p style={{ fontFamily: FONT_JA, fontSize: '0.78rem', color: TEXT_MUTED, margin: '1rem 0 0', textAlign: 'right' }}>
-          写真はイメージです。
+          私たちが測るのは、AIが代わった仕事の数ではなく、人に返った時間です。写真はイメージです。
         </p>
       </div>
     </section>
