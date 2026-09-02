@@ -39,6 +39,7 @@ import { resolveFeatureIcon } from '../lib/featureIcons';
 import { fuzzyScore, FUZZY_MIN_SCORE } from '../lib/commandFuzzy';
 import { rankScore, compareRanked } from '../lib/commandScore';
 import { toReading } from '../lib/commandReading';
+import { capByCategory, BROWSE_CAP, SEARCH_CAP } from '../lib/commandCap';
 // 「答えが 1 つ返るだけ」の用事で、見ていた画面を失わせないための札。
 import {
   buildKnowledgeResult,
@@ -121,10 +122,8 @@ const CATEGORY_TAB_LABEL: Partial<Record<CategoryKey, string>> = {
  *   いまは検索は必ず全件が対象。ここで絞るのは画面に並べる数だけで、
  *   隠した数は必ず「ほかに◯件あります」と画面に出す (黙って切らない)。
  */
-const PREVIEW_CAP: Partial<Record<CategoryKey, number>> = {
-  knowledge: 8,
-  task: 8,
-};
+// 段ごとの上限は `src/lib/commandCap.ts` (BROWSE_CAP = 眺めている時 / SEARCH_CAP = 打っている時)。
+// 打っている時だけ段ごと 3 件へ畳む = 「必要な結果だけ」。隠した数は必ず画面に出す。
 
 // ナビ系 (既存 MODAL_LIST 拡張)
 // iconKey は QuickActions のタイル ID と同じもの。ここを揃えることで、
@@ -700,7 +699,7 @@ export default function CommandPalette({
       });
     }
 
-    // ナレッジ (全件。画面に並べる数だけ PREVIEW_CAP で畳む = 検索からは1件も落とさない)
+    // ナレッジ (全件。画面に並べる数だけ commandCap.ts で畳む = 検索からは1件も落とさない)
     for (const k of personaKnowledge) {
       out.push({
         category: 'knowledge',
@@ -1007,26 +1006,11 @@ export default function CommandPalette({
   // 隠した件数は必ず数えて画面に出す。ここで数えたものが
   // 「ほかに◯件あります・すべて見る」になる = 黙って切らない。
   // ────────────────────────────────────────────────────────
-  const capped = useMemo(() => {
-    const shown = new Map<CategoryKey, number>();
-    const hidden = new Map<CategoryKey, number>();
-    const list: Array<{ item: CmdAction; category: CategoryKey }> = [];
-    for (const entry of filtered) {
-      const cap = PREVIEW_CAP[entry.category];
-      if (cap === undefined || expandedCats.has(entry.category)) {
-        list.push(entry);
-        continue;
-      }
-      const n = (shown.get(entry.category) ?? 0) + 1;
-      if (n <= cap) {
-        shown.set(entry.category, n);
-        list.push(entry);
-      } else {
-        hidden.set(entry.category, (hidden.get(entry.category) ?? 0) + 1);
-      }
-    }
-    return { list, hidden };
-  }, [filtered, expandedCats]);
+  const capped = useMemo(
+    // 打っている時は段ごと 3 件 (SEARCH_CAP)、眺めている時は今までどおり (BROWSE_CAP)。
+    () => capByCategory(filtered, e => e.category, query.trim() ? SEARCH_CAP : BROWSE_CAP, expandedCats),
+    [filtered, expandedCats, query],
+  );
 
   // クエリにマッチが無い (または少ない) 時、AI 依頼候補を末尾に追加
   const filteredWithAi = useMemo<Array<{ item: CmdAction; category: CategoryKey }>>(() => {
