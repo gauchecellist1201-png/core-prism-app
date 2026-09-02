@@ -4166,7 +4166,12 @@ header .lp-tab.is-on { color: #fff; border-bottom-color: #38BDF8; background: tr
   .ch-founder-photo { justify-self: start; width: min(100%, 360px); }
   .ch-hero { min-height: 0; }
   .ch-hero-inner { padding: 5.5rem 1.25rem 2rem; }
-  .ch-hero-img { object-position: 55% 50%; }
+  /* 縦長では横に切り抜かれるので、人が入る位置まで寄せる。
+     横方向の暗がりは縦長では効かない＝上から下への幕に差し替えて文字を守る。 */
+  .ch-hero-img { object-position: 72% 50%; }
+  .ch-hero-shade {
+    background: linear-gradient(180deg, rgba(7,10,16,0.92) 0%, rgba(7,10,16,0.80) 42%, rgba(7,10,16,0.62) 66%, #070A10 100%);
+  }
 }
 @media (max-width: 640px) {
   .ch-br { display: none; }

@@ -7,7 +7,9 @@
 //
 // 設計:
 //   ・写真を主役にする（神戸港のヒーロー、会議室、開発、現場、診断、代表）。
-//     人物は顔が写らない構図だけを使う（架空の社員を「実在」に見せない）。
+//     人物は名前も肩書きも付けない（架空の社員を「実在の誰か」に見せない）。
+//     ヒーローだけは笑顔が要る＝顔を写す。2026-09-02 オーナー指示
+//     「工房の写真はかっこよくない。笑顔だが、もっとかっこよく」。
 //   ・数字は実在するものだけ（自社プロダクト数は suiteData から、設立・資本金は companyInfo から）。
 //     「導入◯社」「効果◯%」のような未確定の数字は作らない。
 //   ・本文は既存の transformData を使い回す（言葉の正本を増やさない）。
@@ -41,7 +43,7 @@ function Kick({ children, center }: { children: React.ReactNode; center?: boolea
 
 // ── 写真の一覧（public/corp/*.webp・2026-09-02 生成） ──
 const IMG = {
-  hero: '/corp/people-workshop.webp',
+  hero: '/corp/hero-office-kobe.webp',
   heroKobe: '/corp/hero-kobe.webp',
   consulting: '/corp/consulting.webp',
   development: '/corp/development.webp',
@@ -70,8 +72,8 @@ export function HomeHero({ onAnchor }: { onAnchor: AnchorHandler }) {
         alt=""
         aria-hidden
         className="ch-hero-img"
-        width={3168}
-        height={1344}
+        width={2560}
+        height={1086}
         fetchPriority="high"
         decoding="async"
       />
