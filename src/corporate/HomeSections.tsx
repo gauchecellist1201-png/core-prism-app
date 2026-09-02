@@ -88,7 +88,10 @@ export function HomeHero({ onAnchor }: { onAnchor: AnchorHandler }) {
           </h1>
           <p className="ch-hero-answer" style={{ fontFamily: FONT_JA }}>
             <span style={{ color: ACCENT_LIGHT }}>核とは、人。</span>
-            AIは、人にしかできない仕事を、人に返すための道具です。
+            <br />
+            AIは、人にしかできない仕事を、
+            <br />
+            人に返すための道具です。
           </p>
           <p style={{
             fontFamily: FONT_JA, fontSize: 'clamp(0.95rem, 1.5vw, 1.12rem)', lineHeight: 1.9,
@@ -436,7 +439,7 @@ export function FounderMessage({ onAnchor }: { onAnchor: AnchorHandler }) {
               そう信じて、この会社をつくりました。
             </p>
             <p style={{ margin: 0 }}>
-              CORE は、儲けるために存在する会社ではありません。人が輝くために、儲ける会社です。
+              CORE が見ているのは、売上の数字ではなく、人が輝いているかどうかです。
               最新の技術を、いちばん古い理由のために使い切る。それが、私たちの仕事です。
             </p>
           </div>
