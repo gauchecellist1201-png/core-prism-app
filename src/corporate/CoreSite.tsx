@@ -40,10 +40,15 @@ import {
 import { ContactSection } from './CorpContactForm';
 import {
   HomeHero, ProofStrip, WhyCore, ServicesEditorial, ProductsProof,
-  ApproachSection, AssessmentHome, FounderMessage, CompanyOverview, FinalCta,
+  ApproachSection, FounderMessage, CompanyOverview, FinalCta,
 } from './HomeSections';
 import { Manifesto, Values, PeopleMosaic, CreedBand } from './HomeManifesto';
 import { COMPANY_INFO } from '../data/companyInfo';
+import { RoaiBand, ExecutiveQuestion, Differentiation, RoaiModelSection, ScoreTeaser } from './roai/HomeRoaiSections';
+import ReturnOnAiPage from './roai/ReturnOnAiPage';
+import RoaiScore from './roai/RoaiScore';
+import { setCorpTab } from './corpRouteStore';
+import { track } from './roai/track';
 
 const COMPANY = {
   nameJa: COMPANY_INFO.name,
@@ -114,7 +119,31 @@ function jumpToHash(e: ReactMouseEvent<HTMLAnchorElement>, href: string) {
 //      SECTION_TAB でどの章がどのタブに載っているかを引き、
 //      必要ならタブを切り替えてからその章へ送る。
 // ============================================================
-export type CoreTabKey = 'home' | 'os' | 'services' | 'products' | 'company' | 'contact';
+export type CoreTabKey = 'home' | 'roai' | 'score' | 'os' | 'services' | 'products' | 'company' | 'contact';
+
+/**
+ * 2026-09-03 MASTER PROMPT: Return on AI と CORE ROAI SCORE は中心的な知的資産なので、
+ * ハッシュではなく独立したパスを持つ（検索・共有・AI検索のため）。中身は同じ CoreSite のタブ。
+ */
+const TAB_PATH: Partial<Record<CoreTabKey, string>> = { roai: '/return-on-ai', score: '/roai-score' };
+const PATH_TAB: Record<string, CoreTabKey> = { '/return-on-ai': 'roai', '/roai-score': 'score' };
+function tabFromPath(): CoreTabKey | null {
+  if (typeof window === 'undefined') return null;
+  const p = window.location.pathname.replace(/\/$/, '');
+  return PATH_TAB[p] ?? null;
+}
+
+/** タブごとの title / description / canonical（SEO・AI検索向け） */
+const TAB_META: Record<CoreTabKey, { title: string; desc: string; path: string }> = {
+  home: { title: '株式会社CORE | AI Transformation Company — Return on AI', desc: 'AIを導入するのではない。AI前提で、企業をつくり直す。戦略・業務・AI・システムを再設計し、AI投資を経営成果へ変えるAI Transformation Company。', path: '/corp' },
+  roai: { title: 'Return on AI とは | 株式会社CORE', desc: 'AI投資は目的ではない。AIが何を返したかを、売上・コスト・時間・リスク・新しい価値で測る。CORE ROAI MODEL・ROAIの計算・損失回避・投資余力の逆算・Transformation Loop。', path: '/return-on-ai' },
+  score: { title: 'CORE ROAI SCORE — 約3分のAI投資優先順位診断 | 株式会社CORE', desc: '約3分で、あなたの会社の次にAI投資すべき場所・削減できる時間・経済価値の概算・AI Readiness・投資余力の目安を可視化。連絡先不要、算定根拠つき。', path: '/roai-score' },
+  os: { title: 'AI COMPANY OS | 株式会社CORE', desc: '経営・営業・顧客対応・バックオフィスを、人とAIエージェントが協働する一つのOperating Systemとして再設計する。', path: '/corp#os' },
+  services: { title: 'サービス — AI戦略から運用・ROAI計測まで | 株式会社CORE', desc: 'AI Strategy / Business Redesign / AI Development / AI Security & Quality / AI Operation / ROAI Management。経営成果を生むプロセス別のサービス。', path: '/corp#services' },
+  products: { title: '自社プロダクト | 株式会社CORE', desc: '自社で作り、本番で動かしているAIプロダクト群。作れることの証拠。', path: '/corp#products' },
+  company: { title: '会社について | 株式会社CORE', desc: 'いつの時代も、変わらない核を。核とは、人。会社概要・理念・代表。', path: '/corp#company' },
+  contact: { title: 'AI Transformationを相談する | 株式会社CORE', desc: 'どこへ、いくらAI投資すると、どの程度のReturnが期待できるか。ROAI戦略相談・お問い合わせ。', path: '/corp#contact' },
+};
 
 /**
  * short — 狭い画面用の短い名札。
@@ -124,6 +153,8 @@ export type CoreTabKey = 'home' | 'os' | 'services' | 'products' | 'company' | '
  */
 const CORE_TABS: { key: CoreTabKey; label: string; short: string; sub: string }[] = [
   { key: 'home', label: '変革', short: '変革', sub: 'TRANSFORMATION' },
+  { key: 'roai', label: 'Return on AI', short: 'ROAI', sub: 'CONCEPT' },
+  { key: 'score', label: 'ROAI SCORE', short: '診断', sub: 'DIAGNOSIS' },
   { key: 'os', label: 'AI COMPANY OS', short: 'AI OS', sub: 'FLAGSHIP' },
   { key: 'services', label: 'サービス', short: 'サービス', sub: 'SERVICES' },
   { key: 'products', label: 'プロダクト', short: '製品', sub: 'PRODUCTS' },
@@ -136,6 +167,9 @@ const SECTION_TAB: Record<string, CoreTabKey> = {
   // 変革 — この会社が何をするのか
   top: 'home', philosophy: 'home', whatwedo: 'home', difference: 'home', assessment: 'home',
   why: 'home', proof: 'home', overview: 'home', cta: 'home', values: 'home',
+  'roai-band': 'home', question: 'home', 'roai-model': 'home', 'score-teaser': 'home',
+  // Return on AI（独立パス /return-on-ai）
+  roai: 'roai', 'roai-fail': 'roai', 'roai-calc': 'roai', 'roai-loss': 'roai', 'roai-capacity': 'roai', 'roai-loop': 'roai', 'roai-measure': 'roai',
   // AI COMPANY OS — 中核商品
   companyos: 'os', usecases: 'os', continuum: 'os',
   // connect（座組み）は 2026-08-21 に〈製品〉タブへ移した。
@@ -169,6 +203,8 @@ const TAB_KEYS = new Set<string>(CORE_TABS.map(t => t.key));
 
 function tabFromHash(): CoreTabKey {
   if (typeof window === 'undefined') return 'home';
+  const byPath = tabFromPath();
+  if (byPath) return byPath;
   const id = window.location.hash.replace('#', '');
   if (SECTION_TAB[id]) return SECTION_TAB[id];
   if (TAB_KEYS.has(id)) return id as CoreTabKey;
@@ -240,10 +276,22 @@ export default function CoreSite() {
    * scrollTo(0,0) を必ず伴う ＝ 前のタブで下まで読んでいた位置を持ち越すと、
    * 切り替えた先の途中から始まって「押しても何も起きない」ように見えるため。
    */
+  /**
+   * URL の書き方（2026-09-03）:
+   *   roai / score タブは独立パス（/return-on-ai・/roai-score）。
+   *   それ以外は /corp#章。パスが変わるときは pushState（戻るで前のページへ戻れるように）。
+   */
+  const writeUrl = (next: CoreTabKey, hash?: string) => {
+    const path = TAB_PATH[next] ?? '/corp';
+    const url = hash && !TAB_PATH[next] ? `${path}${hash}` : hash && TAB_PATH[next] ? `${path}${hash}` : TAB_PATH[next] ? path : `${path}#${next}`;
+    if (window.location.pathname.replace(/\/$/, '') !== path) history.pushState(null, '', url);
+    else history.replaceState(null, '', url);
+  };
+
   const goTab = (next: CoreTabKey, hash?: string) => {
     setTab(next);
     if (hash) {
-      history.replaceState(null, '', hash);
+      writeUrl(next, hash);
       // 章指定つきの場合は、描画が入れ替わってから位置を合わせる
       requestAnimationFrame(() => {
         const el = document.getElementById(hash.replace('#', ''));
@@ -253,10 +301,30 @@ export default function CoreSite() {
         window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - offset, behavior: 'auto' });
       });
     } else {
-      history.replaceState(null, '', '#' + next);
+      writeUrl(next);
       window.scrollTo({ top: 0, behavior: 'auto' });
     }
   };
+
+  // 追従CTA（App.tsx 側）とページの計測に、いまのタブを知らせる
+  useEffect(() => {
+    setCorpTab(tab);
+    track('corp_page_view', tab);
+    const m = TAB_META[tab];
+    document.title = m.title;
+    const setMeta = (sel: string, attr: string, value: string) => {
+      const el = document.querySelector(sel);
+      if (el) el.setAttribute(attr, value);
+    };
+    setMeta('meta[name="description"]', 'content', m.desc);
+    setMeta('meta[property="og:title"]', 'content', m.title);
+    setMeta('meta[property="og:description"]', 'content', m.desc);
+    setMeta('meta[name="twitter:title"]', 'content', m.title);
+    setMeta('meta[name="twitter:description"]', 'content', m.desc);
+    const canon = `https://www.core-ai.jp${m.path.split('#')[0]}`;
+    setMeta('link[rel="canonical"]', 'href', canon);
+    setMeta('meta[property="og:url"]', 'content', canon);
+  }, [tab]);
 
   /**
    * ページ内の #リンクを全部拾う共通ハンドラ。
@@ -264,6 +332,13 @@ export default function CoreSite() {
    * （フッタの「会社概要」やヒーローの「プロダクトを見る」を殺さないため）
    */
   const handleAnchor = (e: ReactMouseEvent<HTMLAnchorElement>, href: string) => {
+    // 独立パスのタブ（/return-on-ai・/roai-score）はページ遷移せずタブを切り替える
+    const pathTab = PATH_TAB[href.replace(/\/$/, '')];
+    if (pathTab) {
+      e.preventDefault();
+      goTab(pathTab);
+      return;
+    }
     if (!href.startsWith('#')) return;
     const id = href.slice(1);
     const target = SECTION_TAB[id];
@@ -297,11 +372,12 @@ export default function CoreSite() {
       });
     };
     window.addEventListener('hashchange', onHash);
-    return () => window.removeEventListener('hashchange', onHash);
+    window.addEventListener('popstate', onHash);
+    return () => { window.removeEventListener('hashchange', onHash); window.removeEventListener('popstate', onHash); };
   }, []);
 
   useEffect(() => {
-    document.title = 'CORE | AI Transformation Company';
+    // title / description / canonical はタブごとに TAB_META で更新する（上の effect）
 
     // theme-color (金×黒テーマ)
     const themeMeta = document.querySelector('meta[name="theme-color"]');
@@ -322,28 +398,6 @@ export default function CoreSite() {
     setLink('icon', '/core-512.png', 'image/png', '512x512');
     setLink('apple-touch-icon', '/core-180.png', undefined, '180x180');
 
-    // OG / Twitter Card メタを CORE 専用に
-    const setMeta = (selector: string, attr: string, value: string) => {
-      let m = document.querySelector(selector);
-      if (!m) {
-        m = document.createElement('meta');
-        const s = selector.match(/\[(?:property|name)="([^"]+)"\]/);
-        if (s) m.setAttribute(selector.includes('property=') ? 'property' : 'name', s[1]);
-        document.head.appendChild(m);
-      }
-      m.setAttribute(attr, value);
-    };
-    const DESC = 'COREは、AI戦略・業務設計・システム開発・事業開発を通じて、企業のDXとAI Transformationを支援します。';
-    setMeta('meta[property="og:title"]', 'content', 'CORE | AI Transformation Company');
-    setMeta('meta[property="og:description"]', 'content', DESC);
-    setMeta('meta[property="og:image"]', 'content', 'https://core-prism-app.vercel.app/og-core-v7.png');
-    setMeta('meta[property="og:url"]', 'content', 'https://core-prism-app.vercel.app/corp');
-    setMeta('meta[property="og:type"]', 'content', 'website');
-    setMeta('meta[name="twitter:card"]', 'content', 'summary_large_image');
-    setMeta('meta[name="twitter:image"]', 'content', 'https://core-prism-app.vercel.app/og-core-v7.png');
-    setMeta('meta[name="twitter:title"]', 'content', 'CORE | AI Transformation Company');
-    setMeta('meta[name="twitter:description"]', 'content', 'いつの時代も、変わらない核を。AIとテクノロジーで、企業の仕組みそのものを変える。');
-    setMeta('meta[name="description"]', 'content', DESC);
   }, []);
 
   return (
@@ -442,7 +496,7 @@ export default function CoreSite() {
           <nav style={{ display: 'flex', gap: '1.6rem', alignItems: 'center' }}>
             <a href="/continuum" style={navLink} className="lp-nav-link">Continuum</a>
             <a href="/studio" style={navLink} className="lp-nav-link">制作スタジオ</a>
-            <a href="#contact" onClick={e => handleAnchor(e, '#contact')} style={ctaSmall}>AI・DXの相談</a>
+            <a href="/roai-score" onClick={e => { track('corp_cta_click', 'header'); handleAnchor(e, '/roai-score'); }} style={ctaSmall}>ROAIを診断</a>
           </nav>
         </div>
 
@@ -484,7 +538,13 @@ export default function CoreSite() {
       {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
       {tab === 'home' && (
       <>
-        {/* 2026-09-02 全面再構築（HomeSections.tsx）。写真主導・事実の帯・実画面・代表の言葉・会社概要 */}
+        {/* 2026-09-03 MASTER PROMPT: 思想理解 → 問題認識 → ROAI理解 → 自己診断 → 相談 の順に並べる。
+            理念（核とは、人）と人の写真は Humanity の章として残す（§15）。 */}
+        <RoaiBand onAnchor={handleAnchor} />
+        <ExecutiveQuestion onAnchor={handleAnchor} />
+        <Differentiation />
+        <RoaiModelSection onAnchor={handleAnchor} />
+        <ScoreTeaser onAnchor={handleAnchor} />
         <Manifesto onAnchor={handleAnchor} />
         <Values />
         <PeopleMosaic />
@@ -493,12 +553,18 @@ export default function CoreSite() {
         <ServicesEditorial onAnchor={handleAnchor} />
         <ProductsProof onAnchor={handleAnchor} />
         <ApproachSection />
-        <AssessmentHome onAnchor={handleAnchor} />
         <FounderMessage onAnchor={handleAnchor} />
         <CompanyOverview onAnchor={handleAnchor} />
         <FinalCta onAnchor={handleAnchor} />
       </>
       )}
+
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
+      {/*  RETURN ON AI（/return-on-ai）  */}
+      {/*  CORE ROAI SCORE（/roai-score） */}
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
+      {tab === 'roai' && <ReturnOnAiPage onAnchor={handleAnchor} />}
+      {tab === 'score' && <RoaiScore onAnchor={handleAnchor} />}
 
       {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
       {/*  05 AI COMPANY OS ＋ 07 USE CASES  */}

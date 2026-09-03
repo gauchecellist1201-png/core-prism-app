@@ -319,6 +319,8 @@ function isCorpPath(): boolean {
   if (typeof window === 'undefined') return false;
   const p = window.location.pathname;
   // '/corp.html' は vite dev での直接アクセス用(本番は vercel rewrite で /corp → corp.html)
+  // 2026-09-03: Return on AI / CORE ROAI SCORE は SEO のため独立パス。中身は CoreSite のタブ。
+  if (p === '/roai-score' || p === '/roai-score/' || p === '/return-on-ai' || p === '/return-on-ai/') return true;
   return p === '/corp' || p.startsWith('/corp/') || p === '/corp.html' || p === '/company' || p.startsWith('/company/');
 }
 

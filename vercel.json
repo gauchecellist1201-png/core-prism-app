@@ -60,19 +60,34 @@
   "redirects": [
     {
       "source": "/",
-      "has": [{ "type": "host", "value": "studio.core-ai.jp" }],
+      "has": [
+        {
+          "type": "host",
+          "value": "studio.core-ai.jp"
+        }
+      ],
       "destination": "/studio",
       "permanent": false
     },
     {
       "source": "/",
-      "has": [{ "type": "host", "value": "www.core-ai.jp" }],
+      "has": [
+        {
+          "type": "host",
+          "value": "www.core-ai.jp"
+        }
+      ],
       "destination": "/corp",
       "permanent": false
     },
     {
       "source": "/",
-      "has": [{ "type": "host", "value": "core-ai.jp" }],
+      "has": [
+        {
+          "type": "host",
+          "value": "core-ai.jp"
+        }
+      ],
       "destination": "/corp",
       "permanent": false
     }
@@ -199,6 +214,22 @@
       "destination": "/continuum.html"
     },
     {
+      "source": "/roai-score",
+      "destination": "/corp.html"
+    },
+    {
+      "source": "/roai-score/",
+      "destination": "/corp.html"
+    },
+    {
+      "source": "/return-on-ai",
+      "destination": "/corp.html"
+    },
+    {
+      "source": "/return-on-ai/",
+      "destination": "/corp.html"
+    },
+    {
       "source": "/corp/sier",
       "destination": "/corp-sier.html"
     },
@@ -292,17 +323,32 @@
     },
     {
       "source": "/(.*)",
-      "has": [{ "type": "host", "value": "studio.core-ai.jp" }],
+      "has": [
+        {
+          "type": "host",
+          "value": "studio.core-ai.jp"
+        }
+      ],
       "destination": "/studio.html"
     },
     {
       "source": "/(.*)",
-      "has": [{ "type": "host", "value": "core-ai.jp" }],
+      "has": [
+        {
+          "type": "host",
+          "value": "core-ai.jp"
+        }
+      ],
       "destination": "/corp.html"
     },
     {
       "source": "/(.*)",
-      "has": [{ "type": "host", "value": "www.core-ai.jp" }],
+      "has": [
+        {
+          "type": "host",
+          "value": "www.core-ai.jp"
+        }
+      ],
       "destination": "/corp.html"
     },
     {

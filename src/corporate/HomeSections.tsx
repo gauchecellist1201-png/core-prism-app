@@ -24,6 +24,7 @@ import {
 import { SERVICE_LAYERS, DIFF_CORE, ASSESSMENT_STEPS, ASSESSMENT_TARGETS } from './transformData';
 import { SUITE_COUNT } from './suiteData';
 import { COMPANY_INFO } from '../data/companyInfo';
+import { rememberSource, track } from './roai/track';
 
 type AnchorHandler = (e: ReactMouseEvent<HTMLAnchorElement>, href: string) => void;
 
@@ -80,31 +81,30 @@ export function HomeHero({ onAnchor }: { onAnchor: AnchorHandler }) {
       <div className="ch-hero-shade" aria-hidden />
       <div className="ch-wrap ch-hero-inner">
         <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}>
+          {/* 2026-09-03 MASTER PROMPT §46: ヒーローは「AI前提で、企業をつくり直す」。理念（核とは、人）は Manifesto 章へ。 */}
           <Kick>AI Transformation Company — Kobe, Japan</Kick>
           <h1 className="ch-h1" style={{ fontFamily: FONT_JA, color: '#FFFFFF' }}>
-            いつの時代も、
+            AIを導入する<br className="ch-br-m" />のではない。
             <br />
-            変わらない核を。
+            AI前提で、<br className="ch-br-m" /><span style={{ color: ACCENT_LIGHT }}>企業をつくり直す。</span>
           </h1>
           <p className="ch-hero-answer" style={{ fontFamily: FONT_JA }}>
-            <span style={{ color: ACCENT_LIGHT }}>核とは、人。</span>
-            <br />
-            AIは、人にしかできない仕事を、
-            <br />
-            人に返すための道具です。
+            COREは、戦略・業務・AI・システムを再設計し、
+            <br className="ch-br" />
+            AI投資を経営成果へ変える AI Transformation Company です。
           </p>
           <p style={{
             fontFamily: FONT_JA, fontSize: 'clamp(0.95rem, 1.5vw, 1.12rem)', lineHeight: 1.9,
             color: 'rgba(236,242,250,0.82)', maxWidth: 600, margin: '0 0 2rem', fontWeight: 500,
           }}>
-            AI戦略・業務設計・システム開発・事業開発までを一気通貫で。
+            {COMPANY_INFO.philosophy} 核とは、人。
             <br className="ch-br" />
-            神戸から、人が真ん中にいる会社を、AI前提でつくり直します。
+            AIは、人にしかできない仕事を人に返すための道具です。
           </p>
           <div className="ch-cta-row">
-            <a href="#contact" onClick={e => onAnchor(e, '#contact')} style={ctaHero}>AI・DXについて相談する</a>
-            <a href="#services" onClick={e => onAnchor(e, '#services')} style={{ ...ctaGhost, backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}>
-              サービスを見る
+            <a href="/roai-score" onClick={e => { rememberSource('home-hero'); track('corp_cta_click', 'home-hero'); onAnchor(e, '/roai-score'); }} style={ctaHero}>ROAIを無料診断する</a>
+            <a href="#contact" onClick={e => onAnchor(e, '#contact')} style={{ ...ctaGhost, backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}>
+              AI Transformationを相談する
             </a>
           </div>
         </motion.div>
@@ -532,9 +532,12 @@ export function FinalCta({ onAnchor }: { onAnchor: AnchorHandler }) {
           御社の「核」を、一緒に守りに行きましょう。
         </p>
         <div className="ch-cta-row" style={{ justifyContent: 'center' }}>
-          <a href="#contact" onClick={e => onAnchor(e, '#contact')} style={ctaHero}>AI・DXについて相談する</a>
-          <a href={`mailto:${COMPANY_INFO.email}`} style={{ ...ctaGhost, backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}>{COMPANY_INFO.email}</a>
+          <a href="/roai-score" onClick={e => { rememberSource('home-final'); track('corp_cta_click', 'home-final'); onAnchor(e, '/roai-score'); }} style={ctaHero}>ROAIを無料診断する</a>
+          <a href="#contact" onClick={e => onAnchor(e, '#contact')} style={{ ...ctaGhost, backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}>AI Transformationを相談する</a>
         </div>
+        <p style={{ fontFamily: FONT_JA, fontSize: '0.8rem', color: 'rgba(236,242,250,0.7)', margin: '1.2rem 0 0' }}>
+          メールでのご相談は <a href={`mailto:${COMPANY_INFO.email}`} style={{ color: '#BAE6FD' }}>{COMPANY_INFO.email}</a>
+        </p>
       </div>
     </section>
   );

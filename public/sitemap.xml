@@ -68,9 +68,21 @@
   </url>
   <url>
     <loc>https://core-prism-app.vercel.app/corp</loc>
-    <lastmod>2026-08-02T17:47:44+09:00</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <lastmod>2026-09-03T12:00:00+09:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://core-prism-app.vercel.app/roai-score</loc>
+    <lastmod>2026-09-03T12:00:00+09:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://core-prism-app.vercel.app/return-on-ai</loc>
+    <lastmod>2026-09-03T12:00:00+09:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
   </url>
   <url>
     <loc>https://core-prism-app.vercel.app/lp/sme</loc>
