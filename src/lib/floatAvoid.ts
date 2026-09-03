@@ -88,7 +88,42 @@ export function inkRects(excludes: (Element | null | undefined)[]): InkRect[] {
     const r = el.getBoundingClientRect();
     if (r.width > 8 && r.height > 8 && inView(r)) out.push({ r, control: true });
   }
+  // ★2026-09-03 根治: これまで「文字」と「押せるもの」しか数えていなかったので、
+  //   **絵そのものが中身**であるもの(サムネ・写真)は覆っても費用ゼロ＝丸ボタンが
+  //   平気で乗り、しかも「何も覆っていないから動かない」ので永久にどかなかった。
+  //   実測(375px・保存済みリール3本を実注入): Iris「作ったリールの棚」の1枚目の
+  //   サムネ(44x60)を切替オーブ(52x52)が最大 939px^2 覆い、可視 64% まで欠けた。
+  //   棚のサムネは「どのリールか」を見分ける唯一の手がかりなので、隠れると棚の目的が消える。
+  //   文字と同じ重みで数える(押せるものより桁違いに軽い)＝逃げ場が無い画面で
+  //   「絵を避けるためにボタンの上に乗る」は起こさない。
+  for (const el of document.querySelectorAll('img,video,canvas')) {
+    if (out.length >= INK_LIMIT) break;
+    if (skip(el)) continue;
+    const r = el.getBoundingClientRect();
+    if (inView(r) && countsAsMedia(r, { w: window.innerWidth, h: vh })) out.push({ r, control: false });
+  }
   return out;
+}
+
+/**
+ * 背景・全面の飾りは「中身」として数えないための上限(画面に対する面積比)。
+ * これを超える絵は避けようがない(どこへ逃げても乗る)ので、数えると
+ * 丸ボタンを画面の隅へ無意味に追いやるだけになる。
+ */
+export const MEDIA_MAX_VIEWPORT_RATIO = 0.25;
+
+/**
+ * その絵を「読むもの」として数えるか。
+ * DOM を触らない純粋な判定なので、画面なしで固定できる。
+ */
+export function countsAsMedia(
+  r: { width: number; height: number },
+  viewport: { w: number; h: number },
+): boolean {
+  if (!(r.width > 8 && r.height > 8)) return false;
+  const vpArea = viewport.w * viewport.h;
+  if (!(vpArea > 0)) return false;
+  return r.width * r.height <= vpArea * MEDIA_MAX_VIEWPORT_RATIO;
 }
 
 /** 押せるものは 1px でも覆ったら失格にするための重み(実質の禁止) */

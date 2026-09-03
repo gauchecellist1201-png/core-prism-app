@@ -20,7 +20,7 @@
 import { useEffect, useRef, useState } from "react";
 import { withCoreHandoff, readCoreHandoff, type CoreAppKey } from "./coreLink";
 import { useCoveredByModal } from "../hooks/useCoveredByModal";
-import { observeContentChange } from "../lib/floatAvoid";
+import { countsAsMedia, observeContentChange } from "../lib/floatAvoid";
 
 type App = { key: Exclude<CoreAppKey, "core">; name: string; tag: string; color: string; url: string };
 
@@ -175,6 +175,16 @@ function inkRects(exclude: Element | null): Ink[] {
     if (exclude && exclude.contains(el)) continue;
     const r = el.getBoundingClientRect();
     if (r.width > 8 && r.height > 8 && inView(r)) out.push({ r, w: CONTROL_WEIGHT });
+  }
+  // ★2026-09-03 根治: 絵そのものが中身のもの(サムネ・写真)を数えていなかったので、
+  //   丸ボタンが乗っても費用ゼロ＝「何も覆っていない」と判断して永久にどかなかった。
+  //   実測(375px)＝Iris「作ったリールの棚」のサムネを 939px^2 覆い、可視 64%。
+  //   判定は floatAvoid の countsAsMedia に一本化する(2つ持つと片方だけ直る)。
+  for (const el of document.querySelectorAll("img,video,canvas")) {
+    if (out.length >= INK_LIMIT) break;
+    if (exclude && exclude.contains(el)) continue;
+    const r = el.getBoundingClientRect();
+    if (inView(r) && countsAsMedia(r, { w: window.innerWidth, h: vh })) out.push({ r, w: TEXT_WEIGHT });
   }
   return out;
 }
