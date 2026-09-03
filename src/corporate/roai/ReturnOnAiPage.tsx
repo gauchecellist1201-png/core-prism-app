@@ -126,8 +126,8 @@ export default function ReturnOnAiPage({ onAnchor }: { onAnchor: AnchorHandler }
       </Block>
 
       {/* INVESTMENT CAPACITY */}
-      <Block id="roai-capacity" kick="AI investment capacity" h={<>「500万円は高い」から、<br />「3,000万円の価値のために500万円」へ。</>}
-        lead="年間の経済価値だけを見て終わらせません。目標ROAIから、合理的な投資額を逆算します。">
+      <Block id="roai-capacity" kick="AI investment capacity" h={<>投資の上限は、価格ではなく<br />リターンから逆算する。</>}
+        lead="年間に見込める経済価値と目標ROAIから、合理的な投資規模を導きます。金額の妥当性は、相見積もりではなくリターンで判断すべきものです。">
         <motion.div {...reveal} className="ro-capacity">
           {[
             { k: 'Annual Potential Economic Value', v: '¥3,000万', j: '年間の潜在経済価値' },
@@ -143,7 +143,7 @@ export default function ReturnOnAiPage({ onAnchor }: { onAnchor: AnchorHandler }
           ))}
         </motion.div>
         <p style={{ fontFamily: FONT_JA, fontSize: '0.82rem', color: TEXT_MUTED, textAlign: 'center', margin: '1.4rem auto 0', maxWidth: 640, lineHeight: 1.8 }}>
-          例示の数字です。価格から商談するのではなく、価値から投資を考える。これがCOREを受託開発の価格競争から離すための営業思想です。
+          上記は前提を置いた試算例です。実際の投資規模は、貴社の現状データに基づく CORE ROAI SCORE の診断結果から算出します。
         </p>
       </Block>
 
