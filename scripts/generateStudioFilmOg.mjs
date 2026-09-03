@@ -3,7 +3,7 @@
 // 2026-08-21 オーナー支給の起動画面ロゴ (黒地に白字) を切り抜き・反転して
 // 白地に黒字のワードマークにしたものを使用。サイト本体が白基調・法人トーンのため
 // OGカードも黒背景から白背景へ揃える。本文コピーは v2 (価格修正版) を踏襲し、
-// 「初回1本 20秒 ¥49,800」等の正しい価格・尺表記はそのまま引き継ぐ。
+// 「初回1本 15秒 ¥49,800」等の正しい価格・尺表記はそのまま引き継ぐ。
 // ============================================================
 import sharp from 'sharp';
 import { readFileSync, writeFileSync } from 'fs';
@@ -54,7 +54,7 @@ const SVG = `<?xml version='1.0' encoding='UTF-8'?>
   <!-- バッジ 3枚 -->
   <g font-family='Noto Sans JP, sans-serif' font-size='18' font-weight='600' fill='${C.ink}'>
     <rect x='90' y='452' width='240' height='46' rx='23' fill='#FFFFFF' stroke='#C9CDD4' stroke-width='1.5'/>
-    <text x='210' y='481' text-anchor='middle'>初回1本 20秒 ¥49,800</text>
+    <text x='210' y='481' text-anchor='middle'>初回1本 15秒 ¥49,800</text>
 
     <rect x='344' y='452' width='214' height='46' rx='23' fill='#FFFFFF' stroke='#C9CDD4' stroke-width='1.5'/>
     <text x='451' y='481' text-anchor='middle'>撮影費・出演費 0円</text>

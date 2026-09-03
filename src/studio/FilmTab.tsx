@@ -397,7 +397,7 @@ export default function FilmTab() {
           font-size: 11.5px; font-weight: 600; letter-spacing: 0.04em; color: ${C.mute}; line-height: 1.7; }
         .fm-mx-head { background: ${C.alt}; }
         .fm-mx-plan { min-width: 148px; }
-        /* 列見出しは「20秒 1本」。和文なので字間は詰める (欧文用の 0.08em は分かち書きに見える) */
+        /* 列見出しは「15秒 1本」。和文なので字間は詰める (欧文用の 0.08em は分かち書きに見える) */
         .fm-mx-plan-name { font-family: ${SERIF}; font-size: 14.5px; font-weight: 700; letter-spacing: 0.02em; color: ${C.ink}; }
         .fm-mx-plan-price { font-family: ${SERIF}; font-size: 17px; font-weight: 700; color: ${C.ink}; margin-top: 3px; }
         .fm-mx-plan-unit { font-size: 11px; color: ${C.mute}; margin-top: 2px; }
@@ -1024,9 +1024,9 @@ function MonthlySavingsTable() {
                 <div style={{ fontSize: 12, fontWeight: 700, color: C.ink, minWidth: 62 }}>{m.volume}</div>
                 <div style={{ fontSize: 12, color: C.mute }}>{VALUE.monthly.colOneOff} <b style={{ color: C.ink }}>¥{s.oneOffTotal.toLocaleString('ja-JP')}</b></div>
                 <div style={{ fontSize: 12, color: C.mute }}>{VALUE.monthly.colMonthly} <b style={{ color: C.ink }}>{m.price}</b></div>
-                {/* 2026-08-24: 比較の基準を 20秒1本の通常価格 ¥89,800 に変えたため、
+                {/* 2026-08-24: 比較の基準を 15秒1本の通常価格 ¥89,800 に変えたため、
                     「規格の異なる比較を値引きに見せている」という旧指摘には当たらなくなった
-                    (月額の1本は20〜30秒で、単発20秒より仕様は上。差は過大ではなく控えめ)。
+                    (月額の1本は20〜30秒で、単発15秒より仕様は上。差は過大ではなく控えめ)。
                     ゆえに割合も出す。percent は切り捨て済み。 */}
                 <div style={{ fontSize: 12, color: C.goldText, fontWeight: 700 }}>
                   {VALUE.monthly.colDiff} ¥{s.diff.toLocaleString('ja-JP')}（{s.percent}%）
@@ -1288,7 +1288,7 @@ function PlanPickCards({ onDetail }: { onDetail: (id: string) => void }) {
               </span>
             )}
           </div>
-          {/* 2026-08-27 第2版: 見出しを英語のプラン名から「20秒 1本」に入れ替えた。
+          {/* 2026-08-27 第2版: 見出しを英語のプラン名から「15秒 1本」に入れ替えた。
               初めて見る人にとって TRIAL / STANDARD / PREMIUM は何が届くかを1文字も語らない。
               プラン名は問い合わせ時の符丁として要るので、小さく残す */}
           <div className="fm-pick-name" data-ja="true">{p.unit}</div>
@@ -1348,9 +1348,9 @@ function MonthlyPickCards() {
           <div className="fm-pick-tax">税込 ／ 月々のお支払い</div>
           <p className="fm-pick-fit">{m.unitPrice}</p>
           {/* 「1本ずつ頼んだほうが安いのでは」という疑いは、月額の金額を見た瞬間に生まれる。
-              疑いが生まれる場所と同じ場所で、20秒1本の通常価格 × 本数と並べて否定する */}
+              疑いが生まれる場所と同じ場所で、15秒1本の通常価格 × 本数と並べて否定する */}
           <div className="fm-pick-save">
-            1本ずつなら <s>{yen(monthlySavings(m).oneOffTotal)}</s>（20秒 ¥89,800 × {m.count}本）
+            1本ずつなら <s>{yen(monthlySavings(m).oneOffTotal)}</s>（15秒 ¥89,800 × {m.count}本）
             <br />このプランなら {yen(monthlySavings(m).diff)} 分が浮きます
           </div>
           <p className="fm-pick-body">{m.body}</p>
@@ -1542,7 +1542,7 @@ function Pricing({ mode, onMode, openPlan, onOpenPlan }: {
               いまの価格について
             </div>
             <p style={{ fontSize: 12.5, lineHeight: 1.9, color: C.body, margin: 0 }}>
-              <b style={{ color: C.ink }}>TRIAL（20秒）</b> — {TRIAL_OFFER.why}
+              <b style={{ color: C.ink }}>TRIAL（15秒）</b> — {TRIAL_OFFER.why}
             </p>
             <p style={{ fontSize: 12, lineHeight: 1.85, color: C.mute, margin: '6px 0 0' }}>
               {TRIAL_OFFER.limit}。{TRIAL_OFFER.quota}
