@@ -21,6 +21,8 @@ const UPSTASH_OK = !!(UP_URL && UP_TOK);
 /** 個人情報の保持日数（診断データと連絡先を同じ寿命で消す） */
 export const RETENTION_DAYS = 365;
 const RATE_LIMIT_PER_HOUR = 10;
+/** 同じメールアドレス宛の受付メールは 1 日 3 通まで（第三者のアドレスへ送りつける踏み台にされないため） */
+const RATE_LIMIT_PER_EMAIL_PER_DAY = 3;
 
 const ALLOWED_ORIGINS = new Set([
   'https://core-prism-app.vercel.app', 'https://www.core-ai.jp', 'https://core-ai.jp',
@@ -57,7 +59,8 @@ export function validateLead(raw: unknown): { ok: true; kind: 'report' | 'consul
   const kind = b.kind === 'consult' ? 'consult' : b.kind === 'report' ? 'report' : null;
   if (!kind) return { ok: false, reason: 'invalid_kind' };
   const c = (b.contact && typeof b.contact === 'object' ? b.contact : {}) as Record<string, unknown>;
-  const str = (v: unknown, max: number) => String(v ?? '').trim().slice(0, max);
+  // 改行はメール件名などのヘッダへ流れ得るので落とす（多層防御）
+  const str = (v: unknown, max: number) => String(v ?? '').replace(/[\r\n]+/g, ' ').trim().slice(0, max);
   const contact: LeadContact = {
     email: str(c.email, 200).toLowerCase(), company: str(c.company, 120), name: str(c.name, 80), phone: str(c.phone, 40), message: str(c.message, 2000),
   };
@@ -76,14 +79,35 @@ async function ipHash(ip: string): Promise<string> {
   return Array.from(new Uint8Array(buf)).slice(0, 8).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-async function rateLimited(req: Request): Promise<boolean> {
-  if (!UPSTASH_OK) return false;
+/** Upstash が無いときの最後の砦（このインスタンスの中だけの簡易カウンタ）。 */
+const memHits = new Map<string, number[]>();
+function memLimited(key: string, limit: number, windowMs: number): boolean {
+  const now = Date.now();
+  const arr = (memHits.get(key) || []).filter(t => now - t < windowMs);
+  arr.push(now);
+  memHits.set(key, arr);
+  if (memHits.size > 5000) memHits.clear();
+  return arr.length > limit;
+}
+
+async function counter(key: string, ttlSec: number): Promise<number> {
+  const r = await up(['INCR', key]);
+  const n = Number(r.result) || 0;
+  if (n === 1) await up(['EXPIRE', key, ttlSec]);
+  return n;
+}
+
+async function rateLimited(req: Request, email: string): Promise<boolean> {
+  const ipKey = await ipHash(clientIp(req));
+  const mailKey = await ipHash(`mail|${email}`);
+  if (!UPSTASH_OK) {
+    console.error('[roai-lead] UPSTASH not configured: falling back to in-memory rate limit');
+    return memLimited(`ip:${ipKey}`, RATE_LIMIT_PER_HOUR, 3600_000) || memLimited(`mail:${mailKey}`, RATE_LIMIT_PER_EMAIL_PER_DAY, 86400_000);
+  }
   try {
-    const key = `roai:rl:${await ipHash(clientIp(req))}`;
-    const r = await up(['INCR', key]);
-    const n = Number(r.result) || 0;
-    if (n === 1) await up(['EXPIRE', key, 3600]);
-    return n > RATE_LIMIT_PER_HOUR;
+    const byIp = await counter(`roai:rl:${ipKey}`, 3600);
+    const byMail = await counter(`roai:rl:mail:${mailKey}`, 86400);
+    return byIp > RATE_LIMIT_PER_HOUR || byMail > RATE_LIMIT_PER_EMAIL_PER_DAY;
   } catch { return false; }
 }
 
@@ -190,7 +214,7 @@ export default async function handler(req: Request): Promise<Response> {
   const v = validateLead(raw);
   if (!v.ok) return json({ ok: false, error: v.reason }, 400);
   if (v.honeypot) return json({ ok: true, delivered: true, stored: true, id: 'ok' });
-  if (await rateLimited(req)) return json({ ok: false, error: 'rate_limited' }, 429);
+  if (await rateLimited(req, v.contact.email)) return json({ ok: false, error: 'rate_limited' }, 429);
 
   const r = computeRoai(v.answers);
   const id = `${Date.now().toString(36)}-${crypto.randomUUID().slice(0, 8)}`;
@@ -203,8 +227,9 @@ export default async function handler(req: Request): Promise<Response> {
     },
   };
 
-  // Vercel Functions Logs にも構造化で残す（メール・KV が両方落ちても失わない）。本文の message は載せない
-  console.log('[roai-lead]', JSON.stringify({ id, kind: rec.kind, tier: rec.result.tier, score: r.score, total: rec.result.total.mid, company: rec.contact.company, email: rec.contact.email, source: rec.source }));
+  // Vercel Functions Logs にも構造化で残す（メール・KV が両方落ちても id で追える）。
+  // PII はログに置かない: メールはドメインだけ、会社名・本文は載せない（本体は Upstash roai:lead:<id>）
+  console.log('[roai-lead]', JSON.stringify({ id, kind: rec.kind, tier: rec.result.tier, score: r.score, total: rec.result.total.mid, emailDomain: rec.contact.email.split('@')[1] || '', source: rec.source }));
 
   const stored = await persist(rec);
   const n = await notify(req, rec, r);

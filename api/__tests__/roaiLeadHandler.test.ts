@@ -16,15 +16,15 @@ vi.hoisted(() => {
 import handler from '../roai/lead';
 
 const calls: { url: string; body: unknown }[] = [];
-let incr = 0;
+const counters = new Map<string, number>();
 function mockFetch() {
-  incr = 0;
+  counters.clear();
   calls.length = 0;
   vi.stubGlobal('fetch', vi.fn(async (url: string, init?: RequestInit) => {
     const body = init?.body ? JSON.parse(String(init.body)) : null;
     calls.push({ url, body });
     if (url === 'https://kv.test.local') {
-      if (Array.isArray(body) && body[0] === 'INCR') { incr += 1; return new Response(JSON.stringify({ result: incr })); }
+      if (Array.isArray(body) && body[0] === 'INCR') { const n = (counters.get(body[1]) || 0) + 1; counters.set(body[1], n); return new Response(JSON.stringify({ result: n })); }
       return new Response(JSON.stringify({ result: 'OK' }));
     }
     return new Response(JSON.stringify({ id: 'email_1' }), { status: 200 });
@@ -79,8 +79,26 @@ describe('/api/roai/lead handler', () => {
     expect(calls.length).toBe(0);
   });
 
-  it('rate limits after 10 posts per hour per ip', async () => {
-    for (let i = 0; i < 10; i++) expect((await handler(req(GOOD))).status).toBe(200);
-    expect((await handler(req(GOOD))).status).toBe(429);
+  it('rate limits after 10 posts per hour per ip (distinct emails)', async () => {
+    for (let i = 0; i < 10; i++) expect((await handler(req({ ...GOOD, contact: { ...GOOD.contact, email: `u${i}@example.co.jp` } }))).status).toBe(200);
+    expect((await handler(req({ ...GOOD, contact: { ...GOOD.contact, email: 'u99@example.co.jp' } }))).status).toBe(429);
+  });
+  it('rate limits the 4th post to the same email within a day (third-party mailbox protection)', async () => {
+    for (let i = 0; i < 3; i++) expect((await handler(req(GOOD, { 'x-forwarded-for': `10.0.0.${i}` }))).status).toBe(200);
+    expect((await handler(req(GOOD, { 'x-forwarded-for': '10.0.0.9' }))).status).toBe(429);
+  });
+  it('strips CR/LF from contact fields and keeps PII out of logs', async () => {
+    const spy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const res = await handler(req({ ...GOOD, contact: { ...GOOD.contact, company: 'Evil\r\nBcc: x@y.z', name: 'A\nB' } }));
+    expect(res.status).toBe(200);
+    const set = calls.find(c => c.url === 'https://kv.test.local' && (c.body as string[])[0] === 'SET')!.body as string[];
+    const rec = JSON.parse(set[2]);
+    expect(rec.contact.company).toBe('Evil Bcc: x@y.z');
+    expect(rec.contact.name).toBe('A B');
+    const logged = spy.mock.calls.map(c => c.join(' ')).join('\n');
+    expect(logged).toContain('[roai-lead]');
+    expect(logged).not.toContain('ceo@example.co.jp');
+    expect(logged).not.toContain('テスト社');
+    spy.mockRestore();
   });
 });

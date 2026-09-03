@@ -6,6 +6,7 @@
 // この endpoint を読む側を足す（書き込み側 api/roai/lead.ts は変えない）。
 // ============================================================
 import type { LeadRecord } from './lead';
+import { logMasterAudit } from '../_lib/masterAudit';
 
 export const config = { runtime: 'edge' };
 
@@ -29,7 +30,12 @@ export default async function handler(req: Request): Promise<Response> {
   if (req.method !== 'GET') return json({ error: 'method_not_allowed' }, 405);
   const url = new URL(req.url);
   const key = req.headers.get('x-master-key') || url.searchParams.get('master_key') || '';
-  if (key !== MASTER_KEY) return json({ error: 'forbidden' }, 403);
+  // フル PII を返す口なので、他の api/master/* と同じく閲覧を監査ログに残す
+  if (key !== MASTER_KEY) {
+    await logMasterAudit(req, '/api/roai/leads', 'forbidden');
+    return json({ error: 'forbidden' }, 403);
+  }
+  await logMasterAudit(req, '/api/roai/leads', 'ok');
   if (!UPSTASH_OK) return json({ ok: true, configured: false, leads: [] });
   const limit = Math.max(1, Math.min(200, Number(url.searchParams.get('limit') || '50')));
   try {
