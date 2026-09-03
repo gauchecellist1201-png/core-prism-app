@@ -24,6 +24,7 @@ import {
 import { SERVICE_LAYERS, DIFF_CORE, ASSESSMENT_STEPS, ASSESSMENT_TARGETS } from './transformData';
 import { SUITE_COUNT } from './suiteData';
 import { COMPANY_INFO } from '../data/companyInfo';
+import { CREED } from './creedData';
 import { rememberSource, track } from './roai/track';
 
 type AnchorHandler = (e: ReactMouseEvent<HTMLAnchorElement>, href: string) => void;
@@ -81,25 +82,25 @@ export function HomeHero({ onAnchor }: { onAnchor: AnchorHandler }) {
       <div className="ch-hero-shade" aria-hidden />
       <div className="ch-wrap ch-hero-inner">
         <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}>
-          {/* 2026-09-03 MASTER PROMPT §46: ヒーローは「AI前提で、企業をつくり直す」。理念（核とは、人）は Manifesto 章へ。 */}
+          {/* 2026-09-03 オーナー指示: ヒーローの主役を理念に入れ替える。
+              「AI前提でつくり直す」は理念から導かれる結論として下に置く。言葉の正本は creedData。 */}
           <Kick>AI Transformation Company — Kobe, Japan</Kick>
+          <p className="ch-hero-tagline" style={{ fontFamily: FONT_JA }}>{CREED.tagline}</p>
           <h1 className="ch-h1" style={{ fontFamily: FONT_JA, color: '#FFFFFF' }}>
-            AIを導入する<br className="ch-br-m" />のではない。
-            <br />
-            AI前提で、<br className="ch-br-m" /><span style={{ color: ACCENT_LIGHT }}>企業をつくり直す。</span>
+            核とは、<span style={{ color: ACCENT_LIGHT }}>人。</span>
           </h1>
           <p className="ch-hero-answer" style={{ fontFamily: FONT_JA }}>
-            COREは、戦略・業務・AI・システムを再設計し、
+            AIは、人の仕事を奪う道具ではありません。
             <br className="ch-br" />
-            AI投資を経営成果へ変える AI Transformation Company です。
+            人にしかできない仕事を、人に返すための道具です。
           </p>
           <p style={{
             fontFamily: FONT_JA, fontSize: 'clamp(0.95rem, 1.5vw, 1.12rem)', lineHeight: 1.9,
-            color: 'rgba(236,242,250,0.82)', maxWidth: 600, margin: '0 0 2rem', fontWeight: 500,
+            color: 'rgba(236,242,250,0.82)', maxWidth: 620, margin: '0 0 2rem', fontWeight: 500,
           }}>
-            {COMPANY_INFO.philosophy} 核とは、人。
+            {CREED.soWhat}
             <br className="ch-br" />
-            AIは、人にしかできない仕事を人に返すための道具です。
+            戦略から実装、運用までを一本の線でつなぎ、AI投資を経営の成果に変えます。
           </p>
           <div className="ch-cta-row">
             <a href="/roai-score" onClick={e => { rememberSource('home-hero'); track('corp_cta_click', 'home-hero'); onAnchor(e, '/roai-score'); }} style={ctaHero}>ROAIを無料診断する</a>

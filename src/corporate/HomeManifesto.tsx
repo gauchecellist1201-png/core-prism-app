@@ -45,12 +45,13 @@ export function Manifesto({ onAnchor }: { onAnchor?: AnchorHandler }) {
       <div className="ch-manifesto-shade" aria-hidden />
       <div className="ch-wrap ch-manifesto-inner">
         <motion.div {...reveal} style={{ maxWidth: 760 }}>
+          {/* 2026-09-03: 「核とは、人。」はヒーローへ上げた。この章はその約束＝「人に、時間を返す。」を引き受ける。 */}
           <Kick>Our Creed — {CREED.tagline}</Kick>
           <h2 className="ch-manifesto-h" style={{ fontFamily: FONT_JA, color: '#fff' }}>
-            {CREED.answer}
+            {CREED.promise}
           </h2>
-          <p style={{ fontFamily: FONT_EN, fontSize: 'clamp(0.85rem, 1.3vw, 1rem)', letterSpacing: '0.14em', color: ACCENT_LIGHT, fontWeight: 600, margin: '0 0 1.8rem', textTransform: 'uppercase' }}>
-            {CREED.answerEn}
+          <p style={{ fontFamily: FONT_JA, fontSize: 'clamp(1.05rem, 1.8vw, 1.45rem)', fontWeight: 800, color: ACCENT_LIGHT, lineHeight: 1.6, margin: '0 0 1.8rem' }}>
+            {CREED.mission}
           </p>
           <p style={{ fontFamily: FONT_JA, fontSize: 'clamp(1.05rem, 1.7vw, 1.3rem)', lineHeight: 2, color: 'rgba(240,245,252,0.92)', fontWeight: 600, margin: '0 0 2.2rem', maxWidth: 640 }}>
             {CREED.lead}
@@ -95,7 +96,7 @@ export function Values() {
             変わらずに守る三つのこと。
           </h2>
           <p style={{ ...sectionLead, margin: '1.2rem 0 0', maxWidth: 600 }}>
-            {CREED.mission}
+            技術も、道具も、値段も変わります。それでも私たちが変えない、三つの約束です。
           </p>
         </div>
         <div className="ch-grid-3" style={{ marginTop: '3.5rem' }}>

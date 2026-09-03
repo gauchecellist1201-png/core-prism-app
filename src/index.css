@@ -4102,7 +4102,11 @@ details[open] > summary .disclosure-chev {
 .ch-band-shade { position: absolute; inset: 0; background: radial-gradient(80% 80% at 50% 50%, rgba(7,10,16,0.55) 0%, rgba(7,10,16,0.9) 100%); }
 
 
-/* ── HERO 理念の答え（2026-09-02） ── */
+/* ── HERO 理念（2026-09-03 理念ドリブンへ入れ替え） ── */
+.ch-hero-tagline {
+  font-size: clamp(1rem, 1.7vw, 1.3rem); font-weight: 700; letter-spacing: 0.06em;
+  color: #BAE6FD; margin: 0 0 0.2rem;
+}
 .ch-hero-answer {
   font-size: clamp(1.15rem, 2.1vw, 1.6rem); font-weight: 800; line-height: 1.6; letter-spacing: -0.005em;
   color: #fff; max-width: 680px; margin: 0 0 1.2rem;
@@ -4171,8 +4175,10 @@ header .lp-tab.is-on { color: #fff; border-bottom-color: #38BDF8; background: tr
   /* 縦長では横に切り抜かれるので、人が入る位置まで寄せる。
      横方向の暗がりは縦長では効かない＝上から下への幕に差し替えて文字を守る。 */
   .ch-hero-img { object-position: 72% 50%; }
+  /* 理念の文章が縦に長くなった分、写真の明るい帯（笑顔の顔）まで文字が届く。
+     読みやすさを優先して中盤を濃くする（2026-09-03）。 */
   .ch-hero-shade {
-    background: linear-gradient(180deg, rgba(7,10,16,0.92) 0%, rgba(7,10,16,0.80) 42%, rgba(7,10,16,0.62) 66%, #070A10 100%);
+    background: linear-gradient(180deg, rgba(7,10,16,0.94) 0%, rgba(7,10,16,0.88) 38%, rgba(7,10,16,0.82) 62%, rgba(7,10,16,0.88) 84%, #070A10 100%);
   }
 }
 @media (max-width: 640px) {

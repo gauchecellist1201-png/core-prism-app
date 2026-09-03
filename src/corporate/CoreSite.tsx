@@ -135,7 +135,7 @@ function tabFromPath(): CoreTabKey | null {
 
 /** タブごとの title / description / canonical（SEO・AI検索向け） */
 const TAB_META: Record<CoreTabKey, { title: string; desc: string; path: string }> = {
-  home: { title: '株式会社CORE | AI Transformation Company — Return on AI', desc: 'AIを導入するのではない。AI前提で、企業をつくり直す。戦略・業務・AI・システムを再設計し、AI投資を経営成果へ変えるAI Transformation Company。', path: '/corp' },
+  home: { title: '株式会社CORE | AI Transformation Company — Return on AI', desc: '核とは、人。AIは、人にしかできない仕事を人に返すための道具です。AI前提で会社そのものをつくり直し、AI投資を経営成果へ変えるAI Transformation Company。', path: '/corp' },
   roai: { title: 'Return on AI とは | 株式会社CORE', desc: 'AI投資は目的ではない。AIが何を返したかを、売上・コスト・時間・リスク・新しい価値で測る。CORE ROAI MODEL・ROAIの計算・損失回避・投資余力の逆算・Transformation Loop。', path: '/return-on-ai' },
   score: { title: 'CORE ROAI SCORE — 約3分のAI投資優先順位診断 | 株式会社CORE', desc: '約3分で、あなたの会社の次にAI投資すべき場所・削減できる時間・経済価値の概算・AI Readiness・投資余力の目安を可視化。連絡先不要、算定根拠つき。', path: '/roai-score' },
   os: { title: 'AI COMPANY OS | 株式会社CORE', desc: '経営・営業・顧客対応・バックオフィスを、人とAIエージェントが協働する一つのOperating Systemとして再設計する。', path: '/corp#os' },
