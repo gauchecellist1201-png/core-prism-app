@@ -2808,7 +2808,7 @@ function SuitePackage({ onAnchor }: { onAnchor: (e: ReactMouseEvent<HTMLAnchorEl
         fontFamily: FONT_SERIF_JA, fontSize: 'clamp(0.92rem, 1.4vw, 1.02rem)',
         color: 'rgba(226,232,240,0.78)', lineHeight: 2.1, maxWidth: 640, margin: '0 auto 2rem',
       }}>
-        単品でそろえると、いちばん選ばれているプランの合計で
+        単品でそろえると、おすすめプランの合計で
         {' '}<strong style={{ color: '#BAE6FD', fontWeight: 700 }}>月 {formatYen(SUITE_BEST_TOTAL)}</strong>。
         <br />
         Continuum なら、ひとつのアカウントで、ひとつの請求で使えます。

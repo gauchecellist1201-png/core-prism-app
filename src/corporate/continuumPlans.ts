@@ -49,7 +49,7 @@ export const CONTINUUM_PLANS: ContinuumPlan[] = [
     name: 'Continuum Light',
     tag: 'まず3つの仕事を、AIに手放す',
     priceYen: LIGHT,
-    compare: `例）Crystal＋Resonance＋Prism を、いちばん選ばれているプランでそろえると ${formatYen(LIGHT_EXAMPLE)} → ${off(LIGHT, LIGHT_EXAMPLE)}%お得`,
+    compare: `例）Crystal＋Resonance＋Prism を、おすすめプランでそろえると ${formatYen(LIGHT_EXAMPLE)} → ${off(LIGHT, LIGHT_EXAMPLE)}%お得`,
     features: [
       `${SUITE_COUNT}サービスから選べる3つ（いつでも入替可）`,
       'ぜんぶ上位プランでご利用OK',
@@ -64,8 +64,8 @@ export const CONTINUUM_PLANS: ContinuumPlan[] = [
     priceYen: COMPLETE,
     // 比べている相手を必ず言う。「上位プラン」と書くと Prism Exclusive(¥29,800)や
     // Crystal Concierge(¥68,000)と比べたように読めるが、合計はそれより低い
-    // 「いちばん選ばれているプラン」で出している（＝お得さを盛らない側に倒す）。
-    compare: `いちばん選ばれているプランで${SUITE_COUNT}つそろえると ${formatYen(SUITE_BEST_TOTAL)} → ${off(COMPLETE, SUITE_BEST_TOTAL)}%お得。正社員ひとり（月30万円〜）の約1/4で、${SUITE_COUNT}人分のAIチーム`,
+    // 「おすすめプラン」で出している（＝お得さを盛らない側に倒す）。
+    compare: `おすすめプランで${SUITE_COUNT}つそろえると ${formatYen(SUITE_BEST_TOTAL)} → ${off(COMPLETE, SUITE_BEST_TOTAL)}%お得。正社員ひとり（月30万円〜）の約1/4で、${SUITE_COUNT}人分のAIチーム`,
     features: [
       `${SUITE_COUNT}サービスすべて使い放題（各上位プラン）`,
       '返信・集客・接客・予約・分析まで全自動',

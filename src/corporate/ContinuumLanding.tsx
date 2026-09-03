@@ -253,7 +253,7 @@ export default function ContinuumLanding() {
             }}>
               {pl.featured && (
                 <span style={{ position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)', whiteSpace: 'nowrap', fontFamily: FONT_SANS, fontSize: '0.64rem', fontWeight: 800, letterSpacing: '0.16em', color: '#141414', background: `linear-gradient(90deg,${GOLD_HI},${GOLD})`, borderRadius: 999, padding: '5px 14px' }}>
-                  いちばん選ばれています
+                  おすすめプラン
                 </span>
               )}
               <div>
@@ -299,7 +299,7 @@ export default function ContinuumLanding() {
         </div>
         {/* 2026-07-31 巡回: /corp 側と同じ注記。0.42(3.94:1)→0.62 で両ページの見え方をそろえる。 */}
         <p style={{ textAlign: 'center', marginTop: '1.8rem', fontFamily: FONT_SANS, fontSize: '0.74rem', color: 'rgba(255,255,255,0.62)', lineHeight: 2 }}>
-          単品でそろえると 月 {formatYen(SUITE_BEST_TOTAL)}（いちばん選ばれているプランの合計）。いつでも解約できます。
+          単品でそろえると 月 {formatYen(SUITE_BEST_TOTAL)}（おすすめプランの合計）。いつでも解約できます。
           <br />
           決済ページ公開までは、ボタンからそのままご相談ください（1営業日以内にお返事します）。
         </p>

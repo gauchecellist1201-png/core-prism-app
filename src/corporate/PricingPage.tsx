@@ -897,7 +897,6 @@ function PlanCard({ plan, yearly, brand }: { plan: any; yearly: boolean; brand: 
   const accentGrad = brand === 'iris' ? 'linear-gradient(135deg,#FCB045,#E1306C)' : 'linear-gradient(135deg,#a78bfa,#f472b6)';
   const price = yearly ? plan.yearly || plan.price * 10 : plan.price;
   const suffix = yearly ? '/ 年' : '/ 月';
-  const listPrice = price > 0 ? price * 2 : 0; // 定価（実売の2倍が目安）
 
   return (
     <motion.div whileHover={{ y: -4 }} transition={{ duration: 0.2 }} style={{
@@ -916,12 +915,6 @@ function PlanCard({ plan, yearly, brand }: { plan: any; yearly: boolean; brand: 
       )}
       <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.75rem', color: accent, marginBottom: 4, fontWeight: 600, letterSpacing: '0.05em' }}>{plan.tag}</p>
       <h3 style={{ fontFamily: FONT_DISPLAY, fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.4rem', letterSpacing: '0.1em' }}>{plan.name}</h3>
-      {listPrice > 0 && (
-        <p style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', marginBottom: 2 }}>
-          <span style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.95rem', color: 'rgba(255,255,255,0.55)', textDecoration: 'line-through', fontWeight: 600 }}>定価 {fmt(listPrice)}</span>
-          <span style={{ fontSize: '0.6rem', fontWeight: 800, color: '#fff', background: accentGrad, padding: '0.12rem 0.4rem', borderRadius: 999, letterSpacing: '0.05em' }}>50% OFF</span>
-        </p>
-      )}
       <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '2rem', fontWeight: 800 }}>
         {fmt(price)}<span style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.55)', fontWeight: 500, marginLeft: 4 }}>{suffix}</span>
       </p>
