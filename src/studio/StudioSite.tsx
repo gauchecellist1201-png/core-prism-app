@@ -703,9 +703,24 @@ function useWide(min = 960) {
 
 function HeroReel({ r, kind, autoplay }: { r: { src: string; poster: string; name: string; note: string }; kind: 'main' | 'l' | 'r'; autoplay: boolean }) {
   const cls = kind === 'main' ? 'st-reel st-reel-main' : `st-reel st-reel-side st-reel-${kind}`;
+  const ref = useRef<HTMLVideoElement>(null);
+  // 自社リール(main)はクライアント案件の素材を編集で使っているので、脇の個別リールと
+  // 同じカットが混ざっている。3本とも読み込み完了と同時に0秒から再生するため、
+  // そのカットが毎回同じ瞬間に重なって見えていた(実測: Laguna Beautéのボトルが
+  // main と left に同時に映る)。読み込めた時点で位相をランダムにずらし、揃わないようにする。
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || !autoplay) return;
+    const desync = () => {
+      if (el.duration > 0 && Number.isFinite(el.duration)) el.currentTime = Math.random() * el.duration;
+    };
+    if (el.readyState >= 1 && el.duration) desync();
+    else el.addEventListener('loadedmetadata', desync, { once: true });
+    return () => el.removeEventListener('loadedmetadata', desync);
+  }, [autoplay]);
   return (
     <div className={cls}>
-      <video src={r.src} poster={r.poster} autoPlay={autoplay} muted loop playsInline preload="metadata" aria-hidden />
+      <video ref={ref} src={r.src} poster={r.poster} autoPlay={autoplay} muted loop playsInline preload="metadata" aria-hidden />
       {kind === 'main' && <span className="st-reel-cap"><span className="st-reel-dot" aria-hidden />CORE STUDIO 制作実績より</span>}
       <span className="st-reel-name"><span>{r.note}</span><b>{r.name}</b></span>
     </div>
