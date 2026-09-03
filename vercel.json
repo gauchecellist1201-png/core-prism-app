@@ -94,6 +94,30 @@
   ],
   "rewrites": [
     {
+      "source": "/pricing",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/pricing/",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/faq",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/faq/",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/pulse",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/pulse/(.*)",
+      "destination": "/index.html"
+    },
+    {
       "source": "/ultima",
       "destination": "/index.html"
     },
