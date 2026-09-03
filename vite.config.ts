@@ -28,51 +28,26 @@ export default defineConfig({
       },
       output: {
         // ──────────────────────────────────────────────────────────────
-        // manualChunks: ベンダー (node_modules) を機能別に分割し、
-        //   - 初回表示で必要なものだけ main に残す
-        //   - 重いライブラリは別チャンク (キャッシュ効率↑)
+        // 2026-09-03: manualChunks → advancedChunks（rolldown ネイティブ）。
+        //   manualChunks（関数）だと rolldown 側で React 本体が chart-vendor、
+        //   react/jsx-runtime が markdown-vendor に混ざり、全チャンクがその 2 つ
+        //   （gzip 200KB 超）を静的に引きずっていた（/corp の FCP 10 秒の主因）。
+        //   priority で React を最優先グループに固定し、重いライブラリは
+        //   「使うページだけ」が読む独立チャンクにする。
         // ──────────────────────────────────────────────────────────────
-        manualChunks(id) {
-          if (!id.includes('node_modules')) return undefined;
-          // React 本体 (どこでも使うので独立チャンク)
-          if (/[\\/]node_modules[\\/](react|react-dom|scheduler)[\\/]/.test(id)) {
-            return 'react-vendor';
-          }
-          // framer-motion (アニメ全般で使うが、main から切り出すと初回が軽くなる)
-          if (id.includes('framer-motion')) return 'motion-vendor';
-          // lucide-react (アイコン)
-          if (id.includes('lucide-react')) return 'icons-vendor';
-          // recharts + d3 系 (PnL / Benchmark / Health などで使用)
-          if (id.includes('recharts') || /[\\/]d3-/.test(id) || id.includes('victory-vendor')) {
-            return 'chart-vendor';
-          }
-          // file 処理系 (pdfjs, mammoth, xlsx, jszip) — fileParser から動的 import
-          if (
-            id.includes('pdfjs-dist') ||
-            id.includes('mammoth') ||
-            id.includes('xlsx') ||
-            id.includes('jszip')
-          ) {
-            return 'file-vendor';
-          }
-          // pptxgenjs (スライド生成) も file 処理寄りの重さ
-          if (id.includes('pptxgenjs')) return 'file-vendor';
-          // markdown レンダラー (Studio 系で必要なときに使う)
-          if (
-            id.includes('react-markdown') ||
-            id.includes('remark') ||
-            id.includes('rehype') ||
-            id.includes('hast') ||
-            id.includes('mdast') ||
-            id.includes('micromark') ||
-            id.includes('unified') ||
-            id.includes('unist')
-          ) {
-            return 'markdown-vendor';
-          }
-          // supabase / stripe (バックエンド連携)
-          if (id.includes('@supabase') || id.includes('stripe')) return 'api-vendor';
-          return undefined;
+        advancedChunks: {
+          groups: [
+            // Vite の preload ヘルパー（\0vite/preload-helper）を最優先で独立させる。
+            // これが file-vendor に入ると、動的 import を持つ全チャンクが 480KB を静的に引く。
+            { name: 'vite-helpers', test: /vite[\\/](preload-helper|modulepreload-polyfill|dynamic-import-helper)/, priority: 200 },
+            { name: 'react-vendor', test: /[\\/]node_modules[\\/](react|react-dom|scheduler|use-sync-external-store)[\\/]/, priority: 100 },
+            { name: 'motion-vendor', test: /[\\/]node_modules[\\/](framer-motion|motion-dom|motion-utils)[\\/]/, priority: 90 },
+            { name: 'icons-vendor', test: /[\\/]node_modules[\\/]lucide-react[\\/]/, priority: 90 },
+            { name: 'file-vendor', test: /[\\/]node_modules[\\/](pdfjs-dist|mammoth|xlsx|jszip|pptxgenjs|underscore|bluebird|xmlbuilder|lop|@xmldom|dingbat-to-unicode)[\\/]/, priority: 80 },
+            { name: 'chart-vendor', test: /[\\/]node_modules[\\/](recharts|d3-[a-z-]+|victory-vendor|es-toolkit|internmap|@reduxjs|reselect|immer|redux)[\\/]/, priority: 70 },
+            { name: 'markdown-vendor', test: /[\\/]node_modules[\\/](react-markdown|remark[a-z-]*|rehype[a-z-]*|hast[a-z-]*|mdast[a-z-]*|micromark[a-z-]*|unified|unist[a-z-]*|vfile[a-z-]*|property-information|parse5|entities|@ungap|highlight\.js|lowlight|devlop|bail|trough|is-plain-obj|zwitch|longest-streak|ccount|decode-named-character-reference|character-entities[a-z-]*|comma-separated-tokens|space-separated-tokens|trim-lines|html-url-attributes|estree-util-is-identifier-name|style-to-js|style-to-object|inline-style-parser|extend|web-namespaces|html-void-elements|markdown-table|escape-string-regexp)[\\/]/, priority: 60 },
+            { name: 'api-vendor', test: /[\\/]node_modules[\\/](@supabase|stripe)[\\/]/, priority: 60 },
+          ],
         },
       },
     },
