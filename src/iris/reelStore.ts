@@ -14,7 +14,16 @@
 const DB_NAME = 'iris-reel-studio';
 const DB_VERSION = 2;
 const STORE_ASSETS = 'assets';    // key: assetId, value: { id, blob, name, type }
-const STORE_PROJECT = 'project';  // key: 'current', value: StoredProject
+const STORE_PROJECT = 'project';  // key: 'current' (いま開いている1本) / 'proj:<id>' (保存した1本ずつ)
+// 「作ったリールが1本しか残らない」の解消 (2026-08-31)。
+// 以前はこのストアがキー 'current' の1件しか持たず、2本目を作り始めた瞬間に
+// 1本目の並び・尺・字幕が上書きで消えていた。素材の棚 (STORE_LIBRARY) は
+// 残る作りなのに、組み上げた結果だけが残らなかった。
+//   ・'current' は今までどおり「いま開いている1本」= 既存の保存データはそのまま読める
+//     (DB のバージョンは上げない = 移行そのものを作らない = 作りかけを壊す道が無い)
+//   ・保存した1本ずつは 'proj:<id>' に増えていく
+const KEY_CURRENT = 'current';
+const PROJ_PREFIX = 'proj:';
 // 「棚」= 作っているリールとは無関係に残り続ける素材の一覧 (2026-08-03)。
 // これが無かった頃は pruneReelAssets / clearReelStore が「いま編集中のリールに
 // 使われていない素材」を全部消していたので、2 本目を作り始めるたびに
@@ -40,6 +49,10 @@ export interface StoredClipMeta {
 export interface StoredCaption { start: number; end: number; text: string }
 
 export interface StoredProject {
+  /** このリールの id。'current' 1 件だけだった頃に保存したものには無い (任意) */
+  id?: string;
+  /** 一覧に出す見出し。無ければ保存時刻から作る */
+  title?: string;
   clips: StoredClipMeta[];
   captions: StoredCaption[];
   capStyle?: Record<string, unknown>;
@@ -153,7 +166,12 @@ export async function saveReelProject(p: StoredProject): Promise<SaveResult> {
     const db = await openDb();
     try {
       const tx = db.transaction(STORE_PROJECT, 'readwrite');
-      tx.objectStore(STORE_PROJECT).put(p, 'current');
+      const store = tx.objectStore(STORE_PROJECT);
+      // 「いま開いている1本」は今までどおり 'current'。ここを変えないので、
+      // これまでの保存データも、古いコードも、そのまま読める。
+      store.put(p, KEY_CURRENT);
+      // id を持つものは「保存した1本」としても残す = 2本目を始めても消えない
+      if (p.id) store.put(p, PROJ_PREFIX + p.id);
       await withTimeout(txDone(tx), 10000, 'プロジェクトの保存');
       return { ok: true };
     } finally { db.close(); }
@@ -166,7 +184,7 @@ export async function loadReelProject(): Promise<StoredProject | null> {
     const db = await openDb();
     try {
       const tx = db.transaction(STORE_PROJECT, 'readonly');
-      const req = tx.objectStore(STORE_PROJECT).get('current');
+      const req = tx.objectStore(STORE_PROJECT).get(KEY_CURRENT);
       const row = await withTimeout(new Promise<any>((resolve, reject) => {
         req.onsuccess = () => resolve(req.result);
         req.onerror = () => reject(req.error);
@@ -175,6 +193,159 @@ export async function loadReelProject(): Promise<StoredProject | null> {
       return row as StoredProject;
     } finally { db.close(); }
   } catch { return null; }
+}
+
+// ============================================================
+// 作ったリールの棚 (2026-08-31) — 「1本しか残らない」の解消
+//
+// Canva が仕事で使えるのは「過去に作ったものが全部そこにある」から。
+// ここは名前・更新時刻・1枚目のサムネだけの薄い一覧で足りる。
+// 保存は今までどおり自動 (「保存」ボタンは増やさない)。
+// ============================================================
+
+/** 一覧に出すぶんだけの見出し (clips は持たない) */
+export interface ReelProjectSummary {
+  id: string;
+  title: string;
+  savedAt: number;
+  /** カットの枚数 (実測値。0 件のものは一覧に出さない) */
+  clipCount: number;
+  /** 1 枚目のカットのサムネ。棚に載っていない素材では付かない (無ければ出さない) */
+  thumb?: string;
+}
+
+/** 新しいリールの id を作る (端末の中だけで使う) */
+export function newReelProjectId(): string {
+  return `r${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
+}
+
+/** 保存時刻から見出しを作る (名前を付けさせない = 手数を増やさない) */
+export function defaultReelTitle(savedAt: number): string {
+  const d = new Date(savedAt);
+  return `${d.getMonth() + 1}/${d.getDate()} のリール`;
+}
+
+/** 保存時刻を「いつのものか」が一目で分かる短い日本語にする */
+export function reelSavedLabel(savedAt: number, now: number = Date.now()): string {
+  if (!savedAt) return '';
+  const d = new Date(savedAt);
+  const today = new Date(now);
+  const isToday = d.getFullYear() === today.getFullYear()
+    && d.getMonth() === today.getMonth() && d.getDate() === today.getDate();
+  const hm = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  return isToday ? `今日 ${hm}` : `${d.getMonth() + 1}/${d.getDate()} ${hm}`;
+}
+
+/** 保存したリールの一覧 (新しい順)。読めなければ空配列 */
+export async function listReelProjects(): Promise<ReelProjectSummary[]> {
+  try {
+    const db = await openDb();
+    try {
+      const tx = db.transaction([STORE_PROJECT, STORE_LIBRARY], 'readonly');
+      const keyReq = tx.objectStore(STORE_PROJECT).getAllKeys();
+      const valReq = tx.objectStore(STORE_PROJECT).getAll();
+      const libReq = tx.objectStore(STORE_LIBRARY).getAll();
+      const keys = await withTimeout(new Promise<IDBValidKey[]>((resolve, reject) => {
+        keyReq.onsuccess = () => resolve(keyReq.result || []);
+        keyReq.onerror = () => reject(keyReq.error);
+      }), 10000, '保存したリールの一覧');
+      const vals = await withTimeout(new Promise<any[]>((resolve, reject) => {
+        valReq.onsuccess = () => resolve(valReq.result || []);
+        valReq.onerror = () => reject(valReq.error);
+      }), 10000, '保存したリールの読み込み');
+      const libRows = await withTimeout(new Promise<any[]>((resolve, reject) => {
+        libReq.onsuccess = () => resolve(libReq.result || []);
+        libReq.onerror = () => reject(libReq.error);
+      }), 10000, '棚の読み込み');
+      const thumbs = new Map<string, string>();
+      for (const r of libRows) {
+        if (r && typeof r.id === 'string' && typeof r.thumb === 'string' && r.thumb) thumbs.set(r.id, r.thumb);
+      }
+      return summarizeProjects(keys, vals, thumbs);
+    } finally { db.close(); }
+  } catch { return []; }
+}
+
+/** キーと中身から一覧を組み立てる (画面を通さずに固定したいので切り出す) */
+export function summarizeProjects(
+  keys: IDBValidKey[], vals: any[], thumbs: Map<string, string>,
+): ReelProjectSummary[] {
+  const out: ReelProjectSummary[] = [];
+  for (let i = 0; i < keys.length; i++) {
+    const key = String(keys[i]);
+    // 'current' (いま開いている1本) は一覧に出さない = 同じものが2つ並ばない
+    if (!key.startsWith(PROJ_PREFIX)) continue;
+    const row = vals[i];
+    if (!row || !Array.isArray(row.clips) || !row.clips.length) continue;
+    const savedAt = Number(row.savedAt) || 0;
+    const firstId = typeof row.clips[0]?.assetId === 'string' ? row.clips[0].assetId : '';
+    out.push({
+      id: String(row.id || key.slice(PROJ_PREFIX.length)),
+      title: String(row.title || defaultReelTitle(savedAt)),
+      savedAt,
+      clipCount: row.clips.length,
+      thumb: (firstId && thumbs.get(firstId)) || undefined,
+    });
+  }
+  return out.sort((a, b) => b.savedAt - a.savedAt);
+}
+
+/** 保存したリールを1本読む (無ければ null) */
+export async function loadReelProjectById(id: string): Promise<StoredProject | null> {
+  if (!id) return null;
+  try {
+    const db = await openDb();
+    try {
+      const tx = db.transaction(STORE_PROJECT, 'readonly');
+      const req = tx.objectStore(STORE_PROJECT).get(PROJ_PREFIX + id);
+      const row = await withTimeout(new Promise<any>((resolve, reject) => {
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      }), 10000, 'リールの読み込み');
+      if (!row || !Array.isArray(row.clips)) return null;
+      return row as StoredProject;
+    } finally { db.close(); }
+  } catch { return null; }
+}
+
+/** 消したリールを戻す (取り消し用)。'current' には触らない —
+ *  ここで 'current' まで書くと、いま開いている別のリールを奪ってしまう。 */
+export async function restoreReelProject(p: StoredProject): Promise<SaveResult> {
+  if (!p?.id) return { ok: false, reason: 'unknown', message: '戻す先が分からず、元に戻せませんでした。' };
+  try {
+    const db = await openDb();
+    try {
+      const tx = db.transaction(STORE_PROJECT, 'readwrite');
+      tx.objectStore(STORE_PROJECT).put(p, PROJ_PREFIX + p.id);
+      await withTimeout(txDone(tx), 10000, 'リールの復帰');
+      return { ok: true };
+    } finally { db.close(); }
+  } catch (e) { return toSaveFail(e); }
+}
+
+/** 保存したリールを1本消す。いま開いているのが同じものなら 'current' も消す。
+ *  素材 (Blob) は消さない — 消えたら取り消せなくなるので、掃除は呼び出し側の判断に任せる。 */
+export async function deleteReelProject(id: string): Promise<SaveResult> {
+  if (!id) return { ok: true };
+  try {
+    const db = await openDb();
+    try {
+      const tx = db.transaction(STORE_PROJECT, 'readwrite');
+      const store = tx.objectStore(STORE_PROJECT);
+      const curReq = store.get(KEY_CURRENT);
+      await new Promise<void>((resolve, reject) => {
+        curReq.onsuccess = () => {
+          const cur = curReq.result as StoredProject | undefined;
+          if (cur && cur.id === id) store.delete(KEY_CURRENT);
+          resolve();
+        };
+        curReq.onerror = () => reject(curReq.error);
+      });
+      store.delete(PROJ_PREFIX + id);
+      await withTimeout(txDone(tx), 10000, 'リールの削除');
+      return { ok: true };
+    } finally { db.close(); }
+  } catch (e) { return toSaveFail(e); }
 }
 
 /** 使っていない素材を掃除 (プロジェクトにも棚にも残っていない assetId を削除)
@@ -191,14 +362,23 @@ export async function pruneReelAssets(keepIds: string[]): Promise<void> {
     const keep = new Set(keepIds);
     const db = await openDb();
     try {
-      const tx = db.transaction([STORE_ASSETS, STORE_LIBRARY], 'readwrite');
+      const tx = db.transaction([STORE_ASSETS, STORE_LIBRARY, STORE_PROJECT], 'readwrite');
       const store = tx.objectStore(STORE_ASSETS);
       const libReq = tx.objectStore(STORE_LIBRARY).getAllKeys();
+      const projReq = tx.objectStore(STORE_PROJECT).getAll();
       const libKeys = await withTimeout(new Promise<IDBValidKey[]>((resolve, reject) => {
         libReq.onsuccess = () => resolve(libReq.result);
         libReq.onerror = () => reject(libReq.error);
       }), 10000, '棚の一覧の取得');
       for (const k of libKeys) keep.add(String(k));
+      // 保存した「他のリール」が使っている素材も必ず残す (2026-08-31)。
+      // ここを見ないと、2本目を保存した瞬間に 1本目の素材が掃除で消え、
+      // 一覧には並ぶのに開くと中身が無い = いちばん質の悪い残り方になる。
+      const projRows = await withTimeout(new Promise<any[]>((resolve, reject) => {
+        projReq.onsuccess = () => resolve(projReq.result || []);
+        projReq.onerror = () => reject(projReq.error);
+      }), 10000, '保存したリール一覧の取得');
+      for (const id of projectAssetIds(projRows)) keep.add(id);
       const req = store.getAllKeys();
       const keys = await withTimeout(new Promise<IDBValidKey[]>((resolve, reject) => {
         req.onsuccess = () => resolve(req.result);
@@ -212,6 +392,18 @@ export async function pruneReelAssets(keepIds: string[]): Promise<void> {
   } catch { /* 掃除失敗は無害 */ }
 }
 
+/** 保存されているリール全部が使っている assetId を集める (掃除で消さないため) */
+function projectAssetIds(rows: any[]): string[] {
+  const out: string[] = [];
+  for (const row of rows || []) {
+    if (!row || !Array.isArray(row.clips)) continue;
+    for (const c of row.clips) {
+      if (c && typeof c.assetId === 'string' && c.assetId) out.push(c.assetId);
+    }
+  }
+  return out;
+}
+
 /** 「いま作りかけのリール」を消す。棚の素材は残す (2026-08-03)。
  *
  *  以前はここで assets を丸ごと clear していたため、クリップを全部消した瞬間に
@@ -223,13 +415,23 @@ export async function clearReelStore(): Promise<void> {
     try {
       const tx = db.transaction([STORE_ASSETS, STORE_PROJECT, STORE_LIBRARY], 'readwrite');
       const assets = tx.objectStore(STORE_ASSETS);
-      tx.objectStore(STORE_PROJECT).clear();
+      const proj = tx.objectStore(STORE_PROJECT);
+      // 消すのは「いま開いている1本」だけ。保存した過去のリールは残す (2026-08-31)。
+      // 以前はここで clear() = ストアごと空にしていたので、クリップを全部消した瞬間に
+      // それまでに作ったリールが全部消えていた。
+      proj.delete(KEY_CURRENT);
       const libReq = tx.objectStore(STORE_LIBRARY).getAllKeys();
+      const projReq = proj.getAll();
       const libKeys = await withTimeout(new Promise<IDBValidKey[]>((resolve, reject) => {
         libReq.onsuccess = () => resolve(libReq.result);
         libReq.onerror = () => reject(libReq.error);
       }), 10000, '棚の一覧の取得');
       const keep = new Set(libKeys.map(String));
+      const projRows = await withTimeout(new Promise<any[]>((resolve, reject) => {
+        projReq.onsuccess = () => resolve(projReq.result || []);
+        projReq.onerror = () => reject(projReq.error);
+      }), 10000, '保存したリール一覧の取得');
+      for (const id of projectAssetIds(projRows)) keep.add(id);
       const req = assets.getAllKeys();
       const keys = await withTimeout(new Promise<IDBValidKey[]>((resolve, reject) => {
         req.onsuccess = () => resolve(req.result);

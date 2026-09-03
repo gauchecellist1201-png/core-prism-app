@@ -109,9 +109,17 @@ let saveReelProject: typeof import('../reelStore').saveReelProject;
 let pruneReelAssets: typeof import('../reelStore').pruneReelAssets;
 let clearReelStore: typeof import('../reelStore').clearReelStore;
 let deleteLibraryItems: typeof import('../reelStore').deleteLibraryItems;
+let listReelProjects: typeof import('../reelStore').listReelProjects;
+let loadReelProjectById: typeof import('../reelStore').loadReelProjectById;
+let deleteReelProject: typeof import('../reelStore').deleteReelProject;
+let restoreReelProject: typeof import('../reelStore').restoreReelProject;
+let summarizeProjects: typeof import('../reelStore').summarizeProjects;
+let reelSavedLabel: typeof import('../reelStore').reelSavedLabel;
 
 beforeEach(async () => {
-  ({ putReelAsset, saveReelProject, pruneReelAssets, clearReelStore, deleteLibraryItems } =
+  ({ putReelAsset, saveReelProject, pruneReelAssets, clearReelStore, deleteLibraryItems,
+     listReelProjects, loadReelProjectById, deleteReelProject, restoreReelProject, summarizeProjects,
+     reelSavedLabel } =
     await import('../reelStore'));
 });
 
@@ -211,5 +219,154 @@ describe('棚の素材は掃除で消えない', () => {
     expect(stores.assets.has('onShelf')).toBe(false);
     expect(stores.library.has('inProject')).toBe(false);
     expect(stores.assets.has('inProject')).toBe(true); // 画面から素材が消える事故を防ぐ
+  });
+});
+
+// ============================================================
+// 作ったリールが 1 本しか残らない、の解消 (2026-08-31)
+//
+// なぜこのテストが要るか:
+//   保存枠はキー 'current' の 1 件だけだった。つまり 2 本目を作り始めた瞬間に
+//   1 本目の並び・尺・字幕が上書きで消えていた。素材の棚は残る作りなのに、
+//   組み上げた結果だけが残らない = 毎回ゼロから組み直しになる。
+//   ここでは「2 本目を保存しても 1 本目が残る」「他のリールの素材を掃除で消さない」を
+//   型ではなく振る舞いとして固定する。
+// ============================================================
+const clip = (assetId: string) => ({
+  assetId, kind: 'image' as const, duration: 2.5, kenBurns: 'none', transition: 'none',
+});
+
+describe('作ったリールが全部残る', () => {
+  const setup = () => {
+    const stores: Record<string, Map<string, any>> = {
+      assets: new Map(), library: new Map(), project: new Map(),
+    };
+    (globalThis as any).indexedDB = memIndexedDb(stores);
+    return stores;
+  };
+
+  it('id を付けて保存すると current と proj:<id> の両方に残る', async () => {
+    const stores = setup();
+    await saveReelProject({ id: 'a', title: '1本目', clips: [clip('x1')], captions: [], savedAt: 100 });
+    expect(stores.project.has('current')).toBe(true);
+    expect(stores.project.has('proj:a')).toBe(true);
+  });
+
+  it('2 本目を保存しても 1 本目が消えない (これが直したかったこと)', async () => {
+    const stores = setup();
+    await saveReelProject({ id: 'a', title: '1本目', clips: [clip('x1')], captions: [], savedAt: 100 });
+    await saveReelProject({ id: 'b', title: '2本目', clips: [clip('x2')], captions: [], savedAt: 200 });
+    const list = await listReelProjects();
+    expect(list.map(r => r.id)).toEqual(['b', 'a']);      // 新しい順
+    expect(stores.project.has('proj:a')).toBe(true);
+    const first = await loadReelProjectById('a');
+    expect(first?.clips[0].assetId).toBe('x1');           // 中身も 1 本目のまま
+  });
+
+  it('id を付けない保存 (上級版スタジオ) は今までどおり current だけ', async () => {
+    const stores = setup();
+    await saveReelProject({ clips: [clip('x1')], captions: [], savedAt: 100 });
+    expect(stores.project.has('current')).toBe(true);
+    expect(Array.from(stores.project.keys()).filter(k => k.startsWith('proj:'))).toEqual([]);
+  });
+
+  it('掃除は「他のリールが使っている素材」を消さない', async () => {
+    const stores = setup();
+    stores.assets.set('x1', { id: 'x1' });
+    stores.assets.set('x2', { id: 'x2' });
+    stores.assets.set('orphan', { id: 'orphan' });
+    stores.project.set('proj:a', { id: 'a', clips: [clip('x1')], captions: [], savedAt: 100 });
+    // いま編集中の 2 本目を保存 → 掃除
+    await pruneReelAssets(['x2']);
+    expect(stores.assets.has('x1')).toBe(true);   // false に戻ると、一覧に並ぶのに開くと中身が無い
+    expect(stores.assets.has('x2')).toBe(true);
+    expect(stores.assets.has('orphan')).toBe(false);
+  });
+
+  it('クリップを全部消しても、保存した過去のリールは残る', async () => {
+    const stores = setup();
+    stores.assets.set('x1', { id: 'x1' });
+    stores.project.set('proj:a', { id: 'a', clips: [clip('x1')], captions: [], savedAt: 100 });
+    stores.project.set('current', { id: 'b', clips: [], captions: [], savedAt: 200 });
+    await clearReelStore();
+    expect(stores.project.has('current')).toBe(false);   // 開いていた 1 本は閉じる
+    expect(stores.project.has('proj:a')).toBe(true);     // 作ったものは残る
+    expect(stores.assets.has('x1')).toBe(true);          // その素材も残る
+  });
+
+  it('消すのは選んだ 1 本だけ。元に戻しても、いま開いている別のリールを奪わない', async () => {
+    const stores = setup();
+    await saveReelProject({ id: 'a', title: '1本目', clips: [clip('x1')], captions: [], savedAt: 100 });
+    await saveReelProject({ id: 'b', title: '2本目', clips: [clip('x2')], captions: [], savedAt: 200 });
+    const kept = await loadReelProjectById('a');
+    expect((await deleteReelProject('a')).ok).toBe(true);
+    expect(stores.project.has('proj:a')).toBe(false);
+    expect(stores.project.has('proj:b')).toBe(true);
+    expect(stores.project.get('current')?.id).toBe('b'); // 開いている 2 本目はそのまま
+    expect((await restoreReelProject(kept!)).ok).toBe(true);
+    expect(stores.project.has('proj:a')).toBe(true);
+    expect(stores.project.get('current')?.id).toBe('b'); // 戻しても current を踏まない
+  });
+
+  it('いま開いている 1 本を消したら current も閉じる', async () => {
+    const stores = setup();
+    await saveReelProject({ id: 'a', clips: [clip('x1')], captions: [], savedAt: 100 });
+    await deleteReelProject('a');
+    expect(stores.project.has('current')).toBe(false);
+  });
+});
+
+describe('一覧の組み立て (summarizeProjects)', () => {
+  const thumbs = new Map([['x1', 'data:image/jpeg;base64,AAAA']]);
+
+  it("current は一覧に出さない (同じものが 2 つ並ばない)", () => {
+    const rows = summarizeProjects(
+      ['current', 'proj:a'],
+      [{ id: 'a', clips: [clip('x1')], savedAt: 100 }, { id: 'a', clips: [clip('x1')], savedAt: 100 }],
+      thumbs,
+    );
+    expect(rows.map(r => r.id)).toEqual(['a']);
+  });
+
+  it('新しい順に並び、1 枚目のサムネと枚数は実測値', () => {
+    const rows = summarizeProjects(
+      ['proj:a', 'proj:b'],
+      [
+        { id: 'a', title: '古い', clips: [clip('x1')], savedAt: 100 },
+        { id: 'b', title: '新しい', clips: [clip('x9'), clip('x8')], savedAt: 300 },
+      ],
+      thumbs,
+    );
+    expect(rows.map(r => r.title)).toEqual(['新しい', '古い']);
+    expect(rows[0].clipCount).toBe(2);
+    expect(rows[0].thumb).toBeUndefined();       // 棚に無い素材のサムネは作らない
+    expect(rows[1].thumb).toBe('data:image/jpeg;base64,AAAA');
+  });
+
+  it('カットが 0 枚のものは一覧に出さない (開いても何も無いものを並べない)', () => {
+    const rows = summarizeProjects(['proj:a'], [{ id: 'a', clips: [], savedAt: 100 }], thumbs);
+    expect(rows).toEqual([]);
+  });
+
+  it('見出しが無い保存にも日付から見出しが付く (無名で並ばない)', () => {
+    const at = new Date(2026, 7, 25, 10, 0).getTime();
+    const rows = summarizeProjects(['proj:a'], [{ id: 'a', clips: [clip('x1')], savedAt: at }], thumbs);
+    expect(rows[0].title).toBe('8/25 のリール');
+  });
+});
+
+describe('保存時刻の見せ方 (reelSavedLabel)', () => {
+  const now = new Date(2026, 7, 31, 18, 30).getTime();
+
+  it('今日のものは「今日 HH:MM」', () => {
+    expect(reelSavedLabel(new Date(2026, 7, 31, 9, 5).getTime(), now)).toBe('今日 09:05');
+  });
+
+  it('別の日は日付から出す (今日と混ぜない)', () => {
+    expect(reelSavedLabel(new Date(2026, 7, 25, 21, 40).getTime(), now)).toBe('8/25 21:40');
+  });
+
+  it('時刻が無いものには何も書かない (推定しない)', () => {
+    expect(reelSavedLabel(0, now)).toBe('');
   });
 });

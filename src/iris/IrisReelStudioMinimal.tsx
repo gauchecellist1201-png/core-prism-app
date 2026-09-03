@@ -39,8 +39,10 @@ import {
   putReelAsset, getReelAsset, saveReelProject, loadReelProject,
   pruneReelAssets, clearReelStore, type StoredClipMeta, type SaveFailReason,
   putLibraryItem, markLibraryUsed, type LibraryItem,
+  loadReelProjectById, newReelProjectId, defaultReelTitle, type StoredProject,
 } from './reelStore';
 import IrisAssetShelf, { makeThumbDataUrl } from './IrisAssetShelf';
+import IrisReelShelf from './IrisReelShelf';
 import { suggestNextSlot, type ScheduledPost } from './usePostQueue';
 import { usePostHistory } from './strategist';
 import { computeBestPostTime, DOW_LABELS } from './bestPostTime';
@@ -259,8 +261,14 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
      *  (プライベートモードで空き容量の話をしても、その人には直せない) */
     reason?: SaveFailReason;
   }>({ state: 'idle' });
-  const [restoreInfo, setRestoreInfo] = useState<{ count: number; savedAt: number } | null>(null);
+  const [restoreInfo, setRestoreInfo] = useState<{ count: number; savedAt: number; id?: string } | null>(null);
   const [restoring, setRestoring] = useState(false);
+  // いま開いているリールの id。保存のたびに 'proj:<id>' へも書くので、
+  // 2 本目を作り始めても 1 本目が上書きで消えない (2026-08-31)
+  const projectIdRef = useRef<string>('');
+  const projectTitleRef = useRef<string>('');
+  /** 作ったリールの棚を読み直す合図 (保存できた / 消した / 新しく作った) */
+  const [reelShelfKey, setReelShelfKey] = useState(0);
   // 棚 (素材ライブラリ) を読み直す合図。素材を足した / 書き出した時に増やす
   const [shelfKey, setShelfKey] = useState(0);
   // 空の棚の「写真・動画を選ぶ」から、上のファイル選択をそのまま開くため
@@ -469,10 +477,20 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
               : { state: 'idle' });
             return;
           }
+          const now = Date.now();
+          // まだ id が無ければ、ここで 1 本ぶんの id を作る (2026-08-31)。
+          // これが無かった頃は保存枠が 'current' の 1 つだけで、
+          // 2 本目を作り始めた瞬間に 1 本目の並び・尺・字幕が消えていた。
+          if (!projectIdRef.current) {
+            projectIdRef.current = newReelProjectId();
+            projectTitleRef.current = defaultReelTitle(now);
+          }
           const saved = await saveReelProject({
+            id: projectIdRef.current,
+            title: projectTitleRef.current || defaultReelTitle(now),
             clips: metas,
             captions: [],
-            savedAt: Date.now(),
+            savedAt: now,
             colorMood,
             captionPresetId: captionPreset.id,
           });
@@ -482,6 +500,7 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
             return;
           }
           void pruneReelAssets(metas.map(m => m.assetId));
+          setReelShelfKey(k => k + 1);
           setPersist(unsaved.length
             ? { state: 'partial', message: firstFail, unsaved, reason: firstReason, savedAt: Date.now(), count: metas.length }
             : { state: 'saved', savedAt: Date.now(), count: metas.length });
@@ -502,16 +521,29 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
       if (initialProject?.clips?.length) return; // 外から渡された素材が優先
       const p = await loadReelProject();
       if (cancelled || !p || !p.clips.length) return;
-      setRestoreInfo({ count: p.clips.length, savedAt: p.savedAt });
+      // 「作ったリールの棚」より前に作られた作りかけには id が無い。
+      // ここで id を付けて棚にも載せる = 昔から使っている人の 1 本目が、
+      // 新しく作り始めた時に黙って消えない (DB のバージョンは上げていない)。
+      let id = p.id;
+      if (!id) {
+        id = newReelProjectId();
+        await saveReelProject({
+          ...p, id,
+          title: p.title || defaultReelTitle(p.savedAt || Date.now()),
+        });
+        if (!cancelled) setReelShelfKey(k => k + 1);
+      }
+      if (cancelled) return;
+      setRestoreInfo({ count: p.clips.length, savedAt: p.savedAt, id });
+      // ここで projectIdRef は設定しない。設定してしまうと、続きから開かずに
+      // 新しく素材を入れた時に、その 1 本目を上書きしてしまう。
     })();
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const restoreSaved = async () => {
-    setRestoring(true);
-    try {
-      const p = await loadReelProject();
+  /** 保存済みの 1 本を、いま編集している画面に戻す (素材は端末から読み直す) */
+  const applyProject = async (p: StoredProject | null) => {
       if (!p || !p.clips.length) {
         setUploadErr('保存データが見つかりませんでした。素材を入れ直してください。');
         setRestoreInfo(null);
@@ -550,16 +582,37 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
       if (failed.length) {
         setUploadErr(`一部の素材を復元できませんでした: ${failed.join('、')}`);
       }
+      // 開いた 1 本を「いま編集中」にする。以後の自動保存はこの id へ書くので、
+      // 別の日に作った他のリールを踏まない。
+      if (built.length) {
+        projectIdRef.current = p.id || newReelProjectId();
+        projectTitleRef.current = p.title || defaultReelTitle(p.savedAt || Date.now());
+      }
       setRestoreInfo(null);
-    } finally {
-      setRestoring(false);
-    }
   };
 
+  const restoreSaved = async () => {
+    setRestoring(true);
+    try { await applyProject(await loadReelProject()); }
+    finally { setRestoring(false); }
+  };
+
+  /** 棚から 1 本開く (先週作ったリールを開き直す) */
+  const openSavedReel = async (id: string) => {
+    setRestoring(true);
+    try { await applyProject(await loadReelProjectById(id)); }
+    finally { setRestoring(false); }
+  };
+
+  /** 「新しく作る」= いま開いている 1 本を閉じるだけ。
+   *  棚に保存した過去のリールは消さない (消す操作は棚の中だけにある)。 */
   const discardSaved = async () => {
     setRestoreInfo(null);
+    projectIdRef.current = '';
+    projectTitleRef.current = '';
     await clearReelStore();
     savedAssetIdsRef.current.clear();
+    setReelShelfKey(k => k + 1);
   };
 
   // ─── アップロード ─────
@@ -2786,10 +2839,22 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
                         background: 'transparent', color: bg.inkSoft, border: `1px solid ${bg.accent}44`,
                         borderRadius: 12, fontSize: 13, fontWeight: 700, cursor: 'pointer',
                       }}>
-                        消して新しく作る
+                        新しく作る
                       </button>
                     </div>
                   </div>
+                )}
+
+                {/* 作ったリールの棚 — 先週作った 1 本を開き直す (2026-08-31)。
+                    1 本も無い時は 1px も出さない */}
+                {!clips.length && (
+                  <IrisReelShelf
+                    bg={bg}
+                    hiddenId={restoreInfo?.id}
+                    onOpen={openSavedReel}
+                    refreshKey={reelShelfKey}
+                    busy={restoring}
+                  />
                 )}
 
                 {/* この端末に保存できたか (silent fail 禁止)。
