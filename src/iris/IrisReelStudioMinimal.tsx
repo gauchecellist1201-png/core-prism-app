@@ -64,6 +64,7 @@ import {
   REEL_SAFE_TOP, REEL_SAFE_BOTTOM,
   wrapCaptionLines, captionHiddenSide, safeCaptionY,
 } from './reelSafeArea';
+import { webmFallbackAdvice, WEBM_KEEP_NOTE } from './webmFallback';
 import { humanizeAiError, humanizeNonAiError } from '../lib/aiErrorMessage';
 
 /** キャプションの「最初の1行」を別フックに差し替える（2行目以降は維持） */
@@ -290,6 +291,16 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
   const [currentTime, setCurrentTime] = useState(0);
   const [scheduled, setScheduled] = useState(false);
   const [scheduledMsg, setScheduledMsg] = useState<string>('');
+  // MP4 で書き出せなかった時、この端末で実際に押せる手順だけを出す (2026-09-03)
+  const webmAdvice = useMemo(
+    () => webmFallbackAdvice(
+      typeof navigator !== 'undefined' ? navigator.userAgent : '',
+      typeof navigator !== 'undefined' ? (navigator.maxTouchPoints || 0) : 0,
+    ),
+    [],
+  );
+  // 「リンクをコピー」の結果。この箱の中に出す (画面の外で報告しない)
+  const [webmLinkCopied, setWebmLinkCopied] = useState<'' | 'ok' | 'ng'>('');
   // 4 種プリセット (テンプレート)
   const [presetId, setPresetId] = useState<PresetId | null>(null);
   // カラーの雰囲気 (リール全体・素材にのみ掛ける)
@@ -3712,13 +3723,54 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
                       </button>
                       {!exportMime.startsWith('video/mp4') && (
                         <div style={{
-                          padding: '0.4rem 0.6rem',
-                          background: 'rgba(251,191,36,0.12)',
-                          border: '1px solid rgba(251,191,36,0.4)',
-                          borderRadius: 8,
-                          fontSize: 10.5, color: bg.inkSoft, lineHeight: 1.4,
+                          padding: '0.6rem 0.7rem',
+                          background: 'rgba(251,191,36,0.14)',
+                          border: '1px solid rgba(251,191,36,0.45)',
+                          borderRadius: 10,
+                          fontSize: 12, color: bg.ink, lineHeight: 1.55,
                         }}>
-                          このブラウザは MP4 書き出しに非対応のため WebM になります。Instagram にそのまま上げると弾かれることがあるので、その場合は <b>Safari</b> で同じ操作を行うか、<b>CloudConvert / HandBrake</b> で MP4 に変換してください。
+                          <p style={{ margin: 0, fontWeight: 800 }}>{webmAdvice.headline}</p>
+                          <p style={{ margin: '2px 0 0', color: bg.inkSoft }}>{WEBM_KEEP_NOTE}</p>
+                          {/* この端末で指が動く手順だけを番号で。パソコン専用ソフトはスマホには出さない */}
+                          <ol style={{ margin: '6px 0 0', paddingLeft: '1.15rem' }}>
+                            {webmAdvice.steps.map((s, i) => (
+                              <li key={i} style={{ marginTop: i ? 3 : 0 }}>{s}</li>
+                            ))}
+                          </ol>
+                          {webmAdvice.showCopyLink && (
+                            <>
+                              <button
+                                onClick={async () => {
+                                  try {
+                                    await navigator.clipboard.writeText(window.location.href);
+                                    setWebmLinkCopied('ok');
+                                  } catch {
+                                    setWebmLinkCopied('ng');
+                                  }
+                                }}
+                                style={{
+                                  marginTop: 8, width: '100%', minHeight: 44,
+                                  padding: '0 0.9rem', borderRadius: 999,
+                                  background: bg.accentSolid, color: '#fff', border: 'none',
+                                  fontSize: 12.5, fontWeight: 800, cursor: 'pointer',
+                                  fontFamily: IRIS_FONTS.body,
+                                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                                }}
+                              >
+                                <Copy size={14} /> リンクをコピー
+                              </button>
+                              {webmLinkCopied && (
+                                <p style={{
+                                  margin: '5px 0 0', fontWeight: 700,
+                                  color: webmLinkCopied === 'ok' ? bg.accentText : '#b91c1c',
+                                }}>
+                                  {webmLinkCopied === 'ok'
+                                    ? 'コピーしました。Safari のアドレス欄に貼り付けてください'
+                                    : 'コピーできませんでした。アドレス欄を長押しして手でコピーしてください'}
+                                </p>
+                              )}
+                            </>
+                          )}
                         </div>
                       )}
                       {/* ─── Instagram 共有導線 (3 ボタン) ─── */}
