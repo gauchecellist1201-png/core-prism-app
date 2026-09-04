@@ -138,11 +138,6 @@ export function HomeHero({ onAnchor }: { onAnchor: AnchorHandler }) {
           <p className="ch-hero-creed-answer" style={{ fontFamily: FONT_JA }}>
             核とは、<span style={{ color: ACCENT_LIGHT }}>人。</span>
           </p>
-          <p className="ch-hero-answer" style={{ fontFamily: FONT_JA }}>
-            AIは、人の仕事を奪う道具ではありません。
-            <br className="ch-br" />
-            人にしかできない仕事を、人に返すための道具です。
-          </p>
           <div className="ch-cta-row">
             <a href="/roai-score" onClick={e => { rememberSource('home-hero'); track('corp_cta_click', 'home-hero'); onAnchor(e, '/roai-score'); }} style={ctaHero}>ROAIを無料診断する</a>
             <a href="#contact" onClick={e => onAnchor(e, '#contact')} style={{ ...ctaGhost, backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}>

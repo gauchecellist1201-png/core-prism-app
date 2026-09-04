@@ -4101,10 +4101,6 @@ details[open] > summary .disclosure-chev {
   font-size: clamp(1rem, 1.7vw, 1.3rem); font-weight: 700; letter-spacing: 0.06em;
   color: #BAE6FD; margin: 0 0 0.2rem;
 }
-.ch-hero-answer {
-  font-size: clamp(1.15rem, 2.1vw, 1.6rem); font-weight: 800; line-height: 1.6; letter-spacing: -0.005em;
-  color: #fff; max-width: 680px; margin: 0 0 1.2rem;
-}
 /* ── HERO ブランドフィルム（2026-09-04）──
    PC: 左に言葉・右に縦型フィルム。地はポスターをぼかしたもの（動画を2本流さない）。
    スマホ: 縦型フィルムをそのまま画面いっぱいに敷き、言葉を下に重ねる。 */
@@ -4197,8 +4193,7 @@ details[open] > summary .disclosure-chev {
   .ch-film-sound { position: absolute; right: 14px; bottom: auto; top: calc(env(safe-area-inset-top, 0px) + 7.25rem); z-index: 3; }
   /* 640px 以下の旧規則 .ch-hero .ch-h1 (0,2,0) に負けないよう詳細度を上げる */
   .ch-hero--film .ch-hero-copy .ch-h1--creed { font-size: clamp(2.1rem, 8.8vw, 2.7rem); margin: 0.1rem 0 0.55rem; }
-  .ch-hero--film .ch-hero-creed-answer { font-size: 1.28rem; margin: 0 0 0.7rem; }
-  .ch-hero--film .ch-hero-answer { font-size: 1rem; line-height: 1.62; margin: 0 0 1.1rem; }
+  .ch-hero--film .ch-hero-creed-answer { font-size: 1.28rem; margin: 0 0 0.9rem; }
   .ch-hero--film .ch-cta-row { gap: 0.6rem; }
 }
 /* ── MANIFESTO 全面写真 ── */
@@ -4234,7 +4229,6 @@ details[open] > summary .disclosure-chev {
 }
 @media (max-width: 640px) {
   .ch-manifesto-h { font-size: 3rem; }
-  .ch-hero-answer { font-size: 1.15rem; }
 }
 
 /* ── HEADER / TABS（金のピル → 下線ナビ） ── */
