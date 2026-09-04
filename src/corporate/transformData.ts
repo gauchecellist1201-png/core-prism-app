@@ -235,7 +235,7 @@ export const INVESTMENT_TIERS: { name: string; nameJa: string; price: string; no
 export const CORE_NUMBERS: { label: string; labelJa: string; value: string | null; note?: string }[] = [
   { label: 'AI PRODUCTS', labelJa: '自社開発AIプロダクト', value: '8', note: '本番稼働中' },
   { label: 'INDUSTRIES', labelJa: '業界特化AI', value: '5', note: '建設・アニメ制作・広告・林業・バックオフィス' },
-  { label: 'AI AGENTS', labelJa: 'AIエージェント', value: '13', note: 'CORE Prism 上で稼働' },
+  { label: 'AI AGENTS', labelJa: 'AIエージェント', value: '7', note: 'CORE Prism 上で稼働' },
   { label: 'PROJECTS', labelJa: '支援プロジェクト', value: null },
   { label: 'CLIENTS', labelJa: '導入企業', value: null },
   { label: 'CONTINUOUS RATE', labelJa: '継続契約率', value: null },

@@ -756,7 +756,7 @@ export default function CoreSite() {
             badge="司令塔 ／ 全事業を一元管理"
             tagline="すべての事業を、ひとつの頭脳で。"
             taglineEn="One mind for your whole business."
-            description="営業・財務・契約・議事録 —— 経営のすべてを 13 名の AI エージェントが引き受ける司令塔。Iris・Resonance・Lume が SNS で掴んだお客様の動きも、最後はここにすべて集まり、次の一手まで提案します。"
+            description="営業・財務・契約・議事録 —— 経営のすべてを 7 名の AI エージェントが引き受ける司令塔。Iris・Resonance・Lume が SNS で掴んだお客様の動きも、最後はここにすべて集まり、次の一手まで提案します。"
             features={[
               '七つの役割に、七人の専属エージェント',
               '商談・財務・契約をひと続きに自動化',
@@ -958,7 +958,7 @@ export default function CoreSite() {
             badge="チーム ／ 貢献で決める組織 OS"
             tagline="肩書きではなく、貢献で動く。"
             taglineEn="Run your team by contribution."
-            description="社員・副業・フリーランス・AI を、ひとつの「ギルド」へ。意思決定は提案と投票で透明に行い、決まったことは改ざんできない記録として刻まれます。Prism が率いる 13 名の AI 役員も、このギルドの一員として動きます。"
+            description="社員・副業・フリーランス・AI を、ひとつの「ギルド」へ。意思決定は提案と投票で透明に行い、決まったことは改ざんできない記録として刻まれます。Prism が率いる 7 名の AI 役員も、このギルドの一員として動きます。"
             features={[
               '提案 → 投票で、チーム全員が意思決定に参加',
               '決定は改ざん検知つきのタイムラインに記録',
@@ -1390,7 +1390,7 @@ export default function CoreSite() {
             <UseCaseCard
               persona="個人事業主・経営者"
               headline="経営とSNSを、ひとつの流れで。"
-              body="判断・営業・財務・事務は Prism の AI 役員 13 名へ。集客の Instagram・LINE もつなげば、現場の反応がそのまま経営判断に届きます。"
+              body="判断・営業・財務・事務は Prism の AI 役員 7 名へ。集客の Instagram・LINE もつなげば、現場の反応がそのまま経営判断に届きます。"
               tools={[{ t: 'Prism', c: '#a78bfa' }, { t: 'Iris', c: '#E1306C' }, { t: 'Resonance', c: '#06C755' }]}
               lead="Prism"
             />
@@ -1487,7 +1487,7 @@ export default function CoreSite() {
               {
                 year: '2026',
                 title: 'CORE 創業',
-                body: '「いつの時代も、変わらない核を」を理念に創業。事業家のための Prism を起点に、Iris・Resonance・Lume を加えた四つのプロダクトと、13 名の AI 役員で、中小経営者と個人事業主を支える土台を築きます。',
+                body: '「いつの時代も、変わらない核を」を理念に創業。事業家のための Prism を起点に、Iris・Resonance・Lume を加えた四つのプロダクトと、7 名の AI 役員で、中小経営者と個人事業主を支える土台を築きます。',
                 accent: '#E0F2FE',
               },
               {

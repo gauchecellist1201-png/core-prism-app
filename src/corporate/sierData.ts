@@ -95,7 +95,7 @@ export const SIER_SAFETY_RULES: { t: string; d: string }[] = [
 /** 確定値のない数字は書かない。CORE_NUMBERS と同じ「本番で動いているものだけ」に限る。 */
 export const SIER_PROOF_NUMBERS: { label: string; labelJa: string; value: string; note: string }[] = [
   { label: 'AI PRODUCTS', labelJa: '自社開発AIプロダクト', value: '8', note: 'いずれも本番稼働中。〈製品〉でそのまま触っていただけます' },
-  { label: 'AI AGENTS', labelJa: 'AIエージェント', value: '13', note: '自社プロダクト上で稼働' },
+  { label: 'AI AGENTS', labelJa: 'AIエージェント', value: '7', note: '自社プロダクト上で稼働' },
 ];
 
 export const SIER_TECH_GROUPS: { purpose: string; tech: string[] }[] = [
