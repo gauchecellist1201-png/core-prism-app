@@ -20,7 +20,7 @@
 import { useEffect, useRef, useState } from "react";
 import { withCoreHandoff, readCoreHandoff, type CoreAppKey } from "./coreLink";
 import { useCoveredByModal } from "../hooks/useCoveredByModal";
-import { countsAsMedia, observeContentChange } from "../lib/floatAvoid";
+import { bandHasContent, countsAsMedia, observeContentChange } from "../lib/floatAvoid";
 
 type App = { key: Exclude<CoreAppKey, "core">; name: string; tag: string; color: string; url: string };
 
@@ -118,6 +118,12 @@ function scanBands(): Bands {
     const r = el.getBoundingClientRect();
     // 画面幅いっぱいに近い「帯」だけを対象にする(小さなFABは避けなくてよい)
     if (r.width < vw * 0.6 || r.height < 24 || r.height > vh * 0.5) continue;
+    // ★2026-09-04 根治: z-index が負でない飾り(Iris ホームの 320x320 のぼかし玉・
+    //   z:0 / pointer-events:none)を下部バーと数えてしまい、可動域を 400px 奪われて
+    //   いた(375x812 実測)。残り 207px では画面いっぱいの入力欄を避けられる場所が
+    //   1つも無く、丸ボタンが入力欄の角に 373px^2 乗ったまま動けなくなっていた。
+    //   判定は floatAvoid の bandHasContent に一本化する(2つ持つと片方だけ直る)。
+    if (!bandHasContent(el)) continue;
     // 上の帯 = 画面の上 1/4 に居るもの。「上端に触れているか」で判定してはいけない:
     // Iris はサンプル帯(上端)に押されてヘッダーが top=60 から始まるため、
     // 上端判定だとヘッダー(＝タブ行)が数えられず素通りしてしまう(実測)。

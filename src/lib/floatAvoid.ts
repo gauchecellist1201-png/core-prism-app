@@ -35,6 +35,37 @@ export type InkRect = {
  * クラス名で探してはいけない: 目印のクラスが無いバーがある(Prism 実測)。
  * 見た目の条件(画面幅いっぱい・固定/追従・上か下の 1/4 に居る)だけで判定する。
  */
+/**
+ * 帯(ヘッダー・下部ドック)として数えてよい要素か。
+ *
+ * ★2026-09-04 根治: これまで「飾りかどうか」は **z-index が負かどうか**だけで
+ *   見分けていた。ところが Iris ホームには **z-index: 0 / pointer-events: none の
+ *   320x320 のぼかし玉**(背景の光)が `position: fixed` で置かれており、
+ *   画面幅の 60% を超え・高さも 24〜画面の半分に収まるため、
+ *   **下部バーとして数えられていた**(実測 375x812: bottom=400px)。
+ *   結果、丸ボタンの可動域が y=131..338 の 207px しか残らず、
+ *   **画面いっぱいの入力欄(x39..335)を避けられる場所が1つも無くなり**、
+ *   「いちばんマシな場所」として入力欄の角に 373px^2 乗ったまま動けなくなっていた。
+ *   (＝費用0の場所が無いのは探索が狭いからではなく、可動域を飾りに奪われていたから)
+ *
+ * pointer-events:none で弾いてはいけない(Prism の下部バーは外枠が none・
+ * 中身だけ auto という作りで、それで弾くとバーを見失う 実測2026-07-27)ので、
+ * **中身を持っているか**で見分ける: 文字・押せるもの・絵のどれも無い箱は飾り。
+ * 実装は DOM に依存しない形(textContent / querySelector を持つものなら何でも)に
+ * してあるので、画面なしで固定できる。
+ */
+export const BAND_CONTENT_SELECTOR =
+  'a,button,input,textarea,select,[role="button"],img,video,canvas,svg';
+
+export function bandHasContent(el: {
+  textContent?: string | null;
+  querySelector?: (selector: string) => unknown;
+}): boolean {
+  if ((el.textContent ?? '').trim()) return true;
+  if (typeof el.querySelector === 'function' && el.querySelector(BAND_CONTENT_SELECTOR)) return true;
+  return false;
+}
+
 export function scanBands(): { top: number; bottom: number; els: HTMLElement[] } {
   const out = { top: 0, bottom: 0, els: [] as HTMLElement[] };
   if (typeof document === 'undefined') return out;
@@ -51,6 +82,8 @@ export function scanBands(): { top: number; bottom: number; els: HTMLElement[] }
     if (Number(s.zIndex) < 0) continue;
     const r = el.getBoundingClientRect();
     if (r.width < vw * 0.6 || r.height < 24 || r.height > vh * 0.5) continue;
+    // 中身の無い箱は飾り(背景の光・ぼかし玉)＝帯として数えない。詳細は bandHasContent。
+    if (!bandHasContent(el)) continue;
     if (r.top < vh * 0.25 && r.bottom > 0) { out.top = Math.max(out.top, r.bottom); out.els.push(el); }
     else if (r.bottom > vh * 0.75 && r.top < vh) { out.bottom = Math.max(out.bottom, vh - r.top); out.els.push(el); }
   }

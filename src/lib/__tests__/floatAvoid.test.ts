@@ -73,3 +73,58 @@ describe('liftToClear — 絵を数えると実際に逃げる', () => {
     expect(liftToClear({ x: 14, w: 52, h: 52 }, 620, [thumb], { minTop: 120, currentLift: 0 })).toBe(0);
   });
 });
+
+// ============================================================
+// bandHasContent — 「帯」と「飾り」を見分ける (2026-09-04)
+//
+// なぜ要るか: Iris ホームには z-index:0 / pointer-events:none の 320x320 の
+// ぼかし玉(背景の光)が fixed で置かれており、画面幅の 60% を超えるため
+// **下部バーとして数えられていた**(実測 375x812: bottom=400px)。
+// 可動域が 207px しか残らず、画面いっぱいの入力欄(x39..335)を避けられる場所が
+// 1つも無くなり、丸ボタンが入力欄の角に 373px^2 乗ったまま動けなくなっていた。
+// ============================================================
+import { bandHasContent, BAND_CONTENT_SELECTOR } from '../floatAvoid';
+
+/** querySelector だけを持つ最小の偽要素(この判定は DOM に依存しない) */
+const fakeEl = (textContent: string, matches: string[] = []) => ({
+  textContent,
+  querySelector: (sel: string) =>
+    sel === BAND_CONTENT_SELECTOR && matches.length ? ({ tag: matches[0] } as unknown) : null,
+});
+
+describe('bandHasContent — 中身の無い箱は帯として数えない', () => {
+  it('文字を持つ下部ドック(「企画」「その他」)は帯として数える', () => {
+    expect(bandHasContent(fakeEl('企画 その他'))).toBe(true);
+  });
+
+  it('文字は無いがボタンを抱えているバーは帯として数える（アイコンだけの下部バー）', () => {
+    expect(bandHasContent(fakeEl('', ['button']))).toBe(true);
+  });
+
+  it('文字も押せるものも絵も無い箱は飾り＝数えない（Iris ホームのぼかし玉）', () => {
+    expect(bandHasContent(fakeEl(''))).toBe(false);
+  });
+
+  it('空白だけの箱も飾り扱い（改行やスペースを「中身」と数えない）', () => {
+    expect(bandHasContent(fakeEl('   \n\t '))).toBe(false);
+  });
+
+  it('textContent が null でも落ちない', () => {
+    expect(bandHasContent({ textContent: null })).toBe(false);
+  });
+
+  it('querySelector を持たないものでも落ちない（文字だけで判定する）', () => {
+    expect(bandHasContent({ textContent: 'ドック' })).toBe(true);
+  });
+
+  it('外枠が pointer-events:none でも、中に押せるものがあれば帯（Prism の下部バー）', () => {
+    // pointer-events では弾かない、という 2026-07-27 の約束をこの判定でも守る
+    expect(bandHasContent(fakeEl('', ['a']))).toBe(true);
+  });
+
+  it('探す対象には絵(img/video/canvas/svg)も入っている＝絵だけのバーも見失わない', () => {
+    for (const tag of ['img', 'video', 'canvas', 'svg']) {
+      expect(BAND_CONTENT_SELECTOR).toContain(tag);
+    }
+  });
+});
