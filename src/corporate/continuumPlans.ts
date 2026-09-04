@@ -52,7 +52,7 @@ export const CONTINUUM_PLANS: ContinuumPlan[] = [
     compare: `例）Crystal＋Resonance＋Prism を、おすすめプランでそろえると ${formatYen(LIGHT_EXAMPLE)} → ${off(LIGHT, LIGHT_EXAMPLE)}%お得`,
     features: [
       `${SUITE_COUNT}サービスから選べる3つ（いつでも入替可）`,
-      'ぜんぶ上位プランでご利用OK',
+      'すべて上位プランでご利用いただけます',
       'ひとつのCOREアカウントで横断',
       'メールサポート',
     ],
@@ -68,7 +68,7 @@ export const CONTINUUM_PLANS: ContinuumPlan[] = [
     compare: `おすすめプランで${SUITE_COUNT}つそろえると ${formatYen(SUITE_BEST_TOTAL)} → ${off(COMPLETE, SUITE_BEST_TOTAL)}%お得。正社員ひとり（月30万円〜）の約1/4で、${SUITE_COUNT}人分のAIチーム`,
     features: [
       `${SUITE_COUNT}サービスすべて使い放題（各上位プラン）`,
-      '返信・集客・接客・予約・分析まで全自動',
+      '返信・集客・接客・予約・分析までを、承認つきで自動化',
       '月次「時間レポート」— AIが代行した仕事量と、あなたに戻った時間を見える化',
       '優先サポート',
     ],
@@ -82,7 +82,7 @@ export const CONTINUUM_PLANS: ContinuumPlan[] = [
     setup: '¥298,000',
     features: [
       'Complete の全部',
-      '導入・初期構築・運用チューニングまで完全代行（あなたの作業ゼロで立ち上がる）',
+      '導入・初期構築・運用チューニングまで代行（御社の工数を最小限に抑えて立ち上げます）',
       '専属コンシェルジュによる月次レビュー',
       '四半期ライフプラン面談 — 戻った時間を「人間関係・趣味・家族」へどう使うかまで一緒に描く',
     ],

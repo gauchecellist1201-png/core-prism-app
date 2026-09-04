@@ -8,7 +8,7 @@
 //   NEW  企業の本質的な課題を見つけ、AI・ソフトウェア・業務設計によって
 //        事業そのものを変革する会社 ＝ AI Transformation Company
 //   ブランド（金×黒・明朝・静かな余白・「核」の思想）は一切壊さない。
-//   自社プロダクト8つは「作れることの証拠」として〈製品〉タブへ移した。
+//   自社プロダクト8つは、開発・運用の実体を示すものとして〈製品〉タブへ移した。
 // ============================================================
 import { useEffect, useState, useRef, type ReactNode, type MouseEvent as ReactMouseEvent } from 'react';
 import { motion } from 'framer-motion';
@@ -140,7 +140,7 @@ const TAB_META: Record<CoreTabKey, { title: string; desc: string; path: string }
   score: { title: 'CORE ROAI SCORE — 約3分のAI投資優先順位診断 | 株式会社CORE', desc: '約3分で、あなたの会社の次にAI投資すべき場所・削減できる時間・経済価値の概算・AI Readiness・投資余力の目安を可視化。連絡先不要、算定根拠つき。', path: '/roai-score' },
   os: { title: 'AI COMPANY OS | 株式会社CORE', desc: '経営・営業・顧客対応・バックオフィスを、人とAIエージェントが協働する一つのOperating Systemとして再設計する。', path: '/corp#os' },
   services: { title: 'サービス — AI戦略から運用・ROAI計測まで | 株式会社CORE', desc: 'AI Strategy / Business Redesign / AI Development / AI Security & Quality / AI Operation / ROAI Management。経営成果を生むプロセス別のサービス。', path: '/corp#services' },
-  products: { title: '自社プロダクト | 株式会社CORE', desc: '自社で作り、本番で動かしているAIプロダクト群。作れることの証拠。', path: '/corp#products' },
+  products: { title: '自社プロダクト | 株式会社CORE', desc: '自社で企画・開発し、本番環境で運用しているAIプロダクト群。', path: '/corp#products' },
   company: { title: '会社について | 株式会社CORE', desc: 'いつの時代も、変わらない核を。核とは、人。会社概要・理念・代表。', path: '/corp#company' },
   contact: { title: 'AI Transformationを相談する | 株式会社CORE', desc: 'どこへ、いくらAI投資すると、どの程度のReturnが期待できるか。ROAI戦略相談・お問い合わせ。', path: '/corp#contact' },
 };
@@ -179,7 +179,7 @@ const SECTION_TAB: Record<string, CoreTabKey> = {
   services: 'services', 'ai-native': 'services', technology: 'services',
   'business-dev': 'services', partner: 'services', investment: 'services',
   engagement: 'services', security: 'services',
-  // プロダクト — 自社で作って動かしているもの（作れることの証拠）
+  // プロダクト — 自社で開発し、本番で運用しているもの
   connect: 'products',
   finder: 'products', products: 'products', platform: 'products', screens: 'products',
   who: 'products', 'industry-os': 'products', vertical: 'products',
@@ -643,7 +643,7 @@ export default function CoreSite() {
               marginBottom: '1.5rem',
             }}
           >
-            道具を、{SUITE_COUNT_KANJI}つ買うのではない。
+            道具を、{SUITE_COUNT_KANJI}つ買い足すのではない。
             <br />
             <span
               style={{
@@ -653,7 +653,7 @@ export default function CoreSite() {
                 fontWeight: 900,
               }}
             >
-              AIの会社が、まるごとひとつ。
+              AIの部門構成を、まるごと導入する。
             </span>
           </motion.h2>
 
@@ -668,15 +668,15 @@ export default function CoreSite() {
               fontWeight: 400,
             }}
           >
-            CORE の {SUITE_COUNT} つは、それぞれ単体でも売っています。
+            CORE の {SUITE_COUNT} つは、それぞれ単体でもご利用いただけます。
             <br />
-            けれど本当の姿は、机の上に並ぶ {SUITE_COUNT} 個の道具ではありません。
+            ただし本来の姿は、机の上に並ぶ {SUITE_COUNT} 個の道具ではありません。
             <br />
-            集客、接客、顧客対応、経営判断、実行、そして経営者自身の体調管理まで。
+            集客、接客、顧客対応、経営判断、実行、そして経営者の健康管理まで。
             <br />
-            <strong style={{ color: '#F3F6FB', fontWeight: 700 }}>会社の部署が、そのまま{SUITE_COUNT_KANJI}つ揃っている</strong>ということです。
+            <strong style={{ color: '#F3F6FB', fontWeight: 700 }}>会社の部門が、そのまま{SUITE_COUNT_KANJI}つ揃う</strong>という構成です。
             <br />
-            あなたに残るのは、社長の仕事だけ。
+            残るのは、経営者にしかできない判断だけになります。
           </p>
 
           {/* 五つの持ち場（図と表の共通の凡例） */}
@@ -829,7 +829,7 @@ export default function CoreSite() {
                 />
               )}
               <p style={{ fontSize: '0.72rem', letterSpacing: '0.34em', color: '#d9b36a', fontWeight: 700, marginBottom: '0.9rem' }}>
-                別格 ─ CORE UNIVERSE
+                無料公開 ─ CORE UNIVERSE
               </p>
               <h3
                 style={{
@@ -841,13 +841,13 @@ export default function CoreSite() {
                   marginBottom: '1rem',
                 }}
               >
-                AIに任せられる仕事が、
+                AIに任せられる業務を、
                 <br />
-                ぜんぶ見える宇宙図。
+                一枚で見渡せます。
               </h3>
               <p style={{ fontFamily: FONT_SERIF_JA, color: 'rgba(226,232,240,0.75)', fontSize: '0.95rem', lineHeight: 2, marginBottom: '1.4rem' }}>
-                30の仕事を星座に。星を押すと「人がやる → AIが下書き → 全自動」の3段のはしごが見え、
-                どの仕事から任せるべきかが分かります。宇宙図は無料。すべてのCOREサービスは、この宇宙のどこかの星です。
+                30の業務を「人がやる → AIが下書きする → 自動で回す」の3段階で整理した一覧図（宇宙図）です。
+                どの業務から着手すべきかを、登録不要・無料でご確認いただけます。COREの各サービスは、この図のいずれかを担当しています。
               </p>
               <span
                 style={{
@@ -904,7 +904,7 @@ export default function CoreSite() {
           <FeatureProduct
             brand="crystal"
             badge="AI コンシェルジュ ／ サイトに1行で"
-            tagline="話しかけるだけで、すべて解決。"
+            tagline="話しかけるだけで、その場で答えが返る。"
             taglineEn="Speak, and it is handled."
             description="画面いっぱいに咲くクリスタルの花に、声で話しかけるだけ。あなたのサイトを訪れたお客様を 24 時間お迎えし、質問に答え、見込みの高い方から商談の日程まで受け取る、白と金の AI コンシェルジュです。"
             features={[
@@ -1088,7 +1088,7 @@ export default function CoreSite() {
         <div style={{ maxWidth: 1280, margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
             <p style={{ fontFamily: '"Cormorant Garamond", serif', fontStyle: 'italic', letterSpacing: '0.35em', textTransform: 'uppercase', color: '#C9A24B', fontSize: '0.8rem', margin: 0 }}>Real Screens</p>
-            <h2 style={{ fontSize: 'clamp(1.6rem, 3.6vw, 2.4rem)', fontWeight: 600, letterSpacing: '0.04em', margin: '0.6rem 0 0.4rem' }}>実物で、ご覧ください。</h2>
+            <h2 style={{ fontSize: 'clamp(1.6rem, 3.6vw, 2.4rem)', fontWeight: 600, letterSpacing: '0.04em', margin: '0.6rem 0 0.4rem' }}>稼働中の画面を、ご覧ください。</h2>
             <p style={{ color: 'rgba(226,232,240,0.68)', fontSize: '0.92rem', lineHeight: 2, maxWidth: 560, margin: '0 auto' }}>
               モックアップではなく、いま本番で動いている画面。<br />気になった一枚から、そのまま触れられます。
             </p>
@@ -1389,7 +1389,7 @@ export default function CoreSite() {
           >
             <UseCaseCard
               persona="個人事業主・経営者"
-              headline="経営も、SNSも、片手間に。"
+              headline="経営とSNSを、ひとつの流れで。"
               body="判断・営業・財務・事務は Prism の AI 役員 13 名へ。集客の Instagram・LINE もつなげば、現場の反応がそのまま経営判断に届きます。"
               tools={[{ t: 'Prism', c: '#a78bfa' }, { t: 'Iris', c: '#E1306C' }, { t: 'Resonance', c: '#06C755' }]}
               lead="Prism"
@@ -1403,7 +1403,7 @@ export default function CoreSite() {
             />
             <UseCaseCard
               persona="店舗・サロン・教室"
-              headline="一度きりを、また会いたいへ。"
+              headline="一度きりのご来店を、次につなげる。"
               body="Resonance が LINE のご縁を一人ひとり温め、Lume が予約や各リンクへの動線を可視化。来店につながる流れを、AI が静かに育てます。"
               tools={[{ t: 'Resonance', c: '#06C755' }, { t: 'Lume', c: '#FFA42A' }]}
               lead="Resonance"
@@ -1787,13 +1787,13 @@ export default function CoreSite() {
           </h2>
           <p style={{ fontFamily: FONT_SERIF_JA, color: 'rgba(255,255,255,0.68)', fontSize: 'clamp(0.92rem, 1.4vw, 1.02rem)', lineHeight: 2.1, maxWidth: 640 }}>
             CORE の上位プランをご契約の企業さまだけにご案内する、招待制の最上位パッケージ。
-            主宰・井出直毅のもう一つの顔 —— 世界のラグジュアリーの現場で演奏するチェリスト
+            代表・井出直毅は、チェリスト
             <strong style={{ color: '#BAE6FD', fontWeight: 600 }}> GAUCHE </strong>
-            による特別な体験を、御社の福利厚生とブランドに。
+            としても活動しています。その演奏とレッスンを、御社の福利厚生とブランディングにご活用いただけます。
           </p>
           <div className="lp-exec-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem', margin: '2.2rem 0 2.4rem' }}>
             {[
-              { t: '周年・VIP レセプションでの出張演奏', d: 'リッツ・カールトン、Loro Piana Milano で磨いた演奏が、御社のイベントの「格」を引き上げます。' },
+              { t: '周年・VIP レセプションでの出張演奏', d: 'リッツ・カールトンや Loro Piana Milano での演奏経験をもとに、周年行事やレセプションでの生演奏を承ります。' },
               { t: 'チェロスクール法人契約（福利厚生）', d: '従業員は GAUCHE Cello School の受け放題レッスンへ。楽器は無料貸与、手ぶらで始められます。' },
               { t: '経営層向け Executive Private 優先枠', d: '役員・経営層のための完全1対1レッスン。多忙な予定に合わせるフルフレックス制。' },
             ].map(f => (

@@ -128,10 +128,10 @@ export function Values() {
 // ============================================================
 export function PeopleMosaic() {
   const tiles: { img: string; alt: string; cap: string; span?: string }[] = [
-    { img: PEOPLE.team, alt: '会議室で笑い合うチーム', cap: '議事録を書く時間が、決める時間に返った。', span: 'wide' },
-    { img: PEOPLE.clinic, alt: 'クリニックの受付で微笑み合う', cap: '予約の電話が減って、目の前の患者さんに返った。' },
-    { img: PEOPLE.factory, alt: '工場で笑い合う作業者と技術者', cap: '日報を写す時間が、現場を見る時間に返った。' },
-    { img: PEOPLE.arcade, alt: '商店街で談笑する店主たち', cap: '請求書の夜が、店先で話す夕方に返った。', span: 'wide' },
+    { img: PEOPLE.team, alt: '会議室で笑い合うチーム', cap: '議事録を書く時間を、決める時間へ返す。', span: 'wide' },
+    { img: PEOPLE.clinic, alt: 'クリニックの受付で微笑み合う', cap: '予約対応の時間を、目の前の患者さんへ返す。' },
+    { img: PEOPLE.factory, alt: '工場で笑い合う作業者と技術者', cap: '日報を書き写す時間を、現場を見る時間へ返す。' },
+    { img: PEOPLE.arcade, alt: '商店街で談笑する店主たち', cap: '請求書に追われる夜を、店先で話す夕方へ返す。', span: 'wide' },
   ];
   return (
     <section aria-label="私たちが向き合う人々" style={{ background: INK, padding: '0 0 6rem' }}>

@@ -497,8 +497,12 @@ export default function StudioSite() {
            伸びてしまう(shrink-to-fitが効かない既知の挙動)。幅を固定値で明示して回避する */
         @media (min-width: 860px) { .st-fw-info { width: 400px; max-width: 400px; flex: 0 0 auto; } }
         .st-fw-shot img, .st-fw-thumb img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+        /* 横スワイプの棚。中身が画面に収まる幅のとき(PC)は左端に貼り付かせず中央に寄せる。
+           justify-content:center は overflow するとスクロールしても先頭が取り出せなくなるので使わない。
+           fit-content + max-width:100% + margin auto なら、収まる時だけ中央・溢れる時は素直に横スクロール。 */
         .st-fw-row { display: flex; gap: 11px; overflow-x: auto; -webkit-overflow-scrolling: touch;
-          scrollbar-width: none; padding: 2px 20px 12px; scroll-snap-type: x mandatory; }
+          scrollbar-width: none; padding: 2px 20px 12px; scroll-snap-type: x mandatory;
+          box-sizing: border-box; width: fit-content; max-width: 100%; margin-inline: auto; }
         .st-fw-row::-webkit-scrollbar { display: none; }
         .st-fw-item { flex: 0 0 auto; width: 126px; scroll-snap-align: center; background: none; border: none;
           padding: 0; cursor: pointer; text-align: left; font-family: ${SANS};

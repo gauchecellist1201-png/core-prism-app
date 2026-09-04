@@ -1012,8 +1012,8 @@ export function CoreNumbersSection() {
       background="#070A10"
       labelJa="数&nbsp;字"
       labelEn="CORE&nbsp;IN&nbsp;NUMBERS"
-      title={<>作ってきたもので、話します。</>}
-      lead={<>本番で動いているものだけを数えています。</>}
+      title={<>稼働しているものだけを、数えています。</>}
+      lead={<>導入社数や効果率など、裏づけの取れない数字は掲載していません。</>}
       narrow
     >
       <div className="corp-grid-3">
@@ -1189,7 +1189,7 @@ export function FaqSection() {
       background="linear-gradient(180deg,#070A10 0%,#0A0D14 100%)"
       labelJa="よくあるご質問"
       labelEn="FAQ"
-      title={<>聞きにくいことから、先に。</>}
+      title={<>ご相談の前に、確かめておきたいこと。</>}
       lead={<>相談の前に確かめておきたいことを、こちらから書いておきます。</>}
       narrow
     >

@@ -88,12 +88,12 @@ const PRISM_PLANS_V2 = [
     price: 5000,
     yearly: 50000,
     highlight: true,
-    badge: '個人 人気 No.1',
+    badge: 'おすすめ',
     features: [
       'AI 相談 月 1,500 回',
       '主要機能ほぼ無制限',
       'ナレッジ 200 件',
-      '事務時間を 最大 70% 削減',
+      '議事録・提案書・経費処理の作成を自動化',
       '3 日間 無料',
     ],
   },
@@ -132,7 +132,7 @@ const PRISM_PLANS_V2 = [
       'フル機能',
       'チーム 15 名まで',
       '請求書払い OK',
-      'コンサル代 月¥200 万を 1/7 に',
+      '外部委託していた調査・資料作成を社内で完結',
       '3 日間 無料',
     ],
   },
@@ -160,7 +160,6 @@ const IRIS_PLANS = [
 const USECASES = [
   {
     industry: '経営者 / CEO',
-    icon: '🧭',
     color: '#a78bfa',
     pain: 'やることが多すぎて、戦略に時間が割けない',
     solution: 'Prism の経営エージェントが KPI 自動モニタリング + 議事録 → 意思決定メモ',
@@ -169,7 +168,6 @@ const USECASES = [
   },
   {
     industry: '営業 / セールス',
-    icon: '💼',
     color: '#ff9842',
     pain: 'リード探し・スクリプト作成・提案書で半日が消える',
     solution: 'Prism の営業エージェントがリード探索→提案書ドラフトまで自動',
@@ -178,7 +176,6 @@ const USECASES = [
   },
   {
     industry: '財務 / 経理',
-    icon: '📊',
     color: '#fbbf24',
     pain: '経費精算・P&L 作成・予算配分の事務作業に追われる',
     solution: 'Prism の財務エージェントが経費 OCR + P&L 自動 + 予算予測',
@@ -187,7 +184,6 @@ const USECASES = [
   },
   {
     industry: 'インフルエンサー',
-    icon: '🌸',
     color: '#E1306C',
     pain: '案件管理・キャプション作成・分析に追われ、創作時間が減る',
     solution: 'Iris が案件交渉・キャプション・IG 分析・コミュニティ運営まで',
@@ -197,7 +193,6 @@ const USECASES = [
   // ── 典型 3 ペルソナ (個人事業主 / 副業ワーカー / 小規模法人) ──
   {
     industry: '個人事業主 (カフェ・サロン・教室)',
-    icon: '☕',
     color: '#fb923c',
     pain: '一人で全部こなす毎日 ── 接客しながら経理も SNS も追えない',
     solution: 'Prism のスターターで売上記録 + SNS 投稿 + 顧客カードを 1 つに',
@@ -206,7 +201,6 @@ const USECASES = [
   },
   {
     industry: '副業ワーカー (会社員 + 副業)',
-    icon: '🌙',
     color: '#60a5fa',
     pain: '本業の隙間でしか動けず、副業は提案書 1 本書くだけで終わる',
     solution: 'Prism が夜 30 分で提案書・請求書・進捗まとめを片付け、休みは創造に',
@@ -215,7 +209,6 @@ const USECASES = [
   },
   {
     industry: '小規模法人代表 (1〜10 名)',
-    icon: '🏛',
     color: '#a78bfa',
     pain: '採用するほどではない雑務に毎日追われ、戦略を考える時間がない',
     solution: 'Prism スタンダードで議事録 + 契約書 + 商談ロープレ + 財務を一気に',
@@ -226,13 +219,13 @@ const USECASES = [
 
 // ─── FAQ ─────────────────
 const FAQS = [
-  { q: '解約はいつでもできますか?', a: 'はい。マイページから 1 タップで解約できます。日割り計算で当月分のみ請求されます。' },
-  { q: '3 日間のトライアル中に料金は発生しますか?', a: '発生しません。トライアル期間中はクレジットカード登録も不要です。' },
-  { q: 'AI の API キーは自分で用意する必要がありますか?', a: '不要です。すべてのプランで Claude / Gemini / 画像生成 AI を内蔵しています。' },
-  { q: 'プランを途中でアップグレード・ダウングレードできますか?', a: 'いつでも変更できます。差額は次回請求で日割り計算されます。' },
-  { q: '法人契約・カスタム導入は可能ですか?', a: 'はい。10 名以上のチームには専用プランを用意しています。お問い合わせください。' },
-  { q: 'データは他社に渡されますか?', a: '渡しません。あなたのデータは localStorage と暗号化された専用領域にのみ保存されます。' },
-  { q: '日本語以外の言語に対応していますか?', a: '今後対応予定です (日英中 順次)。AI への質問はすべての主要言語で可能です。' },
+  { q: '解約はいつでもできますか？', a: 'はい。マイページから 1 タップで解約できます。日割り計算で当月分のみ請求されます。' },
+  { q: '3 日間のトライアル中に料金は発生しますか？', a: '発生しません。トライアル期間中はクレジットカード登録も不要です。' },
+  { q: 'AI の API キーは自分で用意する必要がありますか？', a: '不要です。すべてのプランで Claude / Gemini / 画像生成 AI を内蔵しています。' },
+  { q: 'プランを途中でアップグレード・ダウングレードできますか？', a: 'いつでも変更できます。差額は次回請求で日割り計算されます。' },
+  { q: '法人契約・カスタム導入は可能ですか？', a: 'はい。10 名以上のチームには専用プランを用意しています。お問い合わせください。' },
+  { q: 'データは他社に渡されますか？', a: '渡しません。あなたのデータは localStorage と暗号化された専用領域にのみ保存されます。' },
+  { q: '日本語以外の言語に対応していますか？', a: '今後対応予定です (日英中 順次)。AI への質問はすべての主要言語で可能です。' },
 ];
 
 const fmt = (n: number) => '¥' + Math.round(n).toLocaleString('ja-JP');
@@ -243,7 +236,6 @@ type RoiTask = {
   key: RoiTaskKey;
   label: string;
   sub: string;
-  emoji: string;
   color: string;
   before: number; // 分
   after: number;  // 分
@@ -253,10 +245,10 @@ type RoiTask = {
   unit: string;
 };
 const ROI_TASKS: RoiTask[] = [
-  { key: 'minutes',  label: '議事録 / 会議メモ',  sub: '30 分 → 3 分 (1 件 27 分の節約)',   emoji: '📝', color: '#a78bfa', before: 30, after: 3,   defaultCount: 10, max: 100, step: 1, unit: '件/月' },
-  { key: 'sales',    label: '営業の提案メール',    sub: '20 分 → 2 分 (1 件 18 分の節約)',   emoji: '💼', color: '#60a5fa', before: 20, after: 2,   defaultCount: 20, max: 200, step: 1, unit: '件/月' },
-  { key: 'receipts', label: 'レシート / 経費処理', sub: '3 分 → 0.5 分 (1 枚 2.5 分の節約)', emoji: '🧾', color: '#fbbf24', before: 3,  after: 0.5, defaultCount: 30, max: 300, step: 1, unit: '枚/月' },
-  { key: 'sns',      label: 'SNS 投稿の作成',      sub: '15 分 → 2 分 (1 件 13 分の節約)',   emoji: '🌸', color: '#E1306C', before: 15, after: 2,   defaultCount: 20, max: 200, step: 1, unit: '件/月' },
+  { key: 'minutes',  label: '議事録 / 会議メモ',  sub: '30 分 → 3 分 (1 件 27 分の節約)',   color: '#a78bfa', before: 30, after: 3,   defaultCount: 10, max: 100, step: 1, unit: '件/月' },
+  { key: 'sales',    label: '営業の提案メール',    sub: '20 分 → 2 分 (1 件 18 分の節約)',   color: '#60a5fa', before: 20, after: 2,   defaultCount: 20, max: 200, step: 1, unit: '件/月' },
+  { key: 'receipts', label: 'レシート / 経費処理', sub: '3 分 → 0.5 分 (1 枚 2.5 分の節約)', color: '#fbbf24', before: 3,  after: 0.5, defaultCount: 30, max: 300, step: 1, unit: '枚/月' },
+  { key: 'sns',      label: 'SNS 投稿の作成',      sub: '15 分 → 2 分 (1 件 13 分の節約)',   color: '#E1306C', before: 15, after: 2,   defaultCount: 20, max: 200, step: 1, unit: '件/月' },
 ];
 
 const PRISM_MONTHLY = 9800;
@@ -329,15 +321,15 @@ export default function PricingPage() {
       <section className="lp-section-pad" style={{ padding: '5rem 1.5rem 3rem', textAlign: 'center', background: 'linear-gradient(180deg,#000 0%,#070712 100%)' }}>
         <p style={{ fontFamily: FONT_DISPLAY, fontSize: '0.7rem', letterSpacing: '0.45em', color: 'rgba(255,255,255,0.5)', fontWeight: 600, marginBottom: '1.25rem' }}>PRICING</p>
         <h1 style={{ fontFamily: FONT_SERIF_JA, fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: 700, lineHeight: 1.4, letterSpacing: '0.04em', marginBottom: '1.25rem' }}>
-          人を雇うより、<span style={{ background: 'linear-gradient(90deg,#fbbf24,#a78bfa,#60a5fa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', fontWeight: 900 }}>圧倒的に安い。</span>
+          人を増やす前に、<span style={{ background: 'linear-gradient(90deg,#fbbf24,#a78bfa,#60a5fa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', fontWeight: 900 }}>試せる金額から。</span>
         </h1>
         {/* 2026-07-31 巡回: 0.45(4.43:1)。斜体＋字送り広めで実際はもっと薄く見えるので 0.62 に。 */}
         <p style={{ fontFamily: FONT_SERIF_EN, fontSize: '0.9rem', color: 'rgba(255,255,255,0.62)', fontStyle: 'italic', letterSpacing: '0.15em', marginBottom: '1.25rem' }}>
-          Cheaper than hiring. Smarter than alone.
+          A smaller first step than hiring.
         </p>
         <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '1rem', color: 'rgba(255,255,255,0.7)', lineHeight: 2, maxWidth: 700, margin: '0 auto 2rem' }}>
-          月額 ¥2,980 から、7 つの専属 AI エージェントが 24 時間あなたの代わりに動きます。
-          <br />試算してみてください ── 元が取れるのは、たいてい 1 週間以内です。
+          月額 ¥3,000 から、専属の AI エージェントが事務・営業・経理の定型業務を引き受けます。
+          <br />下の試算表で、御社の実数から削減できる時間を確認いただけます。
         </p>
 
         {/* 月払い / 年払い切替 */}
@@ -375,7 +367,7 @@ export default function PricingPage() {
                   transition: 'all 0.2s',
                 }}
               >
-                👤 個人・スモール
+                個人・スモール
               </button>
               <button
                 onClick={() => setAudienceTab('btoB')}
@@ -388,7 +380,7 @@ export default function PricingPage() {
                   transition: 'all 0.2s',
                 }}
               >
-                🏢 法人 (BtoB)
+                法人 (BtoB)
               </button>
             </div>
           )}
@@ -497,7 +489,7 @@ export default function PricingPage() {
                 {ROI_TASKS.map(t => (
                   <RoiSlider
                     key={t.key}
-                    label={`${t.emoji} ${t.label}`}
+                    label={t.label}
                     sub={t.sub}
                     value={counts[t.key]}
                     setValue={setters[t.key]}
@@ -529,7 +521,7 @@ export default function PricingPage() {
                 {perTask.map(t => (
                   <div key={t.key} style={{ padding: '0.85rem 1rem', background: `${t.color}10`, border: `1px solid ${t.color}30`, borderRadius: 12 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '0.5rem' }}>
-                      <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.85rem', fontWeight: 700, color: '#fff' }}>{t.emoji} {t.label}</p>
+                      <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.85rem', fontWeight: 700, color: '#fff' }}>{t.label}</p>
                       <p style={{ fontFamily: '"JetBrains Mono","SF Mono",ui-monospace,Menlo,monospace', fontSize: '1rem', fontWeight: 800, color: t.color, whiteSpace: 'nowrap' }}>
                         {fmt(t.savedYen)}
                       </p>
@@ -588,8 +580,8 @@ export default function PricingPage() {
               </p>
               {netYearly >= 0 && (
                 <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.82rem', color: 'rgba(255,255,255,0.7)', marginTop: 8, lineHeight: 1.7 }}>
-                  Prism を 12 ヶ月使うと、<strong style={{ color: '#86efac' }}>{fmt(netYearly)} の純利益</strong>。<br className="lp-roi-br" />
-                  投資 ¥{yearlyCost.toLocaleString('ja-JP')} → 回収 ¥{yearlySaved.toLocaleString('ja-JP')} ({roiMultiple.toFixed(1)} 倍)。
+                  12 ヶ月で、削減見込み額が費用を <strong style={{ color: '#86efac' }}>{fmt(netYearly)}</strong> 上回る試算です。<br className="lp-roi-br" />
+                  費用 ¥{yearlyCost.toLocaleString('ja-JP')} / 削減見込み ¥{yearlySaved.toLocaleString('ja-JP')} ({roiMultiple.toFixed(1)} 倍)。
                 </p>
               )}
             </div>
@@ -635,7 +627,7 @@ export default function PricingPage() {
                 <div aria-hidden style={{ position: 'absolute', top: -50, right: -50, width: 160, height: 160, borderRadius: '50%', background: u.color, opacity: 0.18, filter: 'blur(40px)', pointerEvents: 'none' }} />
                 <div style={{ position: 'relative', zIndex: 2 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1rem' }}>
-                    <div style={{ width: 44, height: 44, borderRadius: 12, background: `linear-gradient(135deg, ${u.color}, ${u.color}aa)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.4rem' }}>{u.icon}</div>
+                    <div style={{ width: 44, height: 44, borderRadius: 12, background: `linear-gradient(135deg, ${u.color}, ${u.color}aa)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: FONT_DISPLAY, fontSize: '0.95rem', fontWeight: 800, color: '#0B0B14', letterSpacing: '0.04em' }}>{String(i + 1).padStart(2, '0')}</div>
                     <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '1.05rem', fontWeight: 700 }}>{u.industry}</p>
                   </div>
                   <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.78rem', color: 'rgba(255,255,255,0.55)', marginBottom: 6, fontWeight: 600, letterSpacing: '0.05em' }}>悩み</p>
@@ -659,7 +651,7 @@ export default function PricingPage() {
           <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
             <p style={{ fontFamily: FONT_DISPLAY, fontSize: '0.7rem', letterSpacing: '0.4em', color: '#fbbf24', fontWeight: 700 }}>WHY ¥9,800</p>
             <h2 style={{ fontFamily: FONT_SERIF_JA, fontSize: 'clamp(1.85rem, 3.5vw, 2.5rem)', fontWeight: 700, marginTop: 8, letterSpacing: '0.05em' }}>
-              月 1 万円で<span style={{ background: 'linear-gradient(90deg,#fbbf24,#f472b6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', fontWeight: 900 }}>元が取れる根拠</span>
+              月 1 万円が、<span style={{ background: 'linear-gradient(90deg,#fbbf24,#f472b6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', fontWeight: 900 }}>何の代わりになるか</span>
             </h2>
             <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.9rem', color: 'rgba(255,255,255,0.6)', marginTop: 12, lineHeight: 1.85 }}>
               ChatGPT も Notion も Linear も Hootsuite も、それぞれが部分を解いています。<br />
@@ -728,7 +720,7 @@ export default function PricingPage() {
             }}>
               <p style={{ fontFamily: FONT_DISPLAY, fontSize: '0.7rem', letterSpacing: '0.3em', color: '#E1306C', fontWeight: 700, marginBottom: 10 }}>CORE Iris</p>
               <h3 style={{ fontFamily: FONT_SERIF_JA, fontSize: '1.4rem', fontWeight: 800, marginBottom: 18, lineHeight: 1.45 }}>
-                PR 案件 1 件取れれば、もう元が取れます
+                案件単価に対して、十分に下回る月額です
               </h3>
               <table style={{ width: '100%', fontSize: '0.85rem', borderCollapse: 'collapse', marginBottom: 16 }}>
                 <tbody>
@@ -760,11 +752,11 @@ export default function PricingPage() {
                 </tbody>
               </table>
               <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.85rem', color: 'rgba(255,255,255,0.75)', lineHeight: 1.85 }}>
-                Hootsuite は数字を見せます。Later は予約します。Canva は画像を作ります。
+                分析・予約・画像作成は、それぞれ別のツールで行うのが一般的です。
                 <br />
-                <strong style={{ color: '#fff' }}>Iris は、それを 1 つにして、AI があなたのフォロワー実データから「次の打ち手」と「マッチする案件」を出します</strong>。
+                <strong style={{ color: '#fff' }}>Iris はこれらを 1 つにまとめ、フォロワーの実データから「次の打ち手」と「条件の合う案件」を提示します</strong>。
                 <br />
-                平均 PR 案件報酬 <strong style={{ color: '#E1306C' }}>¥30,000〜100,000</strong>。<strong style={{ color: '#FCB045' }}>月 1 件取れれば 3〜10 ヶ月分の元が取れます</strong>。
+                PR 案件の報酬は 1 件あたり <strong style={{ color: '#E1306C' }}>¥30,000〜100,000</strong> が一つの目安です。<strong style={{ color: '#FCB045' }}>ご自身の単価に置き換えてご判断ください</strong>。
               </p>
             </div>
           </div>
@@ -778,20 +770,19 @@ export default function PricingPage() {
             textAlign: 'center',
           }}>
             <p style={{ fontFamily: FONT_DISPLAY, fontSize: '0.7rem', letterSpacing: '0.3em', color: 'rgba(255,255,255,0.5)', fontWeight: 700, marginBottom: 14 }}>
-              CORE ONLY
+              DESIGN PRINCIPLES
             </p>
             <h3 style={{ fontFamily: FONT_SERIF_JA, fontSize: 'clamp(1.2rem, 2.4vw, 1.6rem)', fontWeight: 800, marginBottom: 22, lineHeight: 1.55 }}>
-              CORE が、他社のどのツールにもできないこと
+              CORE が重視している、4 つの設計
             </h3>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
               {[
-                { icon: '🌈', title: '人格別 AI OS', desc: 'ChatGPT は文脈を混ぜる。Prism は人格別に AI を分離' },
-                { icon: '🌙', title: '24h 自律実行', desc: '夜中に AI がリサーチ → 朝レポート。対話だけで終わらない' },
-                { icon: '🎯', title: '案件マッチ + 交渉文', desc: 'IG 実データから次の案件を発見 → AI が初回 DM を下書き' },
-                { icon: '🔗', title: '一気通貫の連動', desc: '議事録 → 意思決定 → 提案書 → 請求書 → 入金確認' },
+                { title: '役割ごとの文脈分離', desc: '経営・営業・財務などの役割ごとに文脈を分け、混線しない設計にしています' },
+                { title: '対話で終わらせない', desc: '夜間に調査を走らせ、翌朝に結果を届けます。指示待ちのままにしません' },
+                { title: '実データからの提案', desc: 'Instagram の実数から次の案件候補を挙げ、初回連絡文まで下書きします' },
+                { title: '業務の連結', desc: '議事録 → 意思決定 → 提案書 → 請求書 → 入金確認を一本の流れにします' },
               ].map((c, i) => (
                 <div key={i} style={{ padding: '1rem 0.85rem' }}>
-                  <div style={{ fontSize: '1.85rem', marginBottom: 8 }}>{c.icon}</div>
                   <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.95rem', fontWeight: 800, color: '#fff', marginBottom: 6 }}>{c.title}</p>
                   <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.78rem', color: 'rgba(255,255,255,0.65)', lineHeight: 1.7 }}>{c.desc}</p>
                 </div>

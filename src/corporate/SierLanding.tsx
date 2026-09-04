@@ -33,7 +33,7 @@ import {
 } from './sierData';
 
 const PAGE_URL = 'https://core-prism-app.vercel.app/corp/sier';
-const PAGE_TITLE = 'SIer向けAI開発パートナー | AI案件、御社だけで抱えなくて大丈夫です。 — CORE';
+const PAGE_TITLE = 'SIer向けAI開発パートナー | AI案件の技術側を、御社の内側から引き受けます — CORE';
 const PAGE_DESCRIPTION = 'SIer・システム開発会社の担当者へ。生成AI・RAG・AI PoC・AIシステム開発の案件を、営業同行から要件整理・PoC・開発まで、必要な部分だけCOREが裏側から支援します。ホワイトラベル対応・NDA・提案段階からのご相談も可能です。';
 
 function setMeta(selector: string, content: string) {
@@ -106,7 +106,7 @@ export default function SierLanding() {
       {/* LpStickyCta は href 指定時 <a> を描画し onClick を呼ばないため、
           クリック計測は行わない（[[LpStickyCta.tsx]] 参照）。 */}
       <LpStickyCta
-        title="AI案件、御社だけで抱えなくて大丈夫です。"
+        title="AI案件の技術側を、御社の内側から。"
         sub="今あるAI案件を相談する"
         cta="相談する"
         href="#sier-contact"
@@ -172,9 +172,9 @@ function Hero() {
             marginBottom: '1.6rem',
           }}
         >
-          AI案件、
+          AI案件の技術側を、
           <br />
-          御社だけで抱えなくて大丈夫です。
+          御社の内側から引き受けます。
         </motion.h1>
         <motion.p
           {...reveal}
@@ -500,7 +500,7 @@ function SafetySection() {
       background="#080B11"
       labelJa="安心して協業するために"
       labelEn="TERMS FOR PARTNERS"
-      title={<>「顧客を取られるのでは」に、<br />先にお答えします。</>}
+      title={<>協業の条件を、<br />先に明示しておきます。</>}
       lead={<>SIerの皆さまが最初に気にされる点です。実際に相談・運用できる範囲を、先に書いておきます。</>}
     >
       <div className="corp-grid-3">
@@ -525,7 +525,7 @@ function ProofSection() {
       background="radial-gradient(120% 95% at 50% 0%, #0C1119 0%, #070A10 70%)"
       labelJa="実績・技術・信頼性"
       labelEn="PROOF & TECHNOLOGY"
-      title={<>「作れる」ことは、実物で示します。</>}
+      title={<>開発体制は、稼働中の製品でご確認ください。</>}
       narrow
     >
       <div className="corp-grid-2" style={{ marginBottom: '2.6rem' }}>
@@ -583,7 +583,7 @@ function FaqSection() {
       background="#080B11"
       labelJa="よくあるご質問"
       labelEn="FAQ"
-      title={<>聞きにくいことから、先に。</>}
+      title={<>ご発注の前に、確かめておきたいこと。</>}
       narrow
     >
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>

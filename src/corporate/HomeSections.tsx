@@ -183,7 +183,7 @@ export function HomeHero({ onAnchor }: { onAnchor: AnchorHandler }) {
 }
 
 // ============================================================
-//  PROOF STRIP — 自社プロダクトの名前の帯（「作れる」の証拠）
+//  PROOF STRIP — 自社プロダクトの名前の帯（開発・運用の実体を先に示す）
 // ============================================================
 const PRODUCT_NAMES = ['Nexus', 'Prism', 'Resonance', 'Crystal', 'Iris', 'Lume', 'Guild', 'Pulse'];
 
@@ -220,12 +220,12 @@ export function WhyCore() {
     {
       img: IMG.development, alt: '夕暮れの開発デスク。コードと管理画面が並ぶモニター',
       no: '02', title: `自社で${SUITE_COUNT}つのAIプロダクトを運用。`,
-      body: '提案だけの会社ではありません。自分たちで作り、値付けし、売り、直し続けているプロダクトがあります。それが「作れる」ことの証拠です。',
+      body: '構想を描くだけでなく、自社で開発し、価格を決め、販売し、改善を重ねている製品があります。作る側と売る側の両方に立つからこそ、投資判断の勘所までお話しできます。',
     },
     {
       img: IMG.operations, alt: '工場の現場でタブレットを持つ作業者の後ろ姿',
       no: '03', title: '納品で、終わらない。',
-      body: '使われ方を見て、モデルと業務の両方を直し続けます。組織の側が変わらなければAIは効かない。変わったかどうかが、私たちの成果です。',
+      body: '使われ方を見て、モデルと業務の両方を改善し続けます。組織の側が変わらなければ、AIは成果に結びつきません。変わったかどうかを、私たちの成果とします。',
     },
   ];
   return (
@@ -329,7 +329,7 @@ export function ServicesEditorial({ onAnchor }: { onAnchor: AnchorHandler }) {
 }
 
 // ============================================================
-//  PRODUCTS PROOF — 実際の画面（作れることの証拠）
+//  PRODUCTS PROOF — 稼働中の製品の実画面
 // ============================================================
 const SHOTS: { img: string; name: string; cap: string }[] = [
   { img: '/lp/shot-prism.jpg', name: 'Prism', cap: '経営者専属のAI参謀' },
@@ -347,9 +347,9 @@ export function ProductsProof({ onAnchor }: { onAnchor: AnchorHandler }) {
       <div className="ch-wrap" style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', justifyContent: 'space-between', gap: '1.5rem' }}>
         <div className="ch-head" style={{ marginBottom: 0 }}>
           <Kick>Products</Kick>
-          <h2 style={{ ...sectionH2, margin: 0 }}>作れることの、証拠。</h2>
+          <h2 style={{ ...sectionH2, margin: 0 }}>自社で開発し、自社で運用する。</h2>
           <p style={{ ...sectionLead, margin: '1rem 0 0', maxWidth: 560 }}>
-            提案書ではなく、実際に動いている画面です。{SUITE_COUNT}つのAIプロダクトを自社で開発し、本番で運用しています。
+            掲載しているのは構想図やモックアップではなく、稼働中の製品の画面です。企画・設計・実装・運用のすべてを社内で担い、{SUITE_COUNT}つのAIプロダクトを提供しています。
           </p>
         </div>
         <a href="#products" onClick={e => onAnchor(e, '#products')} style={{ ...ctaGhost, minHeight: 48 }}>すべてのプロダクトを見る</a>
@@ -506,7 +506,7 @@ export function FounderMessage({ onAnchor }: { onAnchor: AnchorHandler }) {
           </div>
           <p style={{ marginTop: '1.6rem', display: 'flex', flexWrap: 'wrap', gap: '0.6rem 1.6rem' }}>
             <a href="#philosophy-core" onClick={e => onAnchor(e, '#philosophy-core')} className="ch-textlink">会社の思想と概要を読む →</a>
-            <a href={`mailto:${COMPANY_INFO.email}`} className="ch-textlink">この手紙には、返信できます →</a>
+            <a href={`mailto:${COMPANY_INFO.email}`} className="ch-textlink">代表宛に直接ご連絡いただけます →</a>
           </p>
         </div>
         <motion.div {...reveal} className="ch-founder-photo">
@@ -581,8 +581,8 @@ export function FinalCta({ onAnchor }: { onAnchor: AnchorHandler }) {
           ひとつ教えてください。
         </h2>
         <p style={{ ...sectionLead, margin: '1.2rem auto 2.2rem', color: 'rgba(236,242,250,0.85)' }}>
-          初回のご相談に費用はいただきません。その場で、AIに渡せる仕事と、人にしか出来ない仕事を切り分けてお返しします。
-          御社の「核」を、一緒に守りに行きましょう。
+          初回のご相談に費用はいただきません。その場で、AIに任せられる業務と、人が担うべき業務を切り分けてお返しします。
+          御社の「核」がどこにあるのかを、一緒に見極めます。
         </p>
         <div className="ch-cta-row" style={{ justifyContent: 'center' }}>
           <a href="/roai-score" onClick={e => { rememberSource('home-final'); track('corp_cta_click', 'home-final'); onAnchor(e, '/roai-score'); }} style={ctaHero}>ROAIを無料診断する</a>

@@ -146,7 +146,7 @@ export const QUESTIONS: Question[] = [
       { id: 'reach', label: '知ってもらえない。お客様が来ない', scores: { iris: 10, lume: 5, resonance: 3 } },
       { id: 'repeat', label: '一度きりで終わってしまう。また来てもらえない', scores: { resonance: 10, crystal: 3, lume: 1 } },
       { id: 'reply', label: '問い合わせや電話の対応で、自分の手が止まる', scores: { crystal: 10, resonance: 3 } },
-      { id: 'manage', label: '数字も事務もぐちゃぐちゃで、経営の判断ができない', scores: { prism: 10, guild: 3 } },
+      { id: 'manage', label: '数字も事務も整理できておらず、経営の判断ができない', scores: { prism: 10, guild: 3 } },
       { id: 'team', label: 'チームで決まらない。決めても動かない', scores: { guild: 10, prism: 3 } },
       { id: 'body', label: '自分のからだが心配。この働き方が続かない', scores: { pulse: 10 } },
       { id: 'dream', label: '夢や目標はあるのに、日々のことに追われて前に進まない', scores: { nexus: 10, prism: 2 } },
@@ -259,7 +259,7 @@ export default function ServiceFinder() {
               marginBottom: '0.8rem',
             }}
           >
-            8つのうち、あなたにはどれ？
+            8つのうち、どれが合うかを診断します。
           </h2>
           <p style={{ fontFamily: FONT_SANS, fontSize: '0.84rem', color: 'rgba(255,255,255,0.62)', lineHeight: 1.95 }}>
             3つ答えるだけで、いまのあなたに効く1つと、その理由・料金までお見せします。
@@ -354,7 +354,7 @@ function ResultView({ result, onReset, onCompare }: {
   return (
     <div style={{ ...cardBase, padding: '1.6rem 1.15rem 1.3rem', borderColor: 'rgba(125,211,252,0.55)', boxShadow: '0 34px 80px -40px rgba(125,211,252,0.5)' }}>
       <p style={{ fontFamily: FONT_SANS, fontSize: '0.74rem', letterSpacing: '0.1em', color: '#7DD3FC', fontWeight: 800, marginBottom: '1rem' }}>
-        あなたには、これを
+        おすすめの1つ
       </p>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.9rem', marginBottom: '1.1rem' }}>
