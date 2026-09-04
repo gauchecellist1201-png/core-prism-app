@@ -65,6 +65,7 @@ import {
   wrapCaptionLines, captionHiddenSide, safeCaptionY,
 } from './reelSafeArea';
 import { webmFallbackAdvice, WEBM_KEEP_NOTE } from './webmFallback';
+import { planExportActions } from './exportActionPlan';
 import { humanizeAiError, humanizeNonAiError } from '../lib/aiErrorMessage';
 
 /** キャプションの「最初の1行」を別フックに差し替える（2行目以降は維持） */
@@ -291,6 +292,9 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
   const [currentTime, setCurrentTime] = useState(0);
   const [scheduled, setScheduled] = useState(false);
   const [scheduledMsg, setScheduledMsg] = useState<string>('');
+  // 書き出し後の「ほかの操作」を畳んでおく。作り終えた画面に押せるものが 11 個並び、
+  // どれを押せば終わりなのか分からなくなっていた (2026-09-04)
+  const [moreOpen, setMoreOpen] = useState(false);
   // MP4 で書き出せなかった時、この端末で実際に押せる手順だけを出す (2026-09-03)
   const webmAdvice = useMemo(
     () => webmFallbackAdvice(
@@ -1340,6 +1344,8 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
     if (recording) return;
     exportDoneRef.current = false;
     setRecording(true); setProgress(0); setExportUrl(null);
+    // 書き出すたびに畳んだ状態から始める（前回開いたままだと「主アクション1つ」が崩れる）
+    setMoreOpen(false);
     setOutSize(null); setExportFps(null); drawnFramesRef.current = 0;
     liveRef.current = true; // 書き出し中は字幕のフェードを本来どおり掛ける
 
@@ -1875,6 +1881,19 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
   // (タブ自体を隠すので、素材を全部消した直後に「書出」のまま取り残される＝
   //  戻る手段が画面から消える、という行き止まりを作らないための保険)
   const viewStep = clips.length === 0 ? 'material' : step;
+
+  // 書き出し後に「これを押せば終わり」を 1 つだけ決める。畳んだ数もここで数える
+  const exportPlan = planExportActions({
+    ua: typeof navigator !== 'undefined' ? navigator.userAgent : '',
+    maxTouchPoints: typeof navigator !== 'undefined' ? (navigator.maxTouchPoints || 0) : 0,
+    mime: exportMime,
+    hasPostQueue: !!postQueue,
+    scheduled,
+    hasSchedule: !!onJumpToSchedule,
+    hasAiCaption: !!aiResult,
+    hookOptionCount: aiResult?.hookOptions?.length || 0,
+    otherDestinationCount: REEL_DESTINATIONS.filter(d => d.id !== destId).length,
+  });
 
   return (
     <div style={{
@@ -3560,6 +3579,127 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
                       </div>
                     )}
 
+                    {/* ── 作り終えた画面に押せるものが 11 個並んでいた (2026-09-04)。
+                        全部が同じ大きさで並ぶと「で、どれを押せば終わりなの？」になる。
+                        この端末で本当に最後まで行けるものだけを 1 つ上に出し、
+                        残りは 1 つも消さずに畳む＝1 タップで全部出る。 ── */}
+                    <div style={{ display: 'grid', gap: 8, marginBottom: 14 }}>
+                      {exportPlan.primary === 'instagram' ? (
+                        <button
+                          onClick={openInInstagram}
+                          disabled={igBusy}
+                          style={{
+                            width: '100%', minHeight: 60,
+                            padding: '0.9rem 1rem',
+                            background: igBusy ? 'rgba(255,255,255,0.7)' : whiteSafeGradient(['#833AB4', '#E1306C', '#F77737']),
+                            color: igBusy ? INK_ON_LIGHT_SOFT : '#fff',
+                            border: igBusy ? `1px solid ${bg.cardBorder}` : 'none', borderRadius: 16,
+                            fontSize: 15, fontWeight: 800,
+                            cursor: igBusy ? 'wait' : 'pointer',
+                            boxShadow: igBusy ? 'none' : '0 10px 26px rgba(225,48,108,0.32)',
+                            fontFamily: IRIS_FONTS.body,
+                            display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 7,
+                          }}
+                        >
+                          {igBusy
+                            ? <><Loader2 size={16} className="iris-spin" /> 共有中…</>
+                            : <><Camera size={16} /> {exportPlan.primaryLabel}</>}
+                        </button>
+                      ) : (
+                        <button
+                          onClick={download}
+                          style={{
+                            ...btnPri(), width: '100%', minHeight: 60,
+                            fontSize: 15, borderRadius: 16,
+                          }}
+                        >
+                          <Download size={16} /> {exportPlan.primaryLabel}
+                        </button>
+                      )}
+                      <p style={{ margin: '0 2px', fontSize: 11.5, color: bg.inkSoft, lineHeight: 1.5 }}>
+                        {exportPlan.primaryNote}
+                      </p>
+                      {!exportMime.startsWith('video/mp4') && (
+                        <div style={{
+                          padding: '0.6rem 0.7rem',
+                          background: 'rgba(251,191,36,0.14)',
+                          border: '1px solid rgba(251,191,36,0.45)',
+                          borderRadius: 10,
+                          fontSize: 12, color: bg.ink, lineHeight: 1.55,
+                        }}>
+                          <p style={{ margin: 0, fontWeight: 800 }}>{webmAdvice.headline}</p>
+                          <p style={{ margin: '2px 0 0', color: bg.inkSoft }}>{WEBM_KEEP_NOTE}</p>
+                          {/* この端末で指が動く手順だけを番号で。パソコン専用ソフトはスマホには出さない */}
+                          <ol style={{ margin: '6px 0 0', paddingLeft: '1.15rem' }}>
+                            {webmAdvice.steps.map((s, i) => (
+                              <li key={i} style={{ marginTop: i ? 3 : 0 }}>{s}</li>
+                            ))}
+                          </ol>
+                          {webmAdvice.showCopyLink && (
+                            <>
+                              <button
+                                onClick={async () => {
+                                  try {
+                                    await navigator.clipboard.writeText(window.location.href);
+                                    setWebmLinkCopied('ok');
+                                  } catch {
+                                    setWebmLinkCopied('ng');
+                                  }
+                                }}
+                                style={{
+                                  marginTop: 8, width: '100%', minHeight: 44,
+                                  padding: '0 0.9rem', borderRadius: 999,
+                                  background: bg.accentSolid, color: '#fff', border: 'none',
+                                  fontSize: 12.5, fontWeight: 800, cursor: 'pointer',
+                                  fontFamily: IRIS_FONTS.body,
+                                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                                }}
+                              >
+                                <Copy size={14} /> リンクをコピー
+                              </button>
+                              {webmLinkCopied && (
+                                <p style={{
+                                  margin: '5px 0 0', fontWeight: 700,
+                                  color: webmLinkCopied === 'ok' ? bg.accentText : '#b91c1c',
+                                }}>
+                                  {webmLinkCopied === 'ok'
+                                    ? 'コピーしました。Safari のアドレス欄に貼り付けてください'
+                                    : 'コピーできませんでした。アドレス欄を長押しして手でコピーしてください'}
+                                </p>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      )}
+                      {/* 押した結果はこの場で伝える。畳んだ中に入れると
+                          「押したのに何も言われない」画面になる */}
+                      {scheduledMsg && (
+                        <div style={{
+                          padding: '0.55rem 0.7rem',
+                          background: scheduled ? 'rgba(22,163,74,0.1)' : 'rgba(225,48,108,0.06)',
+                          color: scheduled ? '#15803D' : bg.ink,
+                          borderRadius: 10, fontSize: 12, textAlign: 'center',
+                        }}>{scheduledMsg}</div>
+                      )}
+                      <button
+                        onClick={() => setMoreOpen(v => !v)}
+                        aria-expanded={moreOpen}
+                        style={{
+                          width: '100%', minHeight: 44,
+                          padding: '0 0.9rem', borderRadius: 999,
+                          background: 'transparent',
+                          border: `1px solid ${bg.cardBorder}`,
+                          color: bg.ink, fontSize: 12.5, fontWeight: 700,
+                          cursor: 'pointer', fontFamily: IRIS_FONTS.body,
+                          display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                        }}
+                      >
+                        {moreOpen ? '閉じる' : exportPlan.moreLabel}
+                      </button>
+                    </div>
+
+                    {moreOpen && (
+                    <>
                     {/* 同じ素材を、別の出し先の形でもう1本。ここに置かないと
                         「別ver. を書き出す」まで戻らないと形を変えられず、
                         リールとフィードに同じ動画を出す人がいちばん困る */}
@@ -3718,60 +3858,11 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
                     </div>
 
                     <div style={{ display: 'grid', gap: 8 }}>
-                      <button onClick={download} style={{ ...btnPri(), width: '100%' }}>
-                        <Download size={14} /> {exportMime.startsWith('video/mp4') ? 'MP4 をダウンロード' : 'WebM をダウンロード'}
-                      </button>
-                      {!exportMime.startsWith('video/mp4') && (
-                        <div style={{
-                          padding: '0.6rem 0.7rem',
-                          background: 'rgba(251,191,36,0.14)',
-                          border: '1px solid rgba(251,191,36,0.45)',
-                          borderRadius: 10,
-                          fontSize: 12, color: bg.ink, lineHeight: 1.55,
-                        }}>
-                          <p style={{ margin: 0, fontWeight: 800 }}>{webmAdvice.headline}</p>
-                          <p style={{ margin: '2px 0 0', color: bg.inkSoft }}>{WEBM_KEEP_NOTE}</p>
-                          {/* この端末で指が動く手順だけを番号で。パソコン専用ソフトはスマホには出さない */}
-                          <ol style={{ margin: '6px 0 0', paddingLeft: '1.15rem' }}>
-                            {webmAdvice.steps.map((s, i) => (
-                              <li key={i} style={{ marginTop: i ? 3 : 0 }}>{s}</li>
-                            ))}
-                          </ol>
-                          {webmAdvice.showCopyLink && (
-                            <>
-                              <button
-                                onClick={async () => {
-                                  try {
-                                    await navigator.clipboard.writeText(window.location.href);
-                                    setWebmLinkCopied('ok');
-                                  } catch {
-                                    setWebmLinkCopied('ng');
-                                  }
-                                }}
-                                style={{
-                                  marginTop: 8, width: '100%', minHeight: 44,
-                                  padding: '0 0.9rem', borderRadius: 999,
-                                  background: bg.accentSolid, color: '#fff', border: 'none',
-                                  fontSize: 12.5, fontWeight: 800, cursor: 'pointer',
-                                  fontFamily: IRIS_FONTS.body,
-                                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                                }}
-                              >
-                                <Copy size={14} /> リンクをコピー
-                              </button>
-                              {webmLinkCopied && (
-                                <p style={{
-                                  margin: '5px 0 0', fontWeight: 700,
-                                  color: webmLinkCopied === 'ok' ? bg.accentText : '#b91c1c',
-                                }}>
-                                  {webmLinkCopied === 'ok'
-                                    ? 'コピーしました。Safari のアドレス欄に貼り付けてください'
-                                    : 'コピーできませんでした。アドレス欄を長押しして手でコピーしてください'}
-                                </p>
-                              )}
-                            </>
-                          )}
-                        </div>
+                      {/* 主アクションに選ばれた側は上に出ているので、ここには出さない (二重に置かない) */}
+                      {exportPlan.primary !== 'download' && (
+                        <button onClick={download} style={{ ...btnSec(bg), width: '100%' }}>
+                          <Download size={14} /> {exportPlan.secondaryLabel}
+                        </button>
                       )}
                       {/* ─── Instagram 共有導線 (3 ボタン) ─── */}
                       <div style={{
@@ -3786,9 +3877,11 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
                           marginBottom: 8, paddingLeft: 2,
                           display: 'flex', alignItems: 'center', gap: 5,
                         }}>
-                          <Camera size={11} /> Instagram にすぐ送る
+                          <Camera size={11} /> {exportPlan.primary === 'instagram' ? 'Instagram 用の下ごしらえ' : 'Instagram にすぐ送る'}
                         </div>
                         <div style={{ display: 'grid', gap: 6 }}>
+                          {exportPlan.primary !== 'instagram' && (
+                            <>
                           <button
                             onClick={openInInstagram}
                             disabled={igBusy}
@@ -3815,6 +3908,8 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
                           }}>
                             動画を保存し、本文はコピー済みに。リールは Instagram の仕様上アプリからの投稿になります（本文は投稿画面で長押し→貼り付け）。
                           </p>
+                            </>
+                          )}
                           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
                             <button
                               onClick={copyAllCaptions}
@@ -3935,15 +4030,9 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
                       <button onClick={() => { setExportUrl(null); setProgress(0); setScheduled(false); setScheduledMsg(''); }} style={{ ...btnSec(bg), width: '100%' }}>
                         <Wand2 size={14} /> 別ver. を書き出す
                       </button>
-                      {scheduledMsg && (
-                        <div style={{
-                          padding: '0.55rem 0.7rem',
-                          background: scheduled ? 'rgba(22,163,74,0.1)' : 'rgba(225,48,108,0.06)',
-                          color: scheduled ? '#15803D' : bg.ink,
-                          borderRadius: 10, fontSize: 12, textAlign: 'center',
-                        }}>{scheduledMsg}</div>
-                      )}
                     </div>
+                    </>
+                    )}
                   </>
                 )}
               </>
