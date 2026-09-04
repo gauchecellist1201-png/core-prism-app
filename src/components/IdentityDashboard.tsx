@@ -72,6 +72,7 @@ const PeopleStudio = lazy(() => import('./PeopleStudio'));
 const TeamHub = lazy(() => import('./TeamHub'));
 import AcceptInviteModal from './AcceptInviteModal';
 import InviteShareCard from './InviteShareCard';
+import ReferralReceiptBanner from './ReferralReceiptBanner';
 import { REFERRAL_BONUS_DAYS, getReferralData, syncReferralStatus, applyPendingBonusDays } from '../lib/referral';
 import { Gift, Brain, BarChart3, Search, Menu, HeartPulse, Calendar, BookOpen, MessageSquare, Settings, FileText, StickyNote, Link2, Bot, CheckCircle2, Zap, Pencil, X, Inbox, Sparkles, Gem, Users, Layers, AlertTriangle } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
@@ -2531,6 +2532,9 @@ export default function IdentityDashboard({
       <ShortcutHelpModal />
       <PwaInstallPrompt accentColor={persona.accentColor} />
       <FeedbackWidget brand="prism" />
+
+      {/* 招待リンクで登録した人へ「+N 日が本当に付いたか」を 1 回だけ伝える */}
+      <ReferralReceiptBanner accent={persona.accentColor} onOpenInvite={() => setShowInvite(true)} />
 
       {/* 友達が新たに登録した瞬間のお祝いトースト (safe-area 対応・タップで招待カードへ) */}
       <AnimatePresence>

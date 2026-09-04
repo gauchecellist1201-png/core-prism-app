@@ -51,6 +51,7 @@ import IrisDealCaptureModal from './IrisDealCaptureModal';
 import IrisMorningBrief from './IrisMorningBrief';
 import IrisValueReceipt from './IrisValueReceipt';
 import InviteShareCard from '../components/InviteShareCard';
+import ReferralReceiptBanner from '../components/ReferralReceiptBanner';
 import type { LucideIcon } from 'lucide-react';
 import { onAccent } from '../lib/accentFace';
 
@@ -2164,6 +2165,9 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
           </div>
         </React.Suspense>
       </main>
+
+      {/* 招待リンクで登録した人へ「+N 日が本当に付いたか」を 1 回だけ伝える */}
+      <ReferralReceiptBanner accent="#E1306C" onOpenInvite={() => setTab('invite')} />
 
       {/* Instagram 連携モーダル */}
       <AnimatePresence>
