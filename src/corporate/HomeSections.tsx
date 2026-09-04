@@ -15,7 +15,7 @@
 //   ・本文は既存の transformData を使い回す（言葉の正本を増やさない）。
 //   ・書体は Noto Sans JP の太字＋Inter。金・明朝は使わない（corpTheme 2026-09-02）。
 // ============================================================
-import type { MouseEvent as ReactMouseEvent } from 'react';
+import { useEffect, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react';
 import { motion } from 'framer-motion';
 import {
   FONT_JA, FONT_EN, ACCENT, ACCENT_LIGHT, PAPER, TEXT_BODY, TEXT_MUTED, LINE, INK, INK_2,
@@ -24,7 +24,6 @@ import {
 import { SERVICE_LAYERS, DIFF_CORE, ASSESSMENT_STEPS, ASSESSMENT_TARGETS } from './transformData';
 import { SUITE_COUNT } from './suiteData';
 import { COMPANY_INFO } from '../data/companyInfo';
-import { CREED } from './creedData';
 import { rememberSource, track } from './roai/track';
 
 type AnchorHandler = (e: ReactMouseEvent<HTMLAnchorElement>, href: string) => void;
@@ -58,49 +57,71 @@ const IMG = {
 } as const;
 
 // ============================================================
-//  HERO — 神戸港のブルーアワー。左寄せの大見出し。下に事実の帯。
+//  HERO — ブランドフィルム（2026-09-04 オーナー指示）
+//
+//  ・トップは縦型のブランド動画（public/corp-creed-portrait.mp4・54秒・音あり）。
+//    自動再生はブラウザの規則で無音のみ＝「音を出す」ボタンを添える。
+//  ・いちばん大きい言葉は社是「いつの時代も、変わらない核を。」（H1）。
+//    「核とは、人。」はその答えとして一段小さく置く（前は逆で、答えの方が大きかった）。
+//  ・下にあった事実の帯（神戸／2026年／8／4）は「謎のタブ」に見えるので廃止。
+//  ・PC: 左に言葉、右に縦型フィルム（ポスターをぼかした地の上）。
+//    スマホ: 縦型の動画がそのまま画面いっぱい＝言葉は下に重ねる（CSS .ch-hero--film）。
+//  ・省データ/動きを減らす設定の人には自動再生しない。画面外に出たら止める。
 // ============================================================
+const FILM = {
+  src: '/corp-creed-portrait.mp4',
+  poster: '/corp-creed-poster.webp',
+} as const;
+
 export function HomeHero({ onAnchor }: { onAnchor: AnchorHandler }) {
-  const facts: { k: string; v: string; sub: string }[] = [
-    { k: 'HEADQUARTERS', v: '神戸', sub: COMPANY_INFO.addressJa.replace(/^〒\d{3}-\d{4}\s*/, '').replace(/\d.*$/, '') },
-    { k: 'FOUNDED', v: COMPANY_INFO.founded, sub: '株式会社CORE' },
-    { k: 'AI PRODUCTS', v: String(SUITE_COUNT), sub: '自社開発・本番稼働中' },
-    { k: 'SERVICE LAYERS', v: String(SERVICE_LAYERS.length), sub: '戦略・開発・運用・製品' },
-  ];
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [muted, setMuted] = useState(true);
+  const [canPlay, setCanPlay] = useState(true);
+
+  useEffect(() => {
+    const v = videoRef.current;
+    if (!v) return;
+    const reduce = typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const nav = navigator as Navigator & { connection?: { saveData?: boolean } };
+    if (reduce || nav.connection?.saveData) { setCanPlay(false); v.pause(); return; }
+    // 画面外では止める（電池と回線の節約）。
+    if (typeof IntersectionObserver !== 'function') return;
+    const io = new IntersectionObserver(([en]) => {
+      if (en.isIntersecting) void v.play().catch(() => {}); else v.pause();
+    }, { threshold: 0.15 });
+    io.observe(v);
+    return () => io.disconnect();
+  }, []);
+
+  const toggleSound = () => {
+    const v = videoRef.current;
+    if (!v) return;
+    const nextMuted = !muted;
+    v.muted = nextMuted;
+    setMuted(nextMuted);
+    if (!nextMuted) { setCanPlay(true); void v.play().catch(() => {}); }
+  };
+
   return (
-    <section id="top" className="ch-hero lp-safe">
-      <img
-        src={IMG.hero}
-        alt=""
-        aria-hidden
-        className="ch-hero-img"
-        width={2560}
-        height={1086}
-        fetchPriority="high"
-        decoding="async"
-      />
+    <section id="top" className="ch-hero ch-hero--film lp-safe">
+      <img src={FILM.poster} alt="" aria-hidden className="ch-film-ambient" width={720} height={1280} decoding="async" />
       <div className="ch-hero-shade" aria-hidden />
-      <div className="ch-wrap ch-hero-inner">
-        <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}>
-          {/* 2026-09-03 オーナー指示: ヒーローの主役を理念に入れ替える。
-              「AI前提でつくり直す」は理念から導かれる結論として下に置く。言葉の正本は creedData。 */}
+      <div className="ch-wrap ch-hero-inner ch-hero-grid">
+        <motion.div className="ch-hero-copy" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}>
           <Kick>AI Transformation Company — Kobe, Japan</Kick>
-          <p className="ch-hero-tagline" style={{ fontFamily: FONT_JA }}>{CREED.tagline}</p>
-          <h1 className="ch-h1" style={{ fontFamily: FONT_JA, color: '#FFFFFF' }}>
-            核とは、<span style={{ color: ACCENT_LIGHT }}>人。</span>
+          {/* 言葉の正本は creedData / companyInfo.philosophy */}
+          <h1 className="ch-h1 ch-h1--creed" style={{ fontFamily: FONT_JA, color: '#FFFFFF' }}>
+            いつの時代も、
+            <br />
+            変わらない核を。
           </h1>
+          <p className="ch-hero-creed-answer" style={{ fontFamily: FONT_JA }}>
+            核とは、<span style={{ color: ACCENT_LIGHT }}>人。</span>
+          </p>
           <p className="ch-hero-answer" style={{ fontFamily: FONT_JA }}>
             AIは、人の仕事を奪う道具ではありません。
             <br className="ch-br" />
             人にしかできない仕事を、人に返すための道具です。
-          </p>
-          <p style={{
-            fontFamily: FONT_JA, fontSize: 'clamp(0.95rem, 1.5vw, 1.12rem)', lineHeight: 1.9,
-            color: 'rgba(236,242,250,0.82)', maxWidth: 620, margin: '0 0 2rem', fontWeight: 500,
-          }}>
-            {CREED.soWhat}
-            <br className="ch-br" />
-            戦略から実装、運用までを一本の線でつなぎ、AI投資を経営の成果に変えます。
           </p>
           <div className="ch-cta-row">
             <a href="/roai-score" onClick={e => { rememberSource('home-hero'); track('corp_cta_click', 'home-hero'); onAnchor(e, '/roai-score'); }} style={ctaHero}>ROAIを無料診断する</a>
@@ -110,21 +131,26 @@ export function HomeHero({ onAnchor }: { onAnchor: AnchorHandler }) {
           </div>
         </motion.div>
 
-        <motion.dl
-          className="ch-facts"
-          initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1, delay: 0.25, ease: [0.22, 1, 0.36, 1] }}
-        >
-          {facts.map(f => (
-            <div key={f.k} className="ch-fact">
-              <dt style={{ fontFamily: FONT_EN, fontSize: '0.62rem', letterSpacing: '0.24em', color: ACCENT_LIGHT, fontWeight: 600 }}>{f.k}</dt>
-              <dd style={{ margin: '0.25rem 0 0' }}>
-                <span style={{ fontFamily: FONT_JA, fontSize: 'clamp(1.4rem, 2.2vw, 1.9rem)', fontWeight: 800, color: '#fff', letterSpacing: '-0.01em', lineHeight: 1.1 }}>{f.v}</span>
-                <span style={{ display: 'block', fontFamily: FONT_JA, fontSize: '0.74rem', color: TEXT_MUTED, marginTop: 4 }}>{f.sub}</span>
-              </dd>
-            </div>
-          ))}
-        </motion.dl>
+        <motion.figure className="ch-film" initial={{ opacity: 0, scale: 0.985 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 1.2, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}>
+          <video
+            ref={videoRef}
+            className="ch-film-video"
+            src={FILM.src}
+            poster={FILM.poster}
+            autoPlay={canPlay}
+            muted
+            loop
+            playsInline
+            preload="metadata"
+            width={720}
+            height={1280}
+            aria-label="株式会社COREのブランドフィルム。いつの時代も、変わらない核を。"
+          />
+          <button type="button" className="ch-film-sound" onClick={toggleSound} aria-pressed={!muted} style={{ fontFamily: FONT_JA }}>
+            <span aria-hidden className="ch-film-sound-dot" />
+            {muted ? '音を出す' : '音を消す'}
+          </button>
+        </motion.figure>
       </div>
     </section>
   );

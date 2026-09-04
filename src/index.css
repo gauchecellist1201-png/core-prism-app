@@ -4018,12 +4018,6 @@ details[open] > summary .disclosure-chev {
   font-size: clamp(2.45rem, 6vw, 5.2rem); line-height: 1.14; font-weight: 900;
   letter-spacing: -0.015em; margin: 0.5rem 0 1.4rem;
 }
-.ch-facts {
-  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px;
-  background: rgba(148,163,184,0.2); border: 1px solid rgba(148,163,184,0.2);
-  border-radius: 14px; overflow: hidden; margin: 3.4rem 0 0;
-}
-.ch-fact { background: rgba(7,10,16,0.78); padding: 1.05rem 1.3rem; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
 
 /* ── PROOF STRIP ── */
 .ch-proof { display: flex; align-items: center; gap: 1.5rem 2.5rem; flex-wrap: wrap; justify-content: space-between; }
@@ -4111,6 +4105,80 @@ details[open] > summary .disclosure-chev {
   font-size: clamp(1.15rem, 2.1vw, 1.6rem); font-weight: 800; line-height: 1.6; letter-spacing: -0.005em;
   color: #fff; max-width: 680px; margin: 0 0 1.2rem;
 }
+/* ── HERO ブランドフィルム（2026-09-04）──
+   PC: 左に言葉・右に縦型フィルム。地はポスターをぼかしたもの（動画を2本流さない）。
+   スマホ: 縦型フィルムをそのまま画面いっぱいに敷き、言葉を下に重ねる。 */
+.ch-hero--film { align-items: center; min-height: clamp(640px, 94vh, 960px); }
+.ch-film-ambient {
+  position: absolute; inset: -6%; width: 112%; height: 112%; object-fit: cover; object-position: 50% 40%;
+  filter: blur(46px) saturate(1.2) brightness(0.68); transform: none; animation: none; opacity: 1;
+}
+.ch-hero--film .ch-hero-shade {
+  background:
+    radial-gradient(70% 80% at 22% 50%, rgba(7,10,16,0.55) 0%, rgba(7,10,16,0.1) 100%),
+    linear-gradient(90deg, rgba(7,10,16,0.92) 0%, rgba(7,10,16,0.72) 40%, rgba(7,10,16,0.35) 100%),
+    linear-gradient(180deg, rgba(7,10,16,0.6) 0%, rgba(7,10,16,0) 26%, rgba(7,10,16,0.2) 70%, #070A10 100%);
+}
+.ch-hero-grid {
+  display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr); gap: 2rem 3rem; align-items: center;
+  padding: 7rem 1.5rem 4rem;
+}
+.ch-hero-copy { min-width: 0; }
+.ch-h1--creed {
+  font-size: clamp(2.7rem, 6.4vw, 5.6rem); line-height: 1.12; letter-spacing: -0.02em; margin: 0.4rem 0 1.1rem;
+  text-shadow: 0 2px 24px rgba(0,0,0,0.35);
+}
+.ch-hero-creed-answer {
+  font-size: clamp(1.45rem, 2.8vw, 2.3rem); font-weight: 900; line-height: 1.3; letter-spacing: 0.01em;
+  color: #fff; margin: 0 0 1.2rem;
+}
+.ch-film {
+  position: relative; margin: 0; justify-self: end;
+  aspect-ratio: 9 / 16; height: min(76vh, 760px); max-width: 100%;
+  border-radius: 26px; overflow: hidden; background: #070A10;
+  border: 1px solid rgba(186,230,253,0.22);
+  box-shadow: 0 40px 90px rgba(0,0,0,0.55), 0 0 0 1px rgba(7,10,16,0.6), 0 0 120px rgba(56,189,248,0.12);
+}
+.ch-film-video { width: 100%; height: 100%; object-fit: cover; display: block; background: #070A10; }
+.ch-film-sound {
+  position: absolute; right: 12px; bottom: 12px; z-index: 3;
+  display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 16px 0 12px;
+  border-radius: 999px; border: 1px solid rgba(255,255,255,0.28); background: rgba(7,10,16,0.62);
+  color: #fff; font-size: 0.82rem; font-weight: 700; letter-spacing: 0.04em; cursor: pointer;
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+.ch-film-sound:hover { background: rgba(7,10,16,0.82); border-color: rgba(125,211,252,0.6); }
+.ch-film-sound:focus-visible { outline: 2px solid #7DD3FC; outline-offset: 2px; }
+.ch-film-sound-dot { width: 8px; height: 8px; border-radius: 50%; background: #7DD3FC; box-shadow: 0 0 0 3px rgba(125,211,252,0.25); }
+.ch-film-sound[aria-pressed="true"] .ch-film-sound-dot { background: #FDE68A; box-shadow: 0 0 0 3px rgba(253,230,138,0.25); }
+@media (max-width: 1024px) {
+  .ch-hero-grid { grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr); gap: 2rem; }
+  .ch-film { height: min(68vh, 640px); }
+}
+@media (max-width: 860px) {
+  /* 縦型動画は縦長画面と同じ形＝そのまま背景にする。 */
+  .ch-hero--film { min-height: max(100svh, 640px); align-items: flex-end; }
+  .ch-hero-grid { display: block; padding: 0; }
+  .ch-film {
+    position: absolute; inset: 0; height: auto; aspect-ratio: auto; border-radius: 0; border: none; box-shadow: none;
+    justify-self: auto;
+    /* z-index を付けると積み重ねが閉じて「音を出す」ボタン(z3)が文字(z2)の下に潜る。auto のまま DOM 順で敷く。 */
+    z-index: auto;
+  }
+  .ch-film-video { object-position: 50% 30%; }
+  .ch-film-ambient { display: none; }
+  .ch-hero--film .ch-hero-shade {
+    z-index: 1; pointer-events: none;
+    /* 中盤(社是の行)がガラス扉の明るい帯に重なるので 45% から暗くする（2026-09-04 実測） */
+    background: linear-gradient(180deg, rgba(7,10,16,0.55) 0%, rgba(7,10,16,0.06) 20%, rgba(7,10,16,0.16) 34%, rgba(7,10,16,0.74) 47%, rgba(7,10,16,0.9) 62%, rgba(7,10,16,0.96) 84%, #070A10 100%);
+  }
+  .ch-hero-copy { position: relative; z-index: 2; padding: 12rem 1.25rem 2.2rem; }
+  .ch-film-sound { position: absolute; right: 14px; bottom: auto; top: calc(env(safe-area-inset-top, 0px) + 7.25rem); z-index: 3; }
+  /* 640px 以下の旧規則 .ch-hero .ch-h1 (0,2,0) に負けないよう詳細度を上げる */
+  .ch-hero--film .ch-hero-copy .ch-h1--creed { font-size: clamp(2.25rem, 9.6vw, 3rem); }
+  .ch-hero-creed-answer { font-size: 1.35rem; }
+}
 /* ── MANIFESTO 全面写真 ── */
 .ch-manifesto { position: relative; overflow: hidden; background: #070A10; min-height: clamp(560px, 80vh, 820px); display: flex; align-items: center; }
 .ch-manifesto > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 45%; }
@@ -4121,6 +4189,7 @@ details[open] > summary .disclosure-chev {
     linear-gradient(180deg, #070A10 0%, rgba(7,10,16,0) 22%, rgba(7,10,16,0) 78%, #070A10 100%);
 }
 .ch-manifesto-inner { position: relative; z-index: 2; padding: 7rem 1.5rem; }
+.ch-manifesto-tagline { font-size: clamp(1.15rem, 2.2vw, 1.7rem); font-weight: 800; letter-spacing: 0.06em; color: #BAE6FD; margin: 0; }
 .ch-manifesto-h { font-size: clamp(2.8rem, 7.5vw, 6.4rem); font-weight: 900; line-height: 1.1; letter-spacing: -0.02em; margin: 0.2rem 0 0.9rem; }
 .ch-creed-lines { display: grid; gap: 0.9rem; border-left: 2px solid rgba(56,189,248,0.6); padding-left: 1.2rem; }
 /* ── PEOPLE MOSAIC ── */
@@ -4187,8 +4256,6 @@ header .lp-tab.is-on { color: #fff; border-bottom-color: #38BDF8; background: tr
   .ch-hero .ch-h1 { font-size: 2.15rem; }
   .ch-head h2, .ch-two h2 { font-size: 1.72rem !important; }
   .ch-h1 { font-size: 2.35rem; }
-  .ch-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 2.4rem; }
-  .ch-fact { padding: 0.85rem 1rem; }
   .ch-steps { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .ch-cta-row > a { flex: 1 1 100%; }
   .ch-shots { grid-auto-columns: 72vw; }

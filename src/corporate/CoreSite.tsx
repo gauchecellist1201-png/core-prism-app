@@ -540,14 +540,15 @@ export default function CoreSite() {
       <>
         {/* 2026-09-03 MASTER PROMPT: 思想理解 → 問題認識 → ROAI理解 → 自己診断 → 相談 の順に並べる。
             理念（核とは、人）と人の写真は Humanity の章として残す（§15）。 */}
+        {/* 2026-09-04 オーナー指示: 動画のヒーローの「次のページ」は理念。理念→約束→人→ROAI の順へ。 */}
+        <Manifesto onAnchor={handleAnchor} />
+        <Values />
+        <PeopleMosaic />
         <RoaiBand onAnchor={handleAnchor} />
         <ExecutiveQuestion onAnchor={handleAnchor} />
         <Differentiation />
         <RoaiModelSection onAnchor={handleAnchor} />
         <ScoreTeaser onAnchor={handleAnchor} />
-        <Manifesto onAnchor={handleAnchor} />
-        <Values />
-        <PeopleMosaic />
         <ProofStrip onAnchor={handleAnchor} />
         <WhyCore />
         <ServicesEditorial onAnchor={handleAnchor} />

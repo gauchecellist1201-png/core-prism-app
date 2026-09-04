@@ -45,16 +45,21 @@ export function Manifesto({ onAnchor }: { onAnchor?: AnchorHandler }) {
       <div className="ch-manifesto-shade" aria-hidden />
       <div className="ch-wrap ch-manifesto-inner">
         <motion.div {...reveal} style={{ maxWidth: 760 }}>
-          {/* 2026-09-03: 「核とは、人。」はヒーローへ上げた。この章はその約束＝「人に、時間を返す。」を引き受ける。 */}
-          <Kick>Our Creed — {CREED.tagline}</Kick>
+          {/* 2026-09-04 オーナー指示: ヒーロー（動画＋社是）の次のページで理念をきちんと書く。
+              社是 → 答え（核とは、人。）→ 立ち位置（技術の会社だが人を大事にする）→ 使命 → 三行。 */}
+          <Kick>Our Creed</Kick>
+          <p className="ch-manifesto-tagline" style={{ fontFamily: FONT_JA }}>{CREED.tagline}</p>
           <h2 className="ch-manifesto-h" style={{ fontFamily: FONT_JA, color: '#fff' }}>
-            {CREED.promise}
+            核とは、<span style={{ color: ACCENT_LIGHT }}>人。</span>
           </h2>
-          <p style={{ fontFamily: FONT_JA, fontSize: 'clamp(1.05rem, 1.8vw, 1.45rem)', fontWeight: 800, color: ACCENT_LIGHT, lineHeight: 1.6, margin: '0 0 1.8rem' }}>
-            {CREED.mission}
+          <p style={{ fontFamily: FONT_JA, fontSize: 'clamp(1.1rem, 1.9vw, 1.5rem)', fontWeight: 800, color: '#fff', lineHeight: 1.7, margin: '0 0 1.2rem' }}>
+            {CREED.stance}
           </p>
-          <p style={{ fontFamily: FONT_JA, fontSize: 'clamp(1.05rem, 1.7vw, 1.3rem)', lineHeight: 2, color: 'rgba(240,245,252,0.92)', fontWeight: 600, margin: '0 0 2.2rem', maxWidth: 640 }}>
+          <p style={{ fontFamily: FONT_JA, fontSize: 'clamp(1.05rem, 1.7vw, 1.3rem)', lineHeight: 2, color: 'rgba(240,245,252,0.92)', fontWeight: 600, margin: '0 0 1.6rem', maxWidth: 640 }}>
             {CREED.lead}
+          </p>
+          <p style={{ fontFamily: FONT_JA, fontSize: 'clamp(1rem, 1.6vw, 1.3rem)', fontWeight: 800, color: ACCENT_LIGHT, lineHeight: 1.6, margin: '0 0 2.2rem' }}>
+            {CREED.promise}　{CREED.mission}
           </p>
           <ul className="ch-creed-lines" style={{ listStyle: 'none', padding: 0, margin: 0 }}>
             {CREED.lines.map((l, i) => (
