@@ -4140,18 +4140,21 @@ details[open] > summary .disclosure-chev {
   box-shadow: 0 40px 90px rgba(0,0,0,0.55), 0 0 0 1px rgba(7,10,16,0.6), 0 0 120px rgba(56,189,248,0.12);
 }
 .ch-film-video { width: 100%; height: 100%; object-fit: cover; display: block; background: #070A10; }
+/* 音の入切は「絵だけ」で決める（2026-09-04 オーナー指示）。
+   言葉を置かない代わりに aria-label / title で何が起きるかを伝える。 */
 .ch-film-sound {
   position: absolute; right: 12px; bottom: 12px; z-index: 3;
-  display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 16px 0 12px;
+  display: inline-flex; align-items: center; justify-content: center; padding: 0;
+  width: 44px; height: 44px; min-height: 44px;
   border-radius: 999px; border: 1px solid rgba(255,255,255,0.28); background: rgba(7,10,16,0.62);
-  color: #fff; font-size: 0.82rem; font-weight: 700; letter-spacing: 0.04em; cursor: pointer;
+  color: #fff; cursor: pointer;
   backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-  transition: background 0.2s ease, border-color 0.2s ease;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
 }
 .ch-film-sound:hover { background: rgba(7,10,16,0.82); border-color: rgba(125,211,252,0.6); }
 .ch-film-sound:focus-visible { outline: 2px solid #7DD3FC; outline-offset: 2px; }
-.ch-film-sound-dot { width: 8px; height: 8px; border-radius: 50%; background: #7DD3FC; box-shadow: 0 0 0 3px rgba(125,211,252,0.25); }
-.ch-film-sound[aria-pressed="true"] .ch-film-sound-dot { background: #FDE68A; box-shadow: 0 0 0 3px rgba(253,230,138,0.25); }
+/* 音が出ている時だけ色を変える＝押した／押していないが絵で分かる。 */
+.ch-film-sound[aria-pressed="true"] { color: #FDE68A; border-color: rgba(253,230,138,0.55); background: rgba(7,10,16,0.78); }
 @media (max-width: 1024px) {
   .ch-hero-grid { grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr); gap: 2rem; }
   .ch-film { height: min(68vh, 640px); }
@@ -4171,15 +4174,32 @@ details[open] > summary .disclosure-chev {
   /* 動画は .ch-hero-inner(z-index:2) の中にあり、.ch-hero-shade(z1) より上に積まれる。
      スマホの暗幕は動画と同じ箱の ::after に持たせる（2026-09-04 実測で判明）。 */
   .ch-hero--film .ch-hero-shade { display: none; }
+  /* 文字の塊は下端に貼り付く（align-items:flex-end）ので、
+     「文字を下げる」＝文字の塊を薄くして上端を下へ動かすこと。
+     暗幕の濃くなり始めも同じだけ下げる（2026-09-04 オーナー指示）。 */
+  /* 文字の上端は「章の上端 + .ch-hero-inner の 5.5rem + .ch-hero-copy の上余白」で決まる＝px で数えられる。
+     だから幕も割合(%)ではなく px で置き、文字が始まる手前から濃くする。 */
   .ch-film::after {
     content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none;
-    background: linear-gradient(180deg, rgba(7,10,16,0.55) 0%, rgba(7,10,16,0.06) 20%, rgba(7,10,16,0.16) 34%, rgba(7,10,16,0.74) 47%, rgba(7,10,16,0.9) 62%, rgba(7,10,16,0.96) 84%, #070A10 100%);
+    background: linear-gradient(180deg,
+      rgba(7,10,16,0.5) 0px,
+      rgba(7,10,16,0.05) 110px,
+      rgba(7,10,16,0.08) 240px,
+      rgba(7,10,16,0.62) 325px,
+      rgba(7,10,16,0.9) 400px,
+      rgba(7,10,16,0.96) 560px,
+      #070A10 100%);
   }
-  .ch-hero-copy { position: relative; z-index: 2; padding: 12rem 1.25rem 2.2rem; }
+  .ch-hero-copy {
+    position: relative; z-index: 2;
+    padding: 15rem 1.25rem calc(env(safe-area-inset-bottom, 0px) + 1.5rem);
+  }
   .ch-film-sound { position: absolute; right: 14px; bottom: auto; top: calc(env(safe-area-inset-top, 0px) + 7.25rem); z-index: 3; }
   /* 640px 以下の旧規則 .ch-hero .ch-h1 (0,2,0) に負けないよう詳細度を上げる */
-  .ch-hero--film .ch-hero-copy .ch-h1--creed { font-size: clamp(2.25rem, 9.6vw, 3rem); }
-  .ch-hero-creed-answer { font-size: 1.35rem; }
+  .ch-hero--film .ch-hero-copy .ch-h1--creed { font-size: clamp(2.1rem, 8.8vw, 2.7rem); margin: 0.1rem 0 0.55rem; }
+  .ch-hero--film .ch-hero-creed-answer { font-size: 1.28rem; margin: 0 0 0.7rem; }
+  .ch-hero--film .ch-hero-answer { font-size: 1rem; line-height: 1.62; margin: 0 0 1.1rem; }
+  .ch-hero--film .ch-cta-row { gap: 0.6rem; }
 }
 /* ── MANIFESTO 全面写真 ── */
 .ch-manifesto { position: relative; overflow: hidden; background: #070A10; min-height: clamp(560px, 80vh, 820px); display: flex; align-items: center; }

@@ -68,6 +68,26 @@ const IMG = {
 //    スマホ: 縦型の動画がそのまま画面いっぱい＝言葉は下に重ねる（CSS .ch-hero--film）。
 //  ・省データ/動きを減らす設定の人には自動再生しない。画面外に出たら止める。
 // ============================================================
+/** スピーカーの絵だけの切り替え（言葉は付けない。押すたびに音の入切）。 */
+function SoundIcon({ muted }: { muted: boolean }) {
+  return (
+    <svg viewBox="0 0 24 24" width={20} height={20} fill="none" stroke="currentColor" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round" aria-hidden focusable="false">
+      <path d="M4 9.5h3.2L12 5.6v12.8L7.2 14.5H4z" fill="currentColor" stroke="currentColor" strokeWidth={1.4} />
+      {muted ? (
+        <>
+          <path d="M16.4 9.6l4 4.8" />
+          <path d="M20.4 9.6l-4 4.8" />
+        </>
+      ) : (
+        <>
+          <path d="M15.8 9.2a3.8 3.8 0 0 1 0 5.6" />
+          <path d="M18.4 6.9a7.2 7.2 0 0 1 0 10.2" />
+        </>
+      )}
+    </svg>
+  );
+}
+
 const FILM = {
   src: '/corp-creed-portrait.mp4',
   poster: '/corp-creed-poster.webp',
@@ -146,9 +166,15 @@ export function HomeHero({ onAnchor }: { onAnchor: AnchorHandler }) {
             height={1280}
             aria-label="株式会社COREのブランドフィルム。いつの時代も、変わらない核を。"
           />
-          <button type="button" className="ch-film-sound" onClick={toggleSound} aria-pressed={!muted} style={{ fontFamily: FONT_JA }}>
-            <span aria-hidden className="ch-film-sound-dot" />
-            {muted ? '音を出す' : '音を消す'}
+          <button
+            type="button"
+            className="ch-film-sound"
+            onClick={toggleSound}
+            aria-pressed={!muted}
+            aria-label={muted ? '音を出す' : '音を消す'}
+            title={muted ? '音を出す' : '音を消す'}
+          >
+            <SoundIcon muted={muted} />
           </button>
         </motion.figure>
       </div>
