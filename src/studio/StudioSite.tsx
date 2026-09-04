@@ -826,20 +826,20 @@ function HomeTab({ go }: { go: (t: TabId) => void }) {
           <div className="st-director-copy">
             <div className="st-label" style={{ color: D.gold, marginBottom: 14 }}>Who makes it</div>
             <h2 className="st-serif" style={{ fontSize: 'clamp(23px, 5.6vw, 34px)', fontWeight: 700, lineHeight: 1.5, letterSpacing: '0.03em', color: D.ink, margin: 0 }}>
-              神戸で、チェロ弾きが撮る。<br />AIは道具で、判断は人がします。
+              企画から公開後の運用まで、<br />ひとつの窓口で担当します。
             </h2>
             <p style={{ fontSize: 14.5, lineHeight: 2.1, color: D.body, margin: '18px 0 0', maxWidth: 560 }}>
-              代表の井出は、舞台に立つチェロ奏者です。音楽は、人の手でしか届かない。映像も同じで、
-              どのカットを残し、どの音で始め、どこで黙るかは、AIではなく人が決めます。
-              AIに任せるのは生成と反復だけ。だから、AIっぽくない映像になります。
+              株式会社COREは、神戸を拠点に、映像制作・Webサイト制作・システム開発を行う制作会社です。
+              ご相談から企画・構成、撮影・編集、公開後の運用まで、代表が一貫して窓口を担当します。
+              途中で担当者が変わらないため、最初にお聞きした意図が、そのまま最終形まで残ります。
             </p>
             <p style={{ fontSize: 14.5, lineHeight: 2.1, color: D.body, margin: '14px 0 0', maxWidth: 560 }}>
-              納品して終わりにはしません。公開から2週間後に、反応を一緒に見る時間を取ります。
-              映像で何が伝わり、何が伝わらなかったか。その話が、次の一手の材料になります。
+              制作は納品で終わりではありません。公開から2週間後に、再生数や反応をご一緒に確認する時間をいただき、
+              何が伝わり、何が伝わらなかったかを整理します。その結果が、次の一手を決める材料になります。
             </p>
             <div className="st-director-sig">
               <b className="st-serif">{COMPANY.repName}</b>
-              <span>{COMPANY.repTitle} / チェロ奏者</span>
+              <span>{COMPANY.repTitle}</span>
               <button type="button" className="st-textlink" onClick={() => go('about')}>会社案内を読む <IconArrow color={D.gold} /></button>
             </div>
           </div>
