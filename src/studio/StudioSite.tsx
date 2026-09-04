@@ -25,6 +25,7 @@ const FilmTab = lazy(() => import('./FilmTab'));
 const PlansPage = lazy(() => import('./PlansPage'));
 const DevPage = lazy(() => import('./DevPage'));
 const CarePage = lazy(() => import('./CarePage'));
+const WorksPage = lazy(() => import('./WorksPage'));
 const AboutPage = lazy(() => import('./AboutPage'));
 const ContactPage = lazy(() => import('./ContactPage'));
 
@@ -546,12 +547,12 @@ export default function StudioSite() {
             <FilmTab />
           </Suspense>
         )}
-        {tab === 'works' && <WorksTab go={go} />}
-        {(tab === 'plans' || tab === 'dev' || tab === 'care' || tab === 'about' || tab === 'contact') && (
+        {(tab === 'plans' || tab === 'dev' || tab === 'care' || tab === 'works' || tab === 'about' || tab === 'contact') && (
           <Suspense fallback={<div style={{ background: D.bg, minHeight: '60dvh' }} />}>
             {tab === 'plans' && <PlansPage go={go} />}
             {tab === 'dev' && <DevPage go={go} />}
             {tab === 'care' && <CarePage go={go} />}
+            {tab === 'works' && <WorksPage go={go} />}
             {tab === 'about' && <AboutPage go={go} />}
             {tab === 'contact' && <ContactPage />}
           </Suspense>
@@ -974,103 +975,5 @@ function HomeTab({ go }: { go: (t: TabId) => void }) {
   );
 }
 
-// ============================================================
-// Works
-// ============================================================
-// ---- 実績タブの先頭 = 映像制作の実績 ----
-// 主力商品は映像制作。実績タブがサイトの画像だけで始まっていたのを、先頭に映像を置いた。
-function FilmWorksBand({ go }: { go: (t: TabId) => void }) {
-  const [lead, ...rest] = FILM_WORKS;
-  if (!lead) return null;
-  const openFilm = () => { track('studio_works_to_film', { from: 'works-tab' }); go('film'); };
-
-  return (
-    <section style={{ background: D.bg, padding: '46px 0 40px' }}>
-      <Reveal className="st-inner">
-        <H2 dark en="Film" sub="商品広告・ブランドムービー・ショートドラマまで。すべて当社が制作し、実際に納品した映像です。">映像制作の実績</H2>
-        <div className="st-fw">
-          <button type="button" className="st-fw-shot" onClick={openFilm}
-            aria-label={`${lead.client} の制作事例を映像制作のページで見る`}>
-            {lead.poster && <img src={lead.poster} alt={`${lead.client} の制作事例`} loading="lazy" />}
-          </button>
-          <div className="st-fw-info">
-            <span className="st-label" style={{ color: D.gold, fontSize: 10.5 }}>{lead.category}</span>
-            <h3 className="st-serif" style={{ fontSize: 'clamp(20px, 5vw, 27px)', fontWeight: 700, color: D.ink, lineHeight: 1.5, margin: '11px 0 0' }}>{lead.client}</h3>
-            <p style={{ fontSize: 13.5, lineHeight: 2.05, color: D.body, margin: '12px 0 18px', maxWidth: 460 }}>{lead.purpose}</p>
-            <button className="st-btn" onClick={openFilm}
-              style={{ background: D.gold, color: '#17130A', border: `1px solid ${D.gold}`, fontWeight: 700 }}>
-              映像を再生して見る
-            </button>
-          </div>
-        </div>
-      </Reveal>
-      {rest.length > 0 && (
-        <div style={{ marginTop: 26 }}>
-          <div className="st-fw-row">
-            {rest.map(w => (
-              <button key={w.id} type="button" className="st-fw-item" onClick={openFilm}
-                aria-label={`${w.client} の制作事例を映像制作のページで見る`}>
-                <span className="st-fw-thumb">{w.poster && <img src={w.poster} alt="" loading="lazy" />}</span>
-                <span className="st-fw-name">{w.client}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-    </section>
-  );
-}
-
-function WorksTab({ go }: { go: (t: TabId) => void }) {
-  const cats = ['企業サイト', 'EC・ブランド', 'アプリ', '個人'] as const;
-  return (
-    <>
-    <FilmWorksBand go={go} />
-    <Band>
-      <H2 en="Web" sub="いずれも公開中のサイト・システムです。実物をご確認ください。">サイト・システムの実績</H2>
-      {cats.map(cat => {
-        const list = WORKS.filter(w => w.category === cat);
-        if (!list.length) return null;
-        return (
-          <div key={cat} style={{ marginBottom: 28 }}>
-            <div className="st-label" style={{ fontSize: 11, marginBottom: 10 }}>{cat}</div>
-            {/* 実物のトップページを主役に (文字だけの無機質カード廃止) */}
-            <div style={{ display: 'grid', gap: 16, gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 300px), 1fr))' }}>
-              {list.map(w => (
-                <a
-                  key={w.id}
-                  className="st-card st-workcard"
-                  href={w.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{ textDecoration: 'none', padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}
-                >
-                  <div style={{ position: 'relative', aspectRatio: '16 / 10', overflow: 'hidden', borderBottom: `1px solid ${C.line}` }}>
-                    <img
-                      src={w.img}
-                      alt={`${w.name} のトップページ`}
-                      loading="lazy"
-                      style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top' }}
-                    />
-                  </div>
-                  <div style={{ padding: '14px 16px 16px', display: 'flex', flexDirection: 'column', gap: 6, flex: 1 }}>
-                    <div className="st-serif" style={{ fontSize: 16.5, fontWeight: 700, color: C.ink }}>{w.name}</div>
-                    <p style={{ fontSize: 12.5, lineHeight: 1.8, color: C.body, margin: 0, flex: 1 }}>{w.copy}</p>
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: C.ink, marginTop: 4 }}>
-                      サイトを見る <IconArrow color={C.gold} />
-                    </span>
-                  </div>
-                </a>
-              ))}
-            </div>
-          </div>
-        );
-      })}
-      <div style={{ marginTop: 8, textAlign: 'center' }}>
-        <LineCta where="works" />
-      </div>
-    </Band>
-    </>
-  );
-}
+// 実績タブ (works) は WorksPage.tsx へ (2026-09-04 全面刷新)。
 
