@@ -4,6 +4,8 @@
 // ============================================================
 import { useEffect, useRef, type ReactNode } from 'react';
 import { C, D } from './theme';
+import { CONTACT } from './plans';
+import { track } from './track';
 
 // ---- セクション帯 (白 / #F7F7F5 / 暗部) ----
 // 2026-08-31: 既定でスクロール入場 (Reveal) を掛ける。章がひとつずつ立ち上がるので、
@@ -121,4 +123,13 @@ export const IconCopy = () => (
   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
     <rect x="9" y="9" width="13" height="13" rx="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
   </svg>
+);
+
+// ---- 相談導線 (どのタブでも入口はLINEに統一する) ----
+// 2026-09-04: StudioSite.tsx から移した (下層5ページが別ファイルになり、全員が使うため)。
+export const LineCta = ({ label = CONTACT.lineLabel, where }: { label?: string; where: string }) => (
+  <a className="st-btn st-btn-line" href={CONTACT.lineUrl} target="_blank" rel="noopener noreferrer"
+    onClick={() => track('studio_line_cta', { where })}>
+    <IconChat /> {label}
+  </a>
 );

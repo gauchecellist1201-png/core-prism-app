@@ -5,38 +5,28 @@
 // 見出し Noto Serif JP・本文サンセリフ。CTAは濃色ボタン。
 // 文言・価格は plans.ts に集約 (ここにはレイアウトだけを書く)
 // ============================================================
-import { lazy, Suspense, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  STUDIO, STATS, REASONS, PROCESS, PRODUCTION_PLANS, DEV_LEAD, DEV_TIERS,
-  CARE_PLANS, WORKS, COMPANY, SERVICE_LINES, STUDIO_FAQ, thumbOf,
-  type ProductionPlan, type DevTier,
+  STUDIO, STATS, REASONS, PROCESS, PRODUCTION_PLANS, DEV_LEAD,
+  WORKS, COMPANY, SERVICE_LINES, STUDIO_FAQ, thumbOf,
 } from './plans';
 import { CONTACT } from './plans';
 // 映像の制作実績。film.ts ではなく works.ts が正本 (実績タブと映像タブの両方が使うため)。
 import { FILM_WORKS } from './works';
 import { FILM_PLANS } from './film';
-import { estimate, type EstimateAnswers, type Purpose, type Scale, type Feature, type Timeline, type Budget } from './estimate';
 import { C, D, SERIF, SANS } from './theme';
-import { Reveal, Band, H2, Note, IconCheck, IconArrow, IconChat, IconCopy } from './ui';
+import { Reveal, Band, H2, Note, IconArrow, LineCta } from './ui';
+import { Faq } from './PageHero';
 import { track } from './track';
-import { ESTIMATE_KEY, EMPTY_DRAFT, parseSavedEstimate, type DraftOptions } from './estimateDraft';
+import { TABS, isTabId, pathOf, type TabId } from './tabs';
 
 const FilmTab = lazy(() => import('./FilmTab'));
-
-// ---- tabs ----
-type TabId = 'home' | 'film' | 'plans' | 'dev' | 'care' | 'works' | 'about' | 'contact';
-const TABS: Array<{ id: TabId; label: string }> = [
-  { id: 'home', label: 'ホーム' },
-  { id: 'film', label: '映像制作' },
-  { id: 'plans', label: 'サイト制作' },
-  { id: 'dev', label: '受託開発' },
-  { id: 'care', label: '運用' },
-  { id: 'works', label: '実績' },
-  { id: 'about', label: '会社案内' },
-  { id: 'contact', label: 'お問い合わせ' },
-];
-
-const isTabId = (v: string): v is TabId => TABS.some(t => t.id === v);
+// 下層5ページ (2026-09-04 全面刷新)。ホームの初回表示に載せないよう、開いた時だけ読む
+const PlansPage = lazy(() => import('./PlansPage'));
+const DevPage = lazy(() => import('./DevPage'));
+const CarePage = lazy(() => import('./CarePage'));
+const AboutPage = lazy(() => import('./AboutPage'));
+const ContactPage = lazy(() => import('./ContactPage'));
 
 // /studio/film のようなパスと、従来の /studio#film の両方を受ける。
 // ハッシュはサーバーにもクローラーにも届かないので、以後は必ずパス側に正規化する。
@@ -47,8 +37,6 @@ const readTab = (): TabId => {
   const h = window.location.hash.replace('#', '');
   return isTabId(h) ? h : 'home';
 };
-
-const pathOf = (t: TabId) => (t === 'home' ? '/studio' : `/studio/${t}`);
 
 // ---- カーソル追従のあかり (暗部の章だけ) ----
 // 白地でやると光が濁って安っぽくなるので、黒地の Services にだけ置く。
@@ -94,7 +82,9 @@ function useSpotlight<T extends HTMLElement>() {
 
 // ---- タブごとの title / description (映像は検索の入口が別なので分ける) ----
 // 正本は studio.html / studio-film.html の静的メタ。ここを変えたら向こうも合わせる。
-const SEO = {
+type Seo = { ogImage: string; title: string; description: string };
+const OG_STUDIO = 'https://core-prism-app.vercel.app/og-studio-v4.png';
+const SEO: { default: Seo; film: Seo } & Partial<Record<TabId, Seo>> = {
   // v4 (2026-09-01): ロゴを大きく置いた黒地のカードへ刷新 (scripts/generateStudioOgV4.mjs)。
   // ファイル名を変えないと X/Facebook/LINE のキャッシュが差し替わらないので版番号を上げる。
   // ★タブごとに別のカードを出す。v3までは1枚を共用していたので、映像のページを共有しても
@@ -111,6 +101,12 @@ const SEO = {
     title: 'AI動画制作・ショートドラマ制作代行 — CORE Studio',
     description: 'ショートドラマ、ブランドムービー、SNS縦型動画、CMまで。企画・脚本・映像制作・編集・字幕・SNS最適化までを一貫制作するAIクリエイティブスタジオ。初回1本(15秒)¥49,800、毎月継続は月4本¥228,000から。初期費用0円・最低契約期間なし。',
   },
+  // 下層5ページ (2026-09-04)。静的な html は無い (SPA が返る) ので、ここが唯一の title / description。
+  plans: { ogImage: OG_STUDIO, title: 'ウェブサイト制作 — CORE Studio', description: `1ページのLPから、予約・決済を備えた企業サイトまで。${PRODUCTION_PLANS[0].name} ${PRODUCTION_PLANS[0].price}から。ご契約時に金額を確定し、以後の追加費用はいただきません。原稿と写真がなくても始められます。` },
+  dev: { ogImage: OG_STUDIO, title: 'システム受託開発 — CORE Studio', description: DEV_LEAD },
+  care: { ogImage: OG_STUDIO, title: 'サイト運用・保守 — CORE Studio', description: '公開後の稼働監視・更新代行・セキュリティ更新から、月次レポートと改善提案まで。他社で制作されたサイトのみのご依頼も承ります。' },
+  about: { ogImage: OG_STUDIO, title: '会社案内 — CORE Studio', description: '株式会社CORE。神戸を拠点に、映像制作・ウェブ制作・システム受託開発と、AIプロダクトの自社開発・運営を行っています。' },
+  contact: { ogImage: OG_STUDIO, title: 'お問い合わせ・概算お見積り — CORE Studio', description: '6つの質問に答えるだけで、最適なプランと概算をその場でご確認いただけます。ご相談からお見積りまで無料。NDA・請求書払いに対応。' },
 };
 
 // ============================================================
@@ -132,7 +128,7 @@ export default function StudioSite() {
       m.setAttribute('content', content);
     };
 
-    const seo = tab === 'film' ? SEO.film : SEO.default;
+    const seo = SEO[tab] ?? SEO.default;
     // SNSのカードを出すクローラーはJSを実行しないので、本命は studio.html / studio-film.html の
     // 静的メタ (vercel.json の rewrite で配信) 側。ここは画面遷移した後の表示を合わせるための追従。
     // 一部だけ書き換えるとPrism本体のOGが混ざるので、SNSタグは一式そろえて差し替える。
@@ -550,12 +546,16 @@ export default function StudioSite() {
             <FilmTab />
           </Suspense>
         )}
-        {tab === 'plans' && <PlansTab go={go} />}
-        {tab === 'dev' && <DevTab go={go} />}
-        {tab === 'care' && <CareTab />}
         {tab === 'works' && <WorksTab go={go} />}
-        {tab === 'about' && <AboutTab />}
-        {tab === 'contact' && <ContactTab />}
+        {(tab === 'plans' || tab === 'dev' || tab === 'care' || tab === 'about' || tab === 'contact') && (
+          <Suspense fallback={<div style={{ background: D.bg, minHeight: '60dvh' }} />}>
+            {tab === 'plans' && <PlansPage go={go} />}
+            {tab === 'dev' && <DevPage go={go} />}
+            {tab === 'care' && <CarePage go={go} />}
+            {tab === 'about' && <AboutPage go={go} />}
+            {tab === 'contact' && <ContactPage />}
+          </Suspense>
+        )}
       </main>
 
       {/* フッター */}
@@ -571,14 +571,6 @@ export default function StudioSite() {
     </div>
   );
 }
-
-// ---- 相談導線 (どのタブでも入口はLINEに統一する) ----
-const LineCta = ({ label = CONTACT.lineLabel, where }: { label?: string; where: string }) => (
-  <a className="st-btn st-btn-line" href={CONTACT.lineUrl} target="_blank" rel="noopener noreferrer"
-    onClick={() => track('studio_line_cta', { where })}>
-    <IconChat /> {label}
-  </a>
-);
 
 // ---- 構造化データ (提供サービスの一覧。価格は film.ts / plans.ts の実値に合わせる)
 // FAQPage は STUDIO_FAQ (HomeTab の <FaqList> だけ) が画面に出ているタブでのみ足す。
@@ -959,7 +951,7 @@ function HomeTab({ go }: { go: (t: TabId) => void }) {
       <Band wide pad="clamp(52px, 6vw, 84px) 0">
         <div style={{ maxWidth: 820, margin: '0 auto' }}>
           <H2 en="FAQ" sub="ご相談の前に多くいただくご質問です。ここに無いことも、そのままお尋ねください。">よくあるご質問</H2>
-          <FaqList items={STUDIO_FAQ} />
+          <Faq items={STUDIO_FAQ} />
         </div>
       </Band>
 
@@ -979,185 +971,6 @@ function HomeTab({ go }: { go: (t: TabId) => void }) {
         </div>
       </Band>
     </div>
-  );
-}
-
-// ---- 開閉する Q&A (プランカードの中と同じ手ざわりに揃える) ----
-// 1問目だけ開いておく。全部閉じた状態だと「質問の見出しが並んだだけ」に見え、
-// ここに答えがあること自体が伝わらない。
-function FaqList({ items }: { items: Array<{ q: string; a: string }> }) {
-  const [open, setOpen] = useState<number | null>(0);
-  return (
-    <div className="st-card" style={{ padding: '6px 22px' }}>
-      {items.map((f, i) => (
-        <div key={f.q} style={{ borderTop: i === 0 ? 'none' : `1px solid ${C.line}` }}>
-          <button
-            onClick={() => setOpen(open === i ? null : i)}
-            aria-expanded={open === i}
-            style={{ width: '100%', minHeight: 44, background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left',
-              padding: '14px 0', fontSize: 14, fontWeight: 600, color: C.ink, fontFamily: SANS,
-              display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, lineHeight: 1.7 }}>
-            <span>{f.q}</span>
-            <span style={{ color: C.goldText, fontSize: 18, lineHeight: 1, flexShrink: 0 }}>{open === i ? '−' : '+'}</span>
-          </button>
-          {open === i && (
-            <p style={{ fontSize: 13.5, lineHeight: 2, color: C.body, margin: '0 0 16px' }}>{f.a}</p>
-          )}
-        </div>
-      ))}
-    </div>
-  );
-}
-
-// ============================================================
-// サイト制作 4プラン
-// ============================================================
-function PlanCard({ p }: { p: ProductionPlan }) {
-  const [openFaq, setOpenFaq] = useState<number | null>(null);
-  return (
-    <div className={`st-card${p.featured ? ' st-card-featured' : ''}`}>
-      {p.featured && <div className="st-label" style={{ fontSize: 10.5, marginBottom: 10 }}>Recommended — 標準プラン</div>}
-      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
-        <div className="st-serif" style={{ fontSize: 21, fontWeight: 700, letterSpacing: '0.06em', color: C.ink }}>{p.name}</div>
-        <div className="st-serif" style={{ fontSize: 18, fontWeight: 700, color: C.ink }}>{p.price}</div>
-      </div>
-      <div style={{ fontSize: 14.5, fontWeight: 600, color: C.ink, margin: '8px 0 10px', lineHeight: 1.8 }}>{p.lead}</div>
-      <p style={{ fontSize: 13.5, lineHeight: 1.9, margin: '0 0 12px', color: C.body }}>{p.scope}</p>
-      <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', fontSize: 12.5, color: C.mute, marginBottom: 16, borderTop: `1px solid ${C.line}`, paddingTop: 12 }}>
-        <span>納期の目安 — <strong style={{ color: C.ink, fontWeight: 600 }}>{p.duration}</strong></span>
-        <span>規模 — <strong style={{ color: C.ink, fontWeight: 600 }}>{p.pages}</strong></span>
-      </div>
-      <div style={{ borderTop: `1px solid ${C.line}`, paddingTop: 14 }}>
-        <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.12em', color: C.mute, marginBottom: 8 }}>含まれるもの</div>
-        <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: 6 }}>
-          {p.includes.map(i => (
-            <li key={i} style={{ display: 'flex', gap: 8, fontSize: 13.5, lineHeight: 1.7, color: C.body }}><IconCheck />{i}</li>
-          ))}
-        </ul>
-      </div>
-      <div style={{ marginTop: 14, background: C.alt, borderLeft: `3px solid ${C.gold}`, borderRadius: 4, padding: '11px 14px', fontSize: 13, lineHeight: 1.9, color: C.body }}>
-        <span style={{ color: C.ink, fontWeight: 600 }}>こんな貴社に — </span>{p.bestFor}
-      </div>
-      <div style={{ marginTop: 14 }}>
-        {p.faq.map((f, i) => (
-          <div key={f.q} style={{ borderTop: `1px solid ${C.line}` }}>
-            <button onClick={() => setOpenFaq(openFaq === i ? null : i)}
-              style={{ width: '100%', minHeight: 44, background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', padding: '10px 0', fontSize: 13.5, color: C.ink, fontFamily: SANS, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
-              <span>Q. {f.q}</span><span style={{ color: C.goldText, fontSize: 16, lineHeight: 1 }}>{openFaq === i ? '−' : '+'}</span>
-            </button>
-            {openFaq === i && <p style={{ fontSize: 13, lineHeight: 1.9, color: C.body, margin: '0 0 12px' }}>{f.a}</p>}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function PlansTab({ go }: { go: (t: TabId) => void }) {
-  const [sel, setSel] = useState(1); // 既定は Core
-  const p = PRODUCTION_PLANS[sel];
-  return (
-    <Band>
-      <H2 en="Website" sub="1ページのLPから、予約・決済を備えた本格サイトまで。いずれのプランも、ご契約時に金額を確定し、以後の追加費用はいただきません。">サイト制作 — 4つのプラン</H2>
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
-        {PRODUCTION_PLANS.map((pp, i) => (
-          <button key={pp.id} className="st-chip" data-on={sel === i} onClick={() => setSel(i)}>
-            {pp.name}<span style={{ marginLeft: 6, fontSize: 12, opacity: 0.75 }}>{pp.price}</span>
-          </button>
-        ))}
-      </div>
-      <PlanCard p={p} />
-      <div style={{ marginTop: 24, textAlign: 'center' }}>
-        <LineCta label="このプランをLINEで相談する" where="plans" />
-        <div style={{ marginTop: 12 }}>
-          <button className="st-btn st-btn-ghost" onClick={() => go('contact')}>先に概算を知る</button>
-        </div>
-        <Note>{CONTACT.lineNote}</Note>
-      </div>
-    </Band>
-  );
-}
-
-// ============================================================
-// 受託開発 4Tier
-// ============================================================
-function TierCard({ t }: { t: DevTier }) {
-  return (
-    <div className="st-card">
-      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
-        <div className="st-serif" style={{ fontSize: 21, fontWeight: 700, letterSpacing: '0.06em', color: C.ink }}>{t.name}</div>
-        <div className="st-serif" style={{ fontSize: 18, fontWeight: 700, color: C.ink }}>{t.price}</div>
-      </div>
-      <div style={{ fontSize: 14.5, fontWeight: 600, color: C.ink, margin: '8px 0 10px', lineHeight: 1.8 }}>{t.lead}</div>
-      <p style={{ fontSize: 13.5, lineHeight: 1.9, margin: '0 0 12px', color: C.body }}>{t.scope}</p>
-      <div style={{ fontSize: 12.5, color: C.mute, marginBottom: 14, borderTop: `1px solid ${C.line}`, paddingTop: 12 }}>
-        期間の目安 — <strong style={{ color: C.ink, fontWeight: 600 }}>{t.duration}</strong>
-      </div>
-      <div style={{ borderTop: `1px solid ${C.line}`, paddingTop: 14 }}>
-        <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.12em', color: C.mute, marginBottom: 8 }}>開発例</div>
-        <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: 6 }}>
-          {t.examples.map(e => (
-            <li key={e} style={{ display: 'flex', gap: 8, fontSize: 13.5, lineHeight: 1.7, color: C.body }}><IconCheck />{e}</li>
-          ))}
-        </ul>
-      </div>
-      <div style={{ marginTop: 14, background: C.alt, borderLeft: `3px solid ${C.gold}`, borderRadius: 4, padding: '11px 14px', fontSize: 13, lineHeight: 1.9, color: C.body }}>
-        <span style={{ color: C.ink, fontWeight: 600 }}>価格の考え方 — </span>{t.pricing}
-      </div>
-    </div>
-  );
-}
-
-function DevTab({ go }: { go: (t: TabId) => void }) {
-  const [sel, setSel] = useState(0);
-  return (
-    <Band>
-      <H2 en="Development" sub={DEV_LEAD}>受託開発 — 4つのTier</H2>
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
-        {DEV_TIERS.map((t, i) => (
-          <button key={t.id} className="st-chip" data-on={sel === i} onClick={() => setSel(i)}>{t.name}</button>
-        ))}
-      </div>
-      <TierCard t={DEV_TIERS[sel]} />
-      <div style={{ marginTop: 24, textAlign: 'center' }}>
-        <LineCta label="開発についてLINEで相談する" where="dev" />
-        <div style={{ marginTop: 12 }}>
-          <button className="st-btn st-btn-ghost" onClick={() => go('contact')}>先に概算を知る</button>
-        </div>
-        <Note>要件が固まっていない段階からのご相談も承ります。</Note>
-      </div>
-    </Band>
-  );
-}
-
-// ============================================================
-// 運用プラン
-// ============================================================
-function CareTab() {
-  return (
-    <Band>
-      <H2 en="Maintenance" sub="公開はゴールではなくスタートです。アクセスデータをもとに、貴社サイトの成果を継続的に高めます。">運用 — 月額プラン</H2>
-      <div style={{ display: 'grid', gap: 14 }}>
-        {CARE_PLANS.map(cp => (
-          <div key={cp.id} className="st-card">
-            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
-              <div className="st-serif" style={{ fontSize: 18, fontWeight: 700, color: C.ink }}>{cp.name}</div>
-              <div className="st-serif" style={{ fontSize: 16, fontWeight: 700, color: C.ink }}>{cp.price}</div>
-            </div>
-            <div style={{ fontSize: 14, fontWeight: 600, color: C.ink, margin: '8px 0 12px', lineHeight: 1.8 }}>{cp.lead}</div>
-            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: 6 }}>
-              {cp.includes.map(i => (
-                <li key={i} style={{ display: 'flex', gap: 8, fontSize: 13.5, lineHeight: 1.7, color: C.body }}><IconCheck />{i}</li>
-              ))}
-            </ul>
-          </div>
-        ))}
-      </div>
-      <div style={{ marginTop: 24, textAlign: 'center' }}>
-        <LineCta label="運用についてLINEで相談する" where="care" />
-        <Note>他社で制作されたサイトの運用のみのご依頼も承ります。</Note>
-      </div>
-    </Band>
   );
 }
 
@@ -1261,335 +1074,3 @@ function WorksTab({ go }: { go: (t: TabId) => void }) {
   );
 }
 
-// ============================================================
-// 会社案内
-// ============================================================
-function AboutTab() {
-  return (
-    <Band>
-      <H2 en="Company">{COMPANY.title}</H2>
-
-      {/* 代表メッセージ */}
-      <div className="st-card" style={{ marginBottom: 18 }}>
-        <div className="st-label" style={{ fontSize: 11, marginBottom: 14 }}>Message</div>
-        <div className="st-serif" style={{ fontSize: 18, fontWeight: 700, color: C.ink, marginBottom: 16, lineHeight: 1.7 }}>{COMPANY.messageTitle}</div>
-        {COMPANY.message.map(s => (
-          <p key={s.slice(0, 12)} style={{ fontSize: 14, lineHeight: 2.15, color: C.body, margin: '0 0 16px' }}>{s}</p>
-        ))}
-        <div style={{ textAlign: 'right', marginTop: 4 }}>
-          <span style={{ fontSize: 12.5, color: C.mute, marginRight: 10 }}>{COMPANY.repTitle}</span>
-          <span className="st-serif" style={{ fontSize: 16, fontWeight: 700, color: C.ink }}>{COMPANY.repName}</span>
-        </div>
-      </div>
-
-      {/* 会社概要 */}
-      <div className="st-card">
-        <div className="st-label" style={{ fontSize: 11, marginBottom: 14 }}>Profile</div>
-        <div className="st-serif" style={{ fontSize: 18, fontWeight: 700, color: C.ink, marginBottom: 8, lineHeight: 1.7 }}>会社概要</div>
-        <div>
-          {COMPANY.profile.map((f, i) => (
-            <div key={f.label} style={{ display: 'flex', gap: 16, fontSize: 13.5, padding: '12px 0', borderBottom: i < COMPANY.profile.length - 1 ? `1px solid ${C.line}` : 'none', lineHeight: 1.9 }}>
-              <span style={{ color: C.mute, minWidth: 68, flexShrink: 0, fontWeight: 600 }}>{f.label}</span>
-              <span style={{ color: C.body, overflowWrap: 'anywhere' }}>{f.value}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div style={{ marginTop: 24, textAlign: 'center' }}>
-        <LineCta where="about" />
-        <Note>{CONTACT.lineNote}</Note>
-      </div>
-    </Band>
-  );
-}
-
-// ============================================================
-// お問い合わせ — 見積ウィザード + mailto
-// ============================================================
-type WizardStep = 0 | 1 | 2 | 3 | 4 | 5 | 6; // 6 = 結果
-
-const PURPOSES: Array<{ v: Purpose; label: string }> = [
-  { v: 'lp', label: '集客LP (1ページ)' },
-  { v: 'corporate', label: 'コーポレートサイト' },
-  { v: 'ec', label: 'EC・オンライン販売' },
-  { v: 'webapp', label: 'Webアプリ・業務システム' },
-  { v: 'saas', label: 'SaaS・本格プロダクト' },
-];
-const SCALES: Array<{ v: Scale; label: string }> = [
-  { v: 'small', label: '小規模 (〜5ページ/画面)' },
-  { v: 'medium', label: '標準 (〜15ページ/画面)' },
-  { v: 'large', label: '大規模 (それ以上)' },
-];
-const FEATURES: Array<{ v: Feature; label: string }> = [
-  { v: 'booking', label: '予約' },
-  { v: 'payment', label: '決済' },
-  { v: 'auth', label: 'ログイン・会員' },
-  { v: 'ai', label: 'AI機能' },
-  { v: 'multilingual', label: '多言語' },
-];
-const TIMELINES: Array<{ v: Timeline; label: string }> = [
-  { v: 'asap', label: '2週間以内 (特急)' },
-  { v: 'normal', label: '1〜2ヶ月' },
-  { v: 'flexible', label: '3ヶ月以上・柔軟' },
-];
-const BUDGETS: Array<{ v: Budget; label: string }> = [
-  { v: 'u10', label: '〜10万円' },
-  { v: 'u30', label: '〜30万円' },
-  { v: 'u100', label: '〜100万円' },
-  { v: 'u500', label: '〜500万円' },
-  { v: 'over500', label: '500万円以上' },
-  { v: 'unknown', label: '未定' },
-];
-
-const labelOf = <T extends string>(list: Array<{ v: T; label: string }>, v: T) => list.find(x => x.v === v)?.label ?? String(v);
-
-/** 保存の読み戻しに渡す「実在する選択肢」の一覧 (画面の並びが唯一の出どころ) */
-const DRAFT_OPTIONS: DraftOptions = {
-  purposes: PURPOSES.map(x => x.v),
-  scales: SCALES.map(x => x.v),
-  features: FEATURES.map(x => x.v),
-  timelines: TIMELINES.map(x => x.v),
-  budgets: BUDGETS.map(x => x.v),
-};
-
-function ContactTab() {
-  // 保存があれば続きから開く (読めない・壊れている時は素の初期値)
-  const restored = useMemo(() => {
-    if (typeof window === 'undefined') return null;
-    try { return parseSavedEstimate(localStorage.getItem(ESTIMATE_KEY), DRAFT_OPTIONS); } catch { return null; }
-  }, []);
-  const init = restored ?? EMPTY_DRAFT;
-
-  const [step, setStep] = useState<WizardStep>(init.step as WizardStep);
-  const [purpose, setPurpose] = useState<Purpose | null>(init.purpose as Purpose | null);
-  const [scale, setScale] = useState<Scale | null>(init.scale as Scale | null);
-  const [cms, setCms] = useState<boolean | null>(init.cms);
-  const [features, setFeatures] = useState<Feature[]>(init.features as Feature[]);
-  const [timeline, setTimeline] = useState<Timeline | null>(init.timeline as Timeline | null);
-  const [budget, setBudget] = useState<Budget | null>(init.budget as Budget | null);
-  const [copied, setCopied] = useState(false);
-  const [resumed, setResumed] = useState(restored !== null);
-
-  const answers: EstimateAnswers | null = useMemo(() => {
-    if (!purpose || !scale || cms === null || !timeline || !budget) return null;
-    return { purpose, scale, cms, features, timeline, budget };
-  }, [purpose, scale, cms, features, timeline, budget]);
-
-  const result = useMemo(() => (answers ? estimate(answers) : null), [answers]);
-
-  // 途中の答えを手元に残す。1問目のまま (step 0) は残さない
-  // ——「開いただけ」を復帰対象にすると、次に来た時に何も変わらないのに
-  // 「続きから」と名乗ることになる。
-  useEffect(() => {
-    try {
-      if (step === 0) localStorage.removeItem(ESTIMATE_KEY);
-      else localStorage.setItem(ESTIMATE_KEY, JSON.stringify({ step, purpose, scale, cms, features, timeline, budget }));
-    } catch { /* 保存できない設定でも入力は続けられる */ }
-  }, [step, purpose, scale, cms, features, timeline, budget]);
-
-  // 何問目まで来て帰ったかを CORE 側に残す。戻るボタンで下がった時は数えない
-  // (同じ人が行ったり来たりするたびに「到達者」が増えると、離脱地点が読めなくなる)。
-  // 続きから開いた回は、その step を新規到達として数えない (reachedRef の初期値がそれ)。
-  const reachedRef = useRef<number>(init.step);
-  useEffect(() => {
-    if (step <= reachedRef.current) return;
-    if (reachedRef.current === 0 && step === 1) track('studio_estimate_start');
-    reachedRef.current = step;
-    track('studio_estimate_step', { step });
-  }, [step]);
-
-  useEffect(() => {
-    if (restored) track('studio_estimate_resume', { step: restored.step });
-    // 復帰は「この画面を開いた回」に 1 度だけ数える
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // 結果が出たことは 1 回だけ数える (プラン別)
-  const doneRef = useRef(false);
-  useEffect(() => {
-    if (step === 6 && result && !doneRef.current) {
-      doneRef.current = true;
-      track('studio_estimate_done', { plan: result.plan });
-    }
-  }, [step, result]);
-
-  const resetAll = () => {
-    setStep(0); setPurpose(null); setScale(null); setCms(null);
-    setFeatures([]); setTimeline(null); setBudget(null);
-    setResumed(false);
-    reachedRef.current = 0;
-    doneRef.current = false;
-    try { localStorage.removeItem(ESTIMATE_KEY); } catch { /* */ }
-  };
-
-  const summaryText = useMemo(() => {
-    if (!answers || !result) return '';
-    return [
-      '【CORE Studio お見積りのご相談】',
-      `・目的: ${labelOf(PURPOSES, answers.purpose)}`,
-      `・規模: ${labelOf(SCALES, answers.scale)}`,
-      `・CMS (自社更新): ${answers.cms ? '必要' : '不要'}`,
-      `・機能: ${answers.features.length ? answers.features.map(f => labelOf(FEATURES, f)).join(' / ') : 'なし'}`,
-      `・希望納期: ${labelOf(TIMELINES, answers.timeline)}`,
-      `・予算感: ${labelOf(BUDGETS, answers.budget)}`,
-      '',
-      `【概算結果】${result.plan} プラン / ¥${result.minPrice}万〜¥${result.maxPrice}万`,
-    ].join('\n');
-  }, [answers, result]);
-
-  const copySummary = async () => {
-    try {
-      await navigator.clipboard.writeText(summaryText);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2400);
-    } catch {
-      // clipboard 不許可環境では選択用に prompt
-      window.prompt('以下をコピーしてLINEに貼り付けてください', summaryText.replace(/\n/g, ' '));
-    }
-  };
-
-  // LINEを開く前に概算結果をコピーしておく。貼るだけで相談が始まる状態にする。
-  const openLine = () => {
-    track('studio_line_cta', { where: 'estimate-result' });
-    void copySummary();
-  };
-
-  const stepDefs: Array<{ title: string; body: ReactNode }> = [
-    {
-      title: '制作したいものをお選びください',
-      body: <ChoiceGrid items={PURPOSES} value={purpose} onPick={v => { setPurpose(v); setStep(1); }} />,
-    },
-    {
-      title: '想定される規模をお選びください',
-      body: <ChoiceGrid items={SCALES} value={scale} onPick={v => { setScale(v); setStep(2); }} />,
-    },
-    {
-      title: '貴社での更新機能 (CMS) は必要ですか',
-      body: (
-        <ChoiceGrid
-          items={[{ v: 'yes', label: '必要 — お知らせ等を自社で更新したい' }, { v: 'no', label: '不要 — 更新は依頼したい' }]}
-          value={cms === null ? null : cms ? 'yes' : 'no'}
-          onPick={v => { setCms(v === 'yes'); setStep(3); }}
-        />
-      ),
-    },
-    {
-      title: '必要な機能をお選びください (複数可・なければそのまま次へ)',
-      body: (
-        <div>
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            {FEATURES.map(f => (
-              <button key={f.v} className="st-chip" data-on={features.includes(f.v)}
-                onClick={() => setFeatures(prev => prev.includes(f.v) ? prev.filter(x => x !== f.v) : [...prev, f.v])}>
-                {f.label}
-              </button>
-            ))}
-          </div>
-          <div style={{ marginTop: 18 }}>
-            <button className="st-btn st-btn-primary" onClick={() => setStep(4)}>次へ</button>
-          </div>
-        </div>
-      ),
-    },
-    {
-      title: 'ご希望の納期をお選びください',
-      body: <ChoiceGrid items={TIMELINES} value={timeline} onPick={v => { setTimeline(v); setStep(5); }} />,
-    },
-    {
-      title: 'ご予算の目安をお選びください',
-      body: <ChoiceGrid items={BUDGETS} value={budget} onPick={v => { setBudget(v); setStep(6); }} />,
-    },
-  ];
-
-  if (step === 6 && result) {
-    return (
-      <Band>
-        <H2 en="Estimate" sub="ご回答をもとに算出した概算です。正式なお見積りはヒアリングの上で確定し、ご契約後の追加費用は発生しません。">概算お見積り</H2>
-        <div className="st-card st-card-featured" style={{ textAlign: 'center', padding: '32px 22px' }}>
-          <div className="st-label" style={{ fontSize: 10.5 }}>ご提案プラン</div>
-          <div className="st-serif" style={{ fontSize: 30, fontWeight: 700, letterSpacing: '0.06em', color: C.ink, margin: '10px 0 2px' }}>{result.plan}</div>
-          <div style={{ fontSize: 12.5, color: C.mute }}>{result.kind === 'dev' ? '受託開発' : 'サイト制作'}</div>
-          <div className="st-serif" style={{ fontSize: 24, fontWeight: 700, color: C.ink, margin: '18px 0 4px' }}>
-            ¥{result.minPrice}万 <span style={{ fontSize: 15, color: C.mute, fontWeight: 400 }}>〜</span> ¥{result.maxPrice}万
-          </div>
-          <p style={{ fontSize: 13, lineHeight: 1.9, color: C.body, margin: '16px 0 0', textAlign: 'left', background: C.alt, borderLeft: `3px solid ${C.gold}`, borderRadius: 4, padding: '12px 14px' }}>{result.note}</p>
-        </div>
-        <div style={{ display: 'grid', gap: 10, marginTop: 20 }}>
-          <a className="st-btn st-btn-line" href={CONTACT.lineUrl} target="_blank" rel="noopener noreferrer"
-            style={{ width: '100%', boxSizing: 'border-box' }} onClick={openLine}>
-            <IconChat /> この内容でLINE相談する
-          </a>
-          <button className="st-btn st-btn-ghost" onClick={copySummary} style={{ width: '100%', boxSizing: 'border-box' }}>
-            <IconCopy /> {copied ? 'コピーしました' : '内容をコピーする'}
-          </button>
-        </div>
-        <p style={{ fontSize: 12, color: C.mute, lineHeight: 1.9, marginTop: 14, textAlign: 'center' }}>
-          LINEを開くと同時に、この内容をコピーします。トークに貼り付けて送信してください。<br />
-          LINEをお使いでない場合は <a href={`mailto:${STUDIO.email}?subject=${encodeURIComponent('【CORE Studio】制作のご相談')}`} style={{ color: C.ink }}>{STUDIO.email}</a> でも承ります。
-        </p>
-        <div style={{ textAlign: 'center', marginTop: 10 }}>
-          <button onClick={resetAll}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12.5, color: C.mute, textDecoration: 'underline', minHeight: 44, fontFamily: SANS }}>
-            最初からやり直す
-          </button>
-        </div>
-      </Band>
-    );
-  }
-
-  const def = stepDefs[step];
-  return (
-    <Band>
-      <H2 en="Contact" sub="6つの質問にお答えいただくと、最適なプランと概算をその場でご確認いただけます。">お問い合わせ</H2>
-      {/* 続きから開いたことを黙って隠さない。前の答えのまま進むか、やり直すかを選べるようにする */}
-      {resumed && (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap',
-          background: C.alt, borderLeft: `3px solid ${C.gold}`, borderRadius: 4, padding: '10px 14px', marginBottom: 16 }}>
-          <span style={{ fontSize: 13, color: C.body, lineHeight: 1.8 }}>前回の続きから表示しています。</span>
-          <button onClick={resetAll}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12.5, color: C.ink, fontWeight: 600, textDecoration: 'underline', minHeight: 44, padding: 0, fontFamily: SANS }}>
-            最初からやり直す
-          </button>
-        </div>
-      )}
-
-      {/* 進捗 */}
-      <div style={{ display: 'flex', gap: 5, marginBottom: 20 }}>
-        {stepDefs.map((_, i) => (
-          <div key={i} style={{ flex: 1, height: 3, borderRadius: 2, background: i <= step ? C.gold : C.line }} />
-        ))}
-      </div>
-      <div className="st-card">
-        <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.12em', color: C.mute, marginBottom: 8 }}>質問 {step + 1} / {stepDefs.length}</div>
-        <div className="st-serif" style={{ fontSize: 18, fontWeight: 700, color: C.ink, marginBottom: 16, lineHeight: 1.6 }}>{def.title}</div>
-        {def.body}
-        {step > 0 && (
-          <button onClick={() => setStep((step - 1) as WizardStep)}
-            style={{ marginTop: 16, background: 'none', border: 'none', cursor: 'pointer', fontSize: 12.5, color: C.mute, textDecoration: 'underline', minHeight: 44, padding: 0, fontFamily: SANS }}>
-            ひとつ戻る
-          </button>
-        )}
-      </div>
-      <p style={{ fontSize: 12.5, color: C.mute, marginTop: 16, lineHeight: 1.9, textAlign: 'center' }}>
-        質問に答えず直接ご相談いただいても構いません — <a href={CONTACT.lineUrl} target="_blank" rel="noopener noreferrer" style={{ color: C.ink, fontWeight: 600 }}>LINEで無料相談</a>
-      </p>
-    </Band>
-  );
-}
-
-function ChoiceGrid<T extends string>({ items, value, onPick }: {
-  items: Array<{ v: T; label: string }>;
-  value: T | null;
-  onPick: (v: T) => void;
-}) {
-  return (
-    <div style={{ display: 'grid', gap: 8 }}>
-      {items.map(it => (
-        <button key={it.v} className="st-chip" data-on={value === it.v} onClick={() => onPick(it.v)} style={{ width: '100%' }}>
-          {it.label}
-        </button>
-      ))}
-    </div>
-  );
-}
