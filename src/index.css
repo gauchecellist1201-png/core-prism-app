@@ -4168,9 +4168,11 @@ details[open] > summary .disclosure-chev {
   }
   .ch-film-video { object-position: 50% 30%; }
   .ch-film-ambient { display: none; }
-  .ch-hero--film .ch-hero-shade {
-    z-index: 1; pointer-events: none;
-    /* 中盤(社是の行)がガラス扉の明るい帯に重なるので 45% から暗くする（2026-09-04 実測） */
+  /* 動画は .ch-hero-inner(z-index:2) の中にあり、.ch-hero-shade(z1) より上に積まれる。
+     スマホの暗幕は動画と同じ箱の ::after に持たせる（2026-09-04 実測で判明）。 */
+  .ch-hero--film .ch-hero-shade { display: none; }
+  .ch-film::after {
+    content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none;
     background: linear-gradient(180deg, rgba(7,10,16,0.55) 0%, rgba(7,10,16,0.06) 20%, rgba(7,10,16,0.16) 34%, rgba(7,10,16,0.74) 47%, rgba(7,10,16,0.9) 62%, rgba(7,10,16,0.96) 84%, #070A10 100%);
   }
   .ch-hero-copy { position: relative; z-index: 2; padding: 12rem 1.25rem 2.2rem; }
