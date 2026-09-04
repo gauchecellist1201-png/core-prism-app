@@ -48,6 +48,17 @@ export const FILM_WORKS: FilmWork[] = [
     videoUrl: '/studio/film/laguna-beaute.mp4',
     url: 'https://lagunabeaute.jp/',
   },
+  // 2026-09-04 追加: 当社自身の企業紹介映像（/corp トップに掲載中）。
+  //   外部クライアントではなく自社の実績として、映像がこの品質で作れることの証拠に置く。
+  {
+    id: 'work-core-corp-01',
+    client: '株式会社CORE（自社）',
+    category: 'BRAND FILM',
+    purpose: '当社自身の企業紹介映像。社是「いつの時代も、変わらない核を。」を軸に、AIの会社でありながら人をいちばん大切にする姿勢を伝えるブランドフィルムです。',
+    poster: '/corp-creed-poster.webp',
+    videoUrl: '/corp-creed-portrait.mp4',
+    url: 'https://www.core-ai.jp/corp',
+  },
   {
     id: 'work-event-branding-01',
     client: 'GAUCHE（チェリスト）',
