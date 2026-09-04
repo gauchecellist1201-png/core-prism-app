@@ -59,9 +59,11 @@ export const FILM_WORKS: FilmWork[] = [
     videoUrl: '/corp-creed-portrait.mp4',
     url: 'https://www.core-ai.jp/corp',
   },
+  // 2026-09-04: client を実名(GAUCHE)からイベント開催の一般的な告知として汎用表記に変更
+  //   （ショートドラマの案件と同じ人物名が並ぶと、実績が2件しかないように見えるため）。
   {
     id: 'work-event-branding-01',
-    client: 'GAUCHE（チェリスト）',
+    client: 'ライブイベント主催者様',
     category: 'EVENT BRANDING',
     purpose: '開催前に当日の熱量を見せる告知映像。会場の規模・照明・来場者の空気までを、本番を待たずに集客の材料にできます。',
     poster: '/studio/film/event-artist-live.jpg',
@@ -93,5 +95,6 @@ export const FILM_WORKS: FilmWork[] = [
     purpose: 'チェリスト本人を主人公にした連続もののショートドラマ。舞台裏・本番・日常を1つの物語としてつなぎ、TikTok / Reels で継続発信しています。',
     poster: '/studio/film/short-drama.jpg',
     videoUrl: '/studio/film/short-drama.mp4',
+    url: 'https://www.instagram.com/gauche_cellist/',
   },
 ];
