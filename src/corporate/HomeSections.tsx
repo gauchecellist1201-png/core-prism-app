@@ -135,9 +135,6 @@ export function HomeHero({ onAnchor }: { onAnchor: AnchorHandler }) {
             <br />
             変わらない核を。
           </h1>
-          <p className="ch-hero-creed-answer" style={{ fontFamily: FONT_JA }}>
-            核とは、<span style={{ color: ACCENT_LIGHT }}>人。</span>
-          </p>
           <div className="ch-cta-row">
             <a href="/roai-score" onClick={e => { rememberSource('home-hero'); track('corp_cta_click', 'home-hero'); onAnchor(e, '/roai-score'); }} style={ctaHero}>ROAIを無料診断する</a>
             <a href="#contact" onClick={e => onAnchor(e, '#contact')} style={{ ...ctaGhost, backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}>

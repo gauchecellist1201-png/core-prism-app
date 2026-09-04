@@ -4121,12 +4121,8 @@ details[open] > summary .disclosure-chev {
 }
 .ch-hero-copy { min-width: 0; }
 .ch-h1--creed {
-  font-size: clamp(2.7rem, 6.4vw, 5.6rem); line-height: 1.12; letter-spacing: -0.02em; margin: 0.4rem 0 1.1rem;
+  font-size: clamp(2.7rem, 6.4vw, 5.6rem); line-height: 1.12; letter-spacing: -0.02em; margin: 0.4rem 0 1.6rem;
   text-shadow: 0 2px 24px rgba(0,0,0,0.35);
-}
-.ch-hero-creed-answer {
-  font-size: clamp(1.45rem, 2.8vw, 2.3rem); font-weight: 900; line-height: 1.3; letter-spacing: 0.01em;
-  color: #fff; margin: 0 0 1.2rem;
 }
 .ch-film {
   position: relative; margin: 0; justify-self: end;
@@ -4192,8 +4188,7 @@ details[open] > summary .disclosure-chev {
   }
   .ch-film-sound { position: absolute; right: 14px; bottom: auto; top: calc(env(safe-area-inset-top, 0px) + 7.25rem); z-index: 3; }
   /* 640px 以下の旧規則 .ch-hero .ch-h1 (0,2,0) に負けないよう詳細度を上げる */
-  .ch-hero--film .ch-hero-copy .ch-h1--creed { font-size: clamp(2.1rem, 8.8vw, 2.7rem); margin: 0.1rem 0 0.55rem; }
-  .ch-hero--film .ch-hero-creed-answer { font-size: 1.28rem; margin: 0 0 0.9rem; }
+  .ch-hero--film .ch-hero-copy .ch-h1--creed { font-size: clamp(2.1rem, 8.8vw, 2.7rem); margin: 0.1rem 0 1rem; }
   .ch-hero--film .ch-cta-row { gap: 0.6rem; }
 }
 /* ── MANIFESTO 全面写真 ── */
