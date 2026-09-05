@@ -862,17 +862,17 @@ export default function CoreSite() {
             </div>
           </a>
 
-          {/* NEXUS — 話しながら画面に描くAI秘書（2026-08-07 追加。トップ側に配置） */}
+          {/* NERI — 話すだけで、会社が動く（2026-08-07 追加・2026-09-05 現行の位置づけへ更新） */}
           <FeatureProduct
             brand="nexus"
-            badge="AI秘書 ／ 夢を叶えてくれる相棒"
-            tagline="話しながら、画面に描く秘書。"
-            taglineEn="Your AI secretary that draws while it talks."
-            description="価値観 → 夢 → 長期・中間・短期の目標 → 今日の一手、まで一緒に並走するAI秘書。優先順位は締切ではなく「夢との距離」で決め、毎日15分の計画で迷いを減らします。"
+            badge="Voice-First Company OS"
+            tagline="話すだけで、会社が動く。"
+            taglineEn="Say it. NERI runs the company."
+            description="予定・メール・売上・資料・調査。NERIは答えるAIではなく、あなたの言葉をそのまま仕事にするAIです。理解して、調べて、作って、確かめて、結果を画面に置きます。外へ出る操作（送信・決済）は必ず承認を挟みます。"
             features={[
-              '価値観・夢から逆算して、今日やることまで落とし込む',
-              '話しかけるだけで、AIが画面に構造化して描き出す',
-              '無料から。上位プランで日々の伴走が深くなる',
+              '予定・メール・売上・記憶を、ひとつの入口で',
+              '答えながら画面に描く。読み返さずに、見ながら口で直せる',
+              '無料は1日5回・登録もカードも不要。月39,800円から',
             ]}
             accentColor="#4dc3ff"
             accentGradient="linear-gradient(135deg,#a5e6ff,#4dc3ff,#2f9fd6)"
@@ -2096,6 +2096,11 @@ export default function CoreSite() {
 // ============================================================
 //  FeatureProduct — Prism / Iris をフィーチャーする横長カード
 // ============================================================
+/** 見出しの英字ラベル。内部キー nexus は製品名 NERI で出す（キーは環境変数・URLと共に据え置き）。 */
+function brandLabel(brand: string): string {
+  return brand === 'nexus' ? 'NERI' : brand.toUpperCase();
+}
+
 function FeatureProduct({
   brand,
   badge,
@@ -2205,7 +2210,7 @@ function FeatureProduct({
                 WebkitTextFillColor: 'transparent',
               }}
             >
-              {brand.toUpperCase()}
+              {brandLabel(brand)}
             </span>
             <span className="lp-fp-head-tag">{tagline}</span>
           </span>
@@ -2250,7 +2255,7 @@ function FeatureProduct({
             paddingLeft: '0.4em',
           }}
         >
-          {brand.toUpperCase()}
+          {brandLabel(brand)}
         </p>
         <p
           style={{
