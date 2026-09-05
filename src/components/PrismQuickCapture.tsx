@@ -4,9 +4,17 @@
 // 画面左下に常設のミニ入力。開いている作業を止めず、思いついたことを1〜2タップで
 // 知識に保存→あとで仕分け。「あとで書こう」で消える気づきをゼロ摩擦で貯める＝
 // Prism の「貯める→効く」ループの入口を太くする。保存は即・楽観的に“もう入った”を返す。
+//
+// 2026-09-05 追加: さっきコピーしたものを候補チップで出す (Raycast「クリップボード履歴」)。
+// 貼り直す手間を消す。ブラウザは他アプリの履歴を読めないので、拾えるのは
+// 「この画面でコピーしたもの」だけ — 読めるふりはしない (copyStash.ts)。
 // ============================================================
-import React, { useRef, useState } from 'react';
-import { NotebookPen, X, Check } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { NotebookPen, X, Check, ClipboardList } from 'lucide-react';
+import {
+  chipLabel, getRecentCopies, startCopyCapture, subscribeCopies,
+  type CopyStashEntry,
+} from '../lib/copyStash';
 
 interface Props {
   // 既存の onAddKnowledgeNote(title, content) をそのまま受ける（同期・即時）。
@@ -18,9 +26,27 @@ export default function PrismQuickCapture({ onAddNote, accentColor = '#8b5cf6' }
   const [open, setOpen] = useState(false);
   const [text, setText] = useState('');
   const [justSaved, setJustSaved] = useState(false);
+  const [recent, setRecent] = useState<CopyStashEntry[]>([]);
   const taRef = useRef<HTMLTextAreaElement | null>(null);
 
+  // 選んで ⌘C した分も拾う。控えるのはメモリだけ (保存しない・30分で消える)
+  useEffect(() => {
+    const stopCapture = startCopyCapture();
+    const sync = () => setRecent(getRecentCopies());
+    sync();
+    const unsubscribe = subscribeCopies(sync);
+    return () => { unsubscribe(); stopCapture(); };
+  }, []);
+
+  /** 候補チップを1タップで入力欄へ。すでに書いていれば下に足す (打ったものを消さない) */
+  function insertCopy(entry: CopyStashEntry) {
+    setText(prev => (prev.trim() ? prev.replace(/\s+$/, '') + '\n' + entry.text : entry.text));
+    setJustSaved(false);
+    setTimeout(() => taRef.current?.focus(), 0);
+  }
+
   function expand() {
+    setRecent(getRecentCopies());   // 開いた瞬間に期限切れを落とす (30分前のものを見せない)
     setOpen(true);
     setJustSaved(false);
     setTimeout(() => taRef.current?.focus(), 60);
@@ -84,6 +110,31 @@ export default function PrismQuickCapture({ onAddNote, accentColor = '#8b5cf6' }
           <X size={16} />
         </button>
       </div>
+      {recent.length > 0 && (
+        <div style={{ marginBottom: 9 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 6, color: 'rgba(255,255,255,0.45)', fontSize: '0.68rem' }}>
+            <ClipboardList size={12} strokeWidth={2.2} />
+            さっきコピーしたもの（この端末の中だけ・30分で消えます）
+          </div>
+          <div className="no-scrollbar" style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 2 }}>
+            {recent.map(e => (
+              <button
+                key={e.id}
+                onClick={() => insertCopy(e)}
+                title={e.text}
+                style={{
+                  flexShrink: 0, minHeight: 44, maxWidth: 200, padding: '0 13px', borderRadius: 12, cursor: 'pointer',
+                  background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.15)',
+                  color: 'rgba(255,255,255,0.88)', fontSize: '0.78rem', fontWeight: 600,
+                  whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                }}
+              >
+                {chipLabel(e)}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
       <textarea
         ref={taRef}
         value={text}

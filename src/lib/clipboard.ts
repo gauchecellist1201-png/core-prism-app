@@ -3,6 +3,7 @@
 // 沈黙する失敗をなくし、失敗したときは次の手 (手でコピー) を案内する。
 // ============================================================
 import { notifyInApp } from './inAppNotify';
+import { recordCopy } from './copyStash';
 import { triggerHaptic, playChime } from './haptic';
 
 async function writeClipboard(text: string): Promise<boolean> {
@@ -46,6 +47,8 @@ export async function copyText(
 ): Promise<boolean> {
   const ok = await writeClipboard(text);
   if (ok) {
+    // 「さっきコピーしたもの」を知識に入れる候補として控える (メモリのみ・30分で消える)
+    recordCopy(text, label);
     // 振動 (Android) + やわらかいチャイム (iPhone は振動非対応のため音で「できた」を伝える)
     triggerHaptic('success');
     playChime('success');
