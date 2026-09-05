@@ -36,6 +36,22 @@ describe('/api/track/roai の入口', () => {
     expect(await res.json()).toEqual({ ok: false, error: 'invalid_event' });
   });
 
+  it('決済の確定はブラウザから受けない（誰でも「買われた」を増やせないように）', async () => {
+    for (const event of ['purchase', 'renewal', 'upgrade']) {
+      const res = await post({ site: 'neri_lp', event });
+      expect(res.status).toBe(400);
+      expect(await res.json()).toEqual({ ok: false, error: 'server_only' });
+    }
+    const asBilling = await post({ site: 'billing', event: 'page_view' });
+    expect(asBilling.status).toBe(400);
+    expect(await asBilling.json()).toEqual({ ok: false, error: 'server_only' });
+  });
+
+  it('普通のイベントはこれまでどおり通る（上の縛りが効きすぎていないか）', async () => {
+    const res = await post({ site: 'neri_lp', event: 'checkout_start', label: 'hero' });
+    expect(res.status).toBe(200);
+  });
+
   it('許可していない origin には CORS を返さない（返事は返すが読ませない）', async () => {
     const res = await post({ site: 'corp', event: 'page_view' }, 'https://example.com');
     expect(res.status).toBe(200);

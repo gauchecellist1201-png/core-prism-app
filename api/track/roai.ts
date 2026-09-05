@@ -23,6 +23,7 @@ import {
   coreFunnelKey,
   isCoreEvent,
   isCoreSite,
+  isServerOnly,
   sanitizeLabel,
 } from './_taxonomy';
 
@@ -148,6 +149,9 @@ export default async function handler(req: Request): Promise<Response> {
   if (!isCoreSite(site)) return json({ ok: false, error: 'invalid_site' }, 400, cors);
   const known = EVENT_SET.has(event) || isCoreEvent(event);
   if (!known) return json({ ok: false, error: 'invalid_event' }, 400, cors);
+  // 決済の確定はサーバー（Stripe webhook）だけが積む。ここで受けると誰でも
+  // 「買われた」を増やせてしまう。
+  if (isServerOnly(site, event)) return json({ ok: false, error: 'server_only' }, 400, cors);
   const label = sanitizeLabel(body.label);
 
   if (UPSTASH_OK) {

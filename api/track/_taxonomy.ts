@@ -86,6 +86,20 @@ export const LEGACY_TO_CORE: Readonly<Record<string, CoreEvent>> = {
   studio_film_inquiry_submit: 'contact_complete',
 };
 
+/**
+ * サーバーしか積んではいけないイベント。ブラウザからのビーコンでは受けない。
+ * 受けてしまうと、誰でも「買われた」を好きなだけ増やせる（＝売上の実測が嘘になる）。
+ * 発信元 billing も同じ理由でサーバー専用。
+ */
+export const SERVER_ONLY_EVENTS = ['purchase', 'renewal', 'upgrade'] as const;
+const SERVER_ONLY_SET = new Set<string>(SERVER_ONLY_EVENTS);
+export const SERVER_ONLY_SITES = ['billing'] as const;
+const SERVER_ONLY_SITE_SET = new Set<string>(SERVER_ONLY_SITES);
+
+export function isServerOnly(site: string, event: string): boolean {
+  return SERVER_ONLY_SITE_SET.has(site) || SERVER_ONLY_SET.has(event);
+}
+
 export function isCoreSite(v: unknown): v is CoreSite {
   return typeof v === 'string' && SITE_SET.has(v);
 }
