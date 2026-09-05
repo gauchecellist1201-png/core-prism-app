@@ -109,15 +109,27 @@ export function HomeHero({ onAnchor }: { onAnchor: AnchorHandler }) {
     // 省データ・動きを減らす設定の人には、そもそも取りに行かない（ポスターのまま）。
     if (reduce || nav.connection?.saveData) { setCanPlay(false); return; }
     let cancelled = false;
-    const attach = () => { if (!cancelled) setFilmSrc(FILM.src); };
-    const start = () => {
-      const idle = (window as Window & { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number }).requestIdleCallback;
-      if (idle) idle(attach, { timeout: 2500 });
-      else window.setTimeout(attach, 600);
-    };
-    if (document.readyState === 'complete') start();
-    else window.addEventListener('load', start, { once: true });
-    return () => { cancelled = true; window.removeEventListener('load', start); };
+    const timers: number[] = [];
+    const attach = () => { if (!cancelled) { cancelled = true; setFilmSrc(FILM.src); } };
+    // 「読み込みが終わってから」では足りない。文字が出る前に 4.7MB の取得が始まると
+    // 回線を奪って初回描画が遅れる（実測: 同じコードでも FCP 4.3秒 と 11.6秒 に割れた）。
+    // 最初の描画（First Contentful Paint）を見届けてから、さらに一呼吸おいて取りに行く。
+    const later = () => { timers.push(window.setTimeout(attach, 1200)); };
+    let po: PerformanceObserver | null = null;
+    const painted = typeof performance !== 'undefined'
+      && performance.getEntriesByName?.('first-contentful-paint').length > 0;
+    if (painted) later();
+    else if (typeof PerformanceObserver === 'function') {
+      try {
+        po = new PerformanceObserver(list => {
+          if (list.getEntries().some(e => e.name === 'first-contentful-paint')) { po?.disconnect(); later(); }
+        });
+        po.observe({ type: 'paint', buffered: true });
+      } catch { later(); }
+      // 描画の合図が来ない環境でも必ず動くように、保険の時間を置く
+      timers.push(window.setTimeout(attach, 4000));
+    } else later();
+    return () => { cancelled = true; po?.disconnect(); timers.forEach(t => window.clearTimeout(t)); };
   }, []);
 
   useEffect(() => {
