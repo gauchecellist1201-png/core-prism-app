@@ -461,10 +461,10 @@ export default function CoreSite() {
           >
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 12, lineHeight: 1 }}>
               <img
-                src="/core-logo-mark-v2.png"
+                src="/core-logo-mark-v2.webp"
                 alt="株式会社CORE"
-                width={396}
-                height={240}
+                width={264}
+                height={160}
                 style={{ height: 36, width: 'auto', flexShrink: 0 }}
               />
               <span style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'flex-start', gap: 3 }}>
@@ -1976,10 +1976,10 @@ export default function CoreSite() {
           <div>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 10, lineHeight: 1 }}>
               <img
-                src="/core-logo-mark-v2.png"
+                src="/core-logo-mark-v2.webp"
                 alt="CORE"
-                width={396}
-                height={240}
+                width={264}
+                height={160}
                 style={{ height: 32, width: 'auto', flexShrink: 0 }}
               />
               <span

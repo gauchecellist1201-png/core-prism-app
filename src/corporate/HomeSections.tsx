@@ -97,25 +97,45 @@ export function HomeHero({ onAnchor }: { onAnchor: AnchorHandler }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [muted, setMuted] = useState(true);
   const [canPlay, setCanPlay] = useState(true);
+  // ブランドフィルムは 4.7MB ある。最初から src を付けると、回線をこの1本が占有して
+  // 文字が出るまで 12 秒かかっていた（実測 2026-09-06・Lighthouse mobile: FCP 11.9s / LCP 15.1s）。
+  // 最初の一画面はポスター画像（20KB・preload 済み）で描き、動画は読み込みが落ち着いてから取りに行く。
+  const [filmSrc, setFilmSrc] = useState<string>('');
+
+  useEffect(() => {
+    const reduce = typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const nav = navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string } };
+    // 省データ・動きを減らす設定の人には、そもそも取りに行かない（ポスターのまま）。
+    if (reduce || nav.connection?.saveData) { setCanPlay(false); return; }
+    let cancelled = false;
+    const attach = () => { if (!cancelled) setFilmSrc(FILM.src); };
+    const start = () => {
+      const idle = (window as Window & { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number }).requestIdleCallback;
+      if (idle) idle(attach, { timeout: 2500 });
+      else window.setTimeout(attach, 600);
+    };
+    if (document.readyState === 'complete') start();
+    else window.addEventListener('load', start, { once: true });
+    return () => { cancelled = true; window.removeEventListener('load', start); };
+  }, []);
 
   useEffect(() => {
     const v = videoRef.current;
-    if (!v) return;
-    const reduce = typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const nav = navigator as Navigator & { connection?: { saveData?: boolean } };
-    if (reduce || nav.connection?.saveData) { setCanPlay(false); v.pause(); return; }
+    if (!v || !filmSrc) return;
     // 画面外では止める（電池と回線の節約）。
-    if (typeof IntersectionObserver !== 'function') return;
+    if (typeof IntersectionObserver !== 'function') { void v.play().catch(() => {}); return; }
     const io = new IntersectionObserver(([en]) => {
       if (en.isIntersecting) void v.play().catch(() => {}); else v.pause();
     }, { threshold: 0.15 });
     io.observe(v);
     return () => io.disconnect();
-  }, []);
+  }, [filmSrc]);
 
   const toggleSound = () => {
     const v = videoRef.current;
     if (!v) return;
+    // まだ動画を取りに行っていない段階で押されたら、ここで読み込みを始める。
+    if (!filmSrc) setFilmSrc(FILM.src);
     const nextMuted = !muted;
     v.muted = nextMuted;
     setMuted(nextMuted);
@@ -147,13 +167,13 @@ export function HomeHero({ onAnchor }: { onAnchor: AnchorHandler }) {
           <video
             ref={videoRef}
             className="ch-film-video"
-            src={FILM.src}
+            {...(filmSrc ? { src: filmSrc } : {})}
             poster={FILM.poster}
             autoPlay={canPlay}
             muted
             loop
             playsInline
-            preload="metadata"
+            preload={filmSrc ? 'auto' : 'none'}
             width={720}
             height={1280}
             aria-label="株式会社COREのブランドフィルム。いつの時代も、変わらない核を。"
