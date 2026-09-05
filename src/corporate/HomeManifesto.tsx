@@ -15,6 +15,7 @@ import { motion } from 'framer-motion';
 import type { MouseEvent as ReactMouseEvent } from 'react';
 import { FONT_JA, FONT_EN, ACCENT, ACCENT_LIGHT, PAPER, TEXT_BODY, TEXT_MUTED, LINE, INK, INK_2, ctaHero, sectionH2, sectionLead, reveal } from './corpTheme';
 import { CREED, PEOPLE } from './creedData';
+import { SIZES_CARD, SIZES_FULL, photoSrcSet } from './photoSet';
 
 type AnchorHandler = (e: ReactMouseEvent<HTMLAnchorElement>, href: string) => void;
 
@@ -41,7 +42,7 @@ function Kick({ children, center }: { children: React.ReactNode; center?: boolea
 export function Manifesto({ onAnchor }: { onAnchor?: AnchorHandler }) {
   return (
     <section id="philosophy" className="ch-manifesto" style={{ scrollMarginTop: 70 }}>
-      <img src={PEOPLE.hands} alt="" aria-hidden loading="lazy" decoding="async" width={2400} height={1350} />
+      <img src={PEOPLE.hands} srcSet={photoSrcSet(PEOPLE.hands)} sizes={SIZES_FULL} alt="" aria-hidden loading="lazy" decoding="async" width={2400} height={1350} />
       <div className="ch-manifesto-shade" aria-hidden />
       <div className="ch-wrap ch-manifesto-inner">
         <motion.div {...reveal} style={{ maxWidth: 760 }}>
@@ -108,7 +109,7 @@ export function Values() {
           {CREED.values.map((v, i) => (
             <motion.article key={v.no} {...reveal} transition={{ ...reveal.transition, delay: i * 0.1 }} className="ch-card">
               <div className="ch-card-img">
-                <img src={photos[i]} alt={alts[i]} loading="lazy" decoding="async" width={1600} height={1200} />
+                <img src={photos[i]} srcSet={photoSrcSet(photos[i])} sizes={SIZES_CARD} alt={alts[i]} loading="lazy" decoding="async" width={1600} height={1200} />
               </div>
               <p style={{ fontFamily: FONT_EN, fontSize: '0.7rem', letterSpacing: '0.24em', color: ACCENT, fontWeight: 700, margin: '1.4rem 0 0.5rem' }}>
                 {v.no} — {v.en}
@@ -139,7 +140,7 @@ export function PeopleMosaic() {
         <div className="ch-mosaic">
           {tiles.map((t, i) => (
             <motion.figure key={t.img} {...reveal} transition={{ ...reveal.transition, delay: i * 0.08 }} className={'ch-tile' + (t.span ? ' is-wide' : '')}>
-              <img src={t.img} alt={t.alt} loading="lazy" decoding="async" />
+              <img src={t.img} srcSet={photoSrcSet(t.img)} sizes={SIZES_CARD} alt={t.alt} loading="lazy" decoding="async" />
               <figcaption style={{ fontFamily: FONT_JA }}>{t.cap}</figcaption>
             </motion.figure>
           ))}
@@ -158,7 +159,7 @@ export function PeopleMosaic() {
 export function CreedBand({ onAnchor }: { onAnchor?: AnchorHandler }) {
   return (
     <section id="mission" className="ch-band" style={{ padding: '8rem 1.5rem', scrollMarginTop: 70 }}>
-      <img src={PEOPLE.team} alt="" aria-hidden loading="lazy" decoding="async" />
+      <img src={PEOPLE.team} srcSet={photoSrcSet(PEOPLE.team)} sizes={SIZES_FULL} alt="" aria-hidden loading="lazy" decoding="async" />
       <div className="ch-band-shade" aria-hidden />
       <div style={{ position: 'relative', maxWidth: 860, margin: '0 auto' }}>
         <Kick center>Mission</Kick>

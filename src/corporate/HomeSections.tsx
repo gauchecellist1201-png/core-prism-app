@@ -25,6 +25,7 @@ import { SERVICE_LAYERS, DIFF_CORE, ASSESSMENT_STEPS, ASSESSMENT_TARGETS } from 
 import { SUITE_COUNT } from './suiteData';
 import { COMPANY_INFO } from '../data/companyInfo';
 import { rememberSource, track } from './roai/track';
+import { SIZES_CARD, SIZES_FULL, photoSrcSet } from './photoSet';
 
 type AnchorHandler = (e: ReactMouseEvent<HTMLAnchorElement>, href: string) => void;
 
@@ -258,7 +259,7 @@ export function WhyCore() {
           {items.map((it, i) => (
             <motion.article key={it.no} {...reveal} transition={{ ...reveal.transition, delay: i * 0.1 }} className="ch-card">
               <div className="ch-card-img">
-                <img src={it.img} alt={it.alt} loading="lazy" decoding="async" width={1600} height={1067} />
+                <img src={it.img} srcSet={photoSrcSet(it.img, 1600)} sizes={SIZES_CARD} alt={it.alt} loading="lazy" decoding="async" width={1600} height={1067} />
               </div>
               <p style={{ fontFamily: FONT_EN, fontSize: '0.72rem', letterSpacing: '0.24em', color: ACCENT, fontWeight: 700, margin: '1.4rem 0 0.6rem' }}>{it.no}</p>
               <h3 style={{ fontFamily: FONT_JA, fontSize: 'clamp(1.15rem, 1.7vw, 1.35rem)', fontWeight: 800, color: PAPER, lineHeight: 1.5, margin: '0 0 0.7rem', letterSpacing: '-0.005em' }}>{it.title}</h3>
@@ -298,7 +299,7 @@ export function ServicesEditorial({ onAnchor }: { onAnchor: AnchorHandler }) {
           {SERVICE_LAYERS.map((s, i) => (
             <motion.div key={s.no} {...reveal} className={'ch-row' + (i % 2 === 1 ? ' is-flip' : '')}>
               <div className="ch-row-media">
-                <img src={photos[i]} alt={alts[i]} loading="lazy" decoding="async" width={1600} height={1067} />
+                <img src={photos[i]} srcSet={photoSrcSet(photos[i], 1600)} sizes={SIZES_CARD} alt={alts[i]} loading="lazy" decoding="async" width={1600} height={1067} />
               </div>
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: '0.9rem' }}>
@@ -429,7 +430,7 @@ export function AssessmentHome({ onAnchor }: { onAnchor: AnchorHandler }) {
     <section id="assessment" className="lp-section-pad" style={{ padding: '7rem 1.5rem', background: INK, scrollMarginTop: 70 }}>
       <div className="ch-wrap ch-two">
         <motion.div {...reveal} className="ch-assess-media">
-          <img src={IMG.assessment} alt="机の上のロードマップを指さす手元" loading="lazy" decoding="async" width={1600} height={1200} />
+          <img src={IMG.assessment} srcSet={photoSrcSet(IMG.assessment, 1600)} sizes={SIZES_CARD} alt="机の上のロードマップを指さす手元" loading="lazy" decoding="async" width={1600} height={1200} />
           <div className="ch-assess-tag">
             <span style={{ fontFamily: FONT_EN, fontSize: '0.62rem', letterSpacing: '0.24em', color: ACCENT_LIGHT, fontWeight: 700 }}>DELIVERABLE</span>
             <span style={{ fontFamily: FONT_JA, fontSize: '1.05rem', fontWeight: 800, color: '#fff' }}>AI Transformation Roadmap</span>
@@ -555,7 +556,7 @@ export function CompanyOverview({ onAnchor }: { onAnchor: AnchorHandler }) {
             神戸に本社を置くAI Transformation Companyです。相談から実装、運用まで、すべて自社で行います。
           </p>
           <div className="ch-overview-photo">
-            <img src={IMG.kobeNight} alt="六甲山から見た神戸の夜景" loading="lazy" decoding="async" width={2400} height={1029} />
+            <img src={IMG.kobeNight} srcSet={photoSrcSet(IMG.kobeNight)} sizes={SIZES_FULL} alt="六甲山から見た神戸の夜景" loading="lazy" decoding="async" width={2400} height={1029} />
           </div>
         </div>
         <dl className="ch-dl">
@@ -583,7 +584,7 @@ export function CompanyOverview({ onAnchor }: { onAnchor: AnchorHandler }) {
 export function FinalCta({ onAnchor }: { onAnchor: AnchorHandler }) {
   return (
     <section id="cta" className="ch-band">
-      <img src={IMG.kobeNight} alt="" aria-hidden loading="lazy" decoding="async" />
+      <img src={IMG.kobeNight} srcSet={photoSrcSet(IMG.kobeNight)} sizes={SIZES_FULL} alt="" aria-hidden loading="lazy" decoding="async" />
       <div className="ch-band-shade" aria-hidden />
       <div style={{ position: 'relative', maxWidth: 820, margin: '0 auto' }}>
         <Kick center>Let’s talk</Kick>
