@@ -7,6 +7,12 @@
 // ・Stripe 側のリトライに任せるため、success=200 / processing-error=500 を返す
 // ============================================================
 
+import {
+  funnelFromCheckoutSession,
+  funnelFromInvoice,
+  recordBillingFunnel,
+} from '../_lib/coreFunnel';
+
 export const config = { runtime: 'edge' };
 
 // ─── 構造化ログ (1 行 JSON、Vercel ログから grep しやすく) ─────
@@ -117,6 +123,12 @@ interface StripeInvoice {
   customer?: string;
   attempt_count?: number;
   next_payment_attempt?: number | null;
+  /** 全社ファネル用（purchase / renewal の見分けと、¥0請求の除外に使う） */
+  billing_reason?: string;
+  amount_paid?: number;
+  metadata?: Record<string, string> | null;
+  subscription_details?: { metadata?: Record<string, string> | null } | null;
+  lines?: { data?: Array<{ price?: { metadata?: Record<string, string> | null } | null }> } | null;
 }
 interface StripeEvent {
   id?: string;
@@ -277,7 +289,20 @@ export default async function handler(req: Request) {
             prev.updated_at = Date.now();
           }
         }
-        log('info', 'payment_succeeded', { event_id: eventId, sub_id: subId ?? null, invoice: inv?.id });
+        // 全社ファネルの最後の一段（purchase / renewal）。ここが空だったので、
+        // 「料金を見た → 決済へ出た」までしか繋がっていなかった。
+        const hit = funnelFromInvoice(inv);
+        if (hit) {
+          const r = await recordBillingFunnel(hit, `inv:${eventId}`);
+          log('info', 'core_funnel', {
+            event_id: eventId, kind: hit.event, brand: hit.label || null,
+            recorded: r.recorded, reason: r.reason ?? null,
+          });
+        }
+        log('info', 'payment_succeeded', {
+          event_id: eventId, sub_id: subId ?? null, invoice: inv?.id,
+          billing_reason: inv?.billing_reason ?? null, amount_paid: inv?.amount_paid ?? null,
+        });
         break;
       }
 
@@ -302,9 +327,24 @@ export default async function handler(req: Request) {
       case 'checkout.session.completed': {
         // 初回 checkout — クライアントは success_url + session_id で確定する経路なので
         // ここではログのみ
-        const sess = event.data?.object as { id?: string; subscription?: string; customer?: string };
+        const sess = event.data?.object as {
+          id?: string; subscription?: string; customer?: string;
+          mode?: string; payment_status?: string; amount_total?: number;
+          metadata?: Record<string, string> | null;
+        };
+        // 単発決済（CORE Studio の映像など）はここでしか確定が分からない。
+        // サブスクは invoice.payment_succeeded 側で数える（二重計上しない）。
+        const hit = funnelFromCheckoutSession(sess);
+        if (hit) {
+          const r = await recordBillingFunnel(hit, `cs:${eventId}`);
+          log('info', 'core_funnel', {
+            event_id: eventId, kind: hit.event, brand: hit.label || null,
+            recorded: r.recorded, reason: r.reason ?? null,
+          });
+        }
         log('info', 'checkout_completed', {
           event_id: eventId, session_id: sess?.id, sub_id: sess?.subscription ?? null,
+          mode: sess?.mode ?? null, payment_status: sess?.payment_status ?? null,
         });
         break;
       }

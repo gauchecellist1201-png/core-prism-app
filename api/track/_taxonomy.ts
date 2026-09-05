@@ -17,8 +17,15 @@
 // 個人情報は入れない。label は「どこを押したか」「何問目か」だけ。
 // ============================================================
 
-/** 計測してよいプロパティ（発信元）。ここに無い site は 400 で捨てる。 */
-export const CORE_SITES = ['corp', 'studio', 'neri_lp', 'neri_app', 'prism', 'universe'] as const;
+/**
+ * 計測してよいプロパティ（発信元）。ここに無い site は 400 で捨てる。
+ *
+ * billing だけはブラウザではなくサーバー（Stripe webhook）が積む。
+ * 「どのサイトで買われたか」は Stripe のイベントからは分からないので、
+ * 見てきたサイトのふりをせず billing という別の発信元として立て、
+ * 商品は内訳ラベル（billing:purchase:neri など）で持つ。
+ */
+export const CORE_SITES = ['corp', 'studio', 'neri_lp', 'neri_app', 'prism', 'universe', 'billing'] as const;
 export type CoreSite = (typeof CORE_SITES)[number];
 const SITE_SET = new Set<string>(CORE_SITES);
 
