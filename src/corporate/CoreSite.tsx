@@ -155,12 +155,20 @@ const CORE_TABS: { key: CoreTabKey; label: string; short: string; sub: string }[
   { key: 'home', label: '変革', short: '変革', sub: 'TRANSFORMATION' },
   { key: 'roai', label: 'Return on AI', short: 'ROAI', sub: 'CONCEPT' },
   { key: 'score', label: 'ROAI SCORE', short: '診断', sub: 'DIAGNOSIS' },
-  { key: 'os', label: 'AI COMPANY OS', short: 'AI OS', sub: 'FLAGSHIP' },
   { key: 'services', label: 'サービス', short: 'サービス', sub: 'SERVICES' },
-  { key: 'products', label: 'プロダクト', short: '製品', sub: 'PRODUCTS' },
   { key: 'company', label: '会社について', short: '会社', sub: 'COMPANY' },
   { key: 'contact', label: 'ご相談', short: '相談', sub: 'CONTACT' },
 ];
+/*
+ * 2026-09-06 一次導線を 11 → 8 に減らした（[[09_UI_UX_AUDIT]] 問題2）。
+ * バーから外したのは 2枚:
+ *   os（AI COMPANY OS）… 製品ブランド NERI と同じ場所を取り合っていた。
+ *                        ヘッダーの NERI とフッターの「AI COMPANY OS」から入れる。
+ *   products（プロダクト）… 変革タブに「プロダクトを見る」「すべてのプロダクトを見る」の
+ *                        2本の導線があり、フッターにも全製品が並んでいる。
+ * どちらもタブ自体は生きている（/corp#os・/corp#products と SECTION_TAB は無傷）ので、
+ * 既存の共有URL・検索結果からの着地は今までどおり動く。
+ */
 
 /** 章 id → その章が載っているタブ。既存の #リンクを生かすための対応表。 */
 const SECTION_TAB: Record<string, CoreTabKey> = {
@@ -494,7 +502,16 @@ export default function CoreSite() {
           </a>
           {/* 別ページ（タブでは切り替わらない別ルート）だけをここに残す */}
           <nav style={{ display: 'flex', gap: '1.6rem', alignItems: 'center' }}>
-            <a href="/continuum" style={navLink} className="lp-nav-link">Continuum</a>
+            {/* ブランド階層は CORE ＞ NERI ＞ CORE Studio の3層（[[05_BRAND_ARCHITECTURE]]）。
+                Continuum は4つ目のポジションを名乗っていたのでここから外した（ページは /continuum に残る）。 */}
+            <a
+              href="https://nexus.core-ai.jp/lp/"
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => track('corp_cta_click', 'header-neri')}
+              style={navLink}
+              className="lp-nav-link"
+            >NERI</a>
             <a href="/studio" style={navLink} className="lp-nav-link">制作スタジオ</a>
             <a href="/roai-score" onClick={e => { track('corp_cta_click', 'header'); handleAnchor(e, '/roai-score'); }} style={ctaSmall}>ROAIを診断</a>
           </nav>
