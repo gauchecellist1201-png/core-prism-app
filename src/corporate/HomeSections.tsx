@@ -177,7 +177,7 @@ export function HomeHero({ onAnchor }: { onAnchor: AnchorHandler }) {
 // ============================================================
 //  PROOF STRIP — 自社プロダクトの名前の帯（開発・運用の実体を先に示す）
 // ============================================================
-const PRODUCT_NAMES = ['Nexus', 'Prism', 'Resonance', 'Crystal', 'Iris', 'Lume', 'Guild', 'Pulse'];
+const PRODUCT_NAMES = ['NERI', 'Prism', 'Resonance', 'Crystal', 'Iris', 'Lume', 'Guild', 'Pulse'];
 
 export function ProofStrip({ onAnchor }: { onAnchor: AnchorHandler }) {
   return (

@@ -63,10 +63,10 @@ type Service = {
 // 価格は src/corporate/CoreSite.tsx の PLATFORM_PLANS と同じ実額
 export const SERVICES: Service[] = [
   {
-    key: 'nexus', name: 'Nexus',
+    key: 'nexus', name: 'NERI',
     who: '夢や目標はあるのに、日々のことに追われて前に進めない人',
-    can: '価値観・夢・目標から今日の一手までをつなぎ、話しかけると画面に描きながら並走する',
-    price: '無料', priceNote: '〜 / 上位 ¥9,800・¥19,800 / 月（税込）',
+    can: '話すだけで予定・メール・売上・記憶が動く。答えながら画面に描き、勝手には外へ出さない',
+    price: '¥39,800', priceNote: '〜 / 月（税込）・無料は1日5回',
     firstStep: '大切にしていることを3つ書くと、あなたの夢リストづくりが始まります',
     accent: '#4dc3ff', url: 'https://core-nexus-kappa.vercel.app/lp/', Logo: NexusLogo,
   },

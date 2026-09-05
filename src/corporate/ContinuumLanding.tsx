@@ -59,7 +59,7 @@ const DAY: Array<{ time: string; ai: string; you: string }> = [
 
 // 担当一覧。SUITE_COUNT と同じ人数であること（片方だけ増えると本文の数と合わなくなる）。
 const SIX: Array<{ Logo: typeof PrismLogo; name: string; role: string; hand: string }> = [
-  { Logo: NexusLogo, name: 'Nexus', role: 'あなたの夢と、今日の一手', hand: '価値観と夢から逆算して予定を組む秘書。話しかけると画面に描きながら並走する。' },
+  { Logo: NexusLogo, name: 'NERI', role: '話すだけで、会社が動く', hand: '価値観と夢から逆算して予定を組む秘書。話しかけると画面に描きながら並走する。' },
   { Logo: ResonanceLogo, name: 'Resonance', role: 'LINEの返信・日程調整', hand: '届いた1通ずつにAIが返信し、予約まで運ぶ。あなたは承認するだけ。' },
   { Logo: CrystalLogo, name: 'Crystal', role: 'サイトの接客・予約受付', hand: '24時間その場で即答するAIコンシェルジュ。問い合わせに追われない。' },
   { Logo: PrismLogo, name: 'Prism', role: '事務・資料・経営の数字', hand: '7人の専属AIが、社長のやりたくない仕事を片づける。' },

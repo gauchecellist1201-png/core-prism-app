@@ -6,7 +6,7 @@
 import type { Dictionary } from './ja';
 
 export const en: Dictionary = {
-  banner: '✦ Now in beta — 7-day free trial / No credit card / Cancel in one tap',
+  banner: '✦ Now in beta — 3-day free trial / No credit card / Cancel in one tap',
 
   nav: {
     agents:  '7 Agents',
@@ -22,7 +22,7 @@ export const en: Dictionary = {
     h1Line2: 'running your company 24/7.',
     sub1: 'You just approve.',
     sub2: 'Meetings · Sales · Finance · Content — everything moves on its own.',
-    cta:  'Start 7-day free trial',
+    cta:  'Start 3-day free trial',
     cta2: 'See pricing',
     sample: 'Try with sample data',
     sampleNote: '(experience a fictional café owner)',
@@ -181,7 +181,7 @@ export const en: Dictionary = {
 
   sticky: {
     title: 'Try Prism for free',
-    sub: '7-day free trial · No credit card · Cancel anytime',
+    sub: '3-day free trial · No credit card · Cancel anytime',
     cta: 'Start free →',
   },
 

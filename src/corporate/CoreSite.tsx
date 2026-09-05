@@ -67,7 +67,7 @@ const PLATFORM_PLANS: Array<{
   accent: string; url: string; Logo: typeof PrismLogo; step: string; featured?: boolean;
 }> = [
   // オーナー指示 2026-08-07: NEXUS（話しながら画面に描く秘書）を最上段に追加。
-  { name: 'Nexus', role: 'AI Secretary', copy: '話しながら画面に描くAI秘書。価値観→夢→今日の一手まで並走する。', price: '無料〜', priceNote: '上位 ¥9,800・¥19,800 / 月（税込）', accent: '#4dc3ff', url: 'https://core-nexus-kappa.vercel.app/lp/', Logo: NexusLogo, step: '新登場 — 夢を叶える秘書を', featured: true },
+  { name: 'NERI', role: 'Company OS', copy: '話すだけで、会社が動く。予定・メール・売上・記憶を一つの入口に。', price: '¥39,800〜', priceNote: '/ 月（税込）・無料は1日5回', accent: '#4dc3ff', url: 'https://core-nexus-kappa.vercel.app/lp/', Logo: NexusLogo, step: '新登場 — 夢を叶える秘書を', featured: true },
   // オーナー指示 2026-07-30: 主力は Prism → Resonance → Crystal。この順で先頭に置く。
   // ラベルは「STEP 1..5」の導線順だったが、主力を先に出す並びと矛盾するため
   // 「主力 / そのほか」の役割表記に変えた（読み手が順番を導線と誤解しないように）。
@@ -1718,7 +1718,7 @@ export default function CoreSite() {
             <InfoRow label="代表取締役" subLabel="CEO"           value={COMPANY.ceoJa}    subValue={COMPANY.ceoEn} />
             <InfoRow label="本社所在地" subLabel="Headquarters" value={COMPANY.addressJa} subValue={COMPANY.addressEn} />
             <InfoRow label="事業内容"   subLabel="Business"     value="エージェントAIを中心とした SaaS の開発・運営" />
-            <InfoRow label="提供サービス" subLabel="Products"   value="CORE Nexus（話しながら画面に描くAI秘書）／ CORE Universe（AIに任せられる仕事の宇宙図）／ CORE Prism（事業家向け）／ CORE Iris（インフルエンサー向け）／ CORE Resonance（店舗・サロン・教室向け）／ CORE Lume（クリエイター向け）／ Crystal（AI コンシェルジュ・接客サイト向け）／ CORE Pulse（からだ見守りAI）" isLast />
+            <InfoRow label="提供サービス" subLabel="Products"   value="CORE NERI（話すだけで会社が動く Company OS）／ CORE Universe（AIに任せられる仕事の宇宙図）／ CORE Prism（事業家向け）／ CORE Iris（インフルエンサー向け）／ CORE Resonance（店舗・サロン・教室向け）／ CORE Lume（クリエイター向け）／ Crystal（AI コンシェルジュ・接客サイト向け）／ CORE Pulse（からだ見守りAI）" isLast />
           </dl>
           </MobileFold>
 
@@ -1996,7 +1996,7 @@ export default function CoreSite() {
           </div>
           <div>
             <p style={footHead}>プロダクト</p>
-            <a href="https://core-nexus-kappa.vercel.app/lp/" target="_blank" rel="noopener noreferrer" style={footLink} className="lp-tap-link">CORE Nexus</a>
+            <a href="https://core-nexus-kappa.vercel.app/lp/" target="_blank" rel="noopener noreferrer" style={footLink} className="lp-tap-link">CORE NERI</a>
             <a href="/?lp=1" style={footLink} className="lp-tap-link">CORE Prism</a>
             <a href="/iris?lp=1" style={footLink} className="lp-tap-link">CORE Iris</a>
             <a href="https://guild-gauches-projects.vercel.app/?lp=1" target="_blank" rel="noopener noreferrer" style={footLink} className="lp-tap-link">CORE Guild</a>
@@ -2138,7 +2138,7 @@ function FeatureProduct({
     brand === 'lume' ? 'CORE Lume' :
     brand === 'crystal' ? 'Crystal' :
     brand === 'pulse' ? 'CORE Pulse' :
-    brand === 'nexus' ? 'CORE Nexus' :
+    brand === 'nexus' ? 'CORE NERI' :
     'CORE Prism';
 
   // モバイルでは7枚を畳む。デスクトップは常に開いたまま（見え方を変えない）。

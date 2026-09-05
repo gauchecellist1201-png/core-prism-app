@@ -454,7 +454,7 @@ export default function MasterEntry() {
               cursor: 'pointer',
             }}
           >
-            ◈ NEXUS (AI中枢) へ
+            ◈ NERI (AI中枢) へ
           </button>
           <button
             onClick={() => goToExternal('https://core-universe.vercel.app')}

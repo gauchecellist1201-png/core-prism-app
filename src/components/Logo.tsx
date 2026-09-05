@@ -1118,7 +1118,7 @@ export function NexusLogo({ size = 28, withWordmark = true, variant = 'default',
         height={size}
         viewBox="0 0 100 100"
         xmlns="http://www.w3.org/2000/svg"
-        aria-label="CORE NEXUS"
+        aria-label="CORE NERI"
         style={{ flexShrink: 0 }}
       >
         <defs>
@@ -1161,7 +1161,7 @@ export function NexusLogo({ size = 28, withWordmark = true, variant = 'default',
             lineHeight: 1,
           }}
         >
-          NEXUS
+          NERI
         </span>
       )}
     </span>
