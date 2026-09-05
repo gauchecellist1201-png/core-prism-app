@@ -61,7 +61,7 @@ export function labelOfProps(props?: Record<string, unknown>): string {
 
 function beacon(event: string, label: string) {
   try {
-    const body = JSON.stringify({ event, label });
+    const body = JSON.stringify({ site: 'studio', event, label });
     if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
       navigator.sendBeacon(BEACON_PATH, new Blob([body], { type: 'application/json' }));
     } else if (typeof fetch !== 'undefined') {

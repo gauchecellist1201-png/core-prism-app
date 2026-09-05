@@ -15,11 +15,14 @@
 //          (合計と内訳を別々に足す。内訳だけだと label 無しの回が消える)
 // ============================================================
 
+import { coreFunnelCommands } from './_taxonomy';
+
 export const config = { runtime: 'edge' };
 
 const UP_URL = (typeof process !== 'undefined' && process.env?.UPSTASH_REDIS_REST_URL) || '';
 const UP_TOK = (typeof process !== 'undefined' && process.env?.UPSTASH_REDIS_REST_TOKEN) || '';
 const UPSTASH_OK = !!(UP_URL && UP_TOK);
+const MASTER_KEY = (typeof process !== 'undefined' && process.env?.MASTER_KEY) || 'GAUCHE2026';
 
 // 受け付けるイベント名。ここに無い名前は捨てる。
 // (任意の文字列を通すと、書き間違えた1回きりの名前でキーが際限なく増える)
@@ -69,6 +72,17 @@ async function up(cmd: (string | number)[]): Promise<unknown> {
   return res.json();
 }
 
+/** 複数コマンドを1往復で送る（1件のビーコンで何度も fetch しないため） */
+async function upPipeline(cmds: (string | number)[][]): Promise<void> {
+  if (!UPSTASH_OK || cmds.length === 0) return;
+  const res = await fetch(`${UP_URL.replace(/\/$/, '')}/pipeline`, {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${UP_TOK}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify(cmds),
+  });
+  if (!res.ok) throw new Error(`upstash ${res.status}`);
+}
+
 function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
     status,
@@ -85,6 +99,9 @@ function dateOffsetDays(daysAgo: number): string {
 export default async function handler(req: Request): Promise<Response> {
   if (req.method === 'GET') {
     const url = new URL(req.url);
+    // 導線の生数字は社外に出さない（以前は誰でも読めた）
+    const key = req.headers.get('x-master-key') || url.searchParams.get('master_key') || '';
+    if (key !== MASTER_KEY) return json({ ok: false, error: 'forbidden' }, 403);
     const days = Math.max(1, Math.min(60, Number(url.searchParams.get('days') || '14')));
     if (!UPSTASH_OK) {
       return json({
@@ -120,9 +137,12 @@ export default async function handler(req: Request): Promise<Response> {
   if (UPSTASH_OK) {
     try {
       const key = `studio:funnel:${new Date().toISOString().slice(0, 10)}`;
-      await up(['HINCRBY', key, event, 1]);
-      if (label) await up(['HINCRBY', key, `${event}:${label}`, 1]);
-      await up(['EXPIRE', key, 100 * 86400]);
+      const cmds: (string | number)[][] = [['HINCRBY', key, event, 1]];
+      if (label) cmds.push(['HINCRBY', key, `${event}:${label}`, 1]);
+      cmds.push(['EXPIRE', key, 100 * 86400]);
+      // 全社共通ハッシュ core:funnel:<date> にも同じ1件を積む（語彙は _taxonomy.ts）
+      cmds.push(...coreFunnelCommands('studio', event, label));
+      await upPipeline(cmds);
     } catch (e) {
       console.error('[studio-funnel] upstash error', (e as Error).message);
     }

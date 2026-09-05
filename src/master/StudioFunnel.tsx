@@ -38,7 +38,10 @@ export default function StudioFunnel() {
   const load = async () => {
     setLoading(true); setErr(null);
     try {
-      const res = await fetch('/api/track/studio?days=14');
+      // 生カウントは master key 必須（他の /master 画面と同じ持ち方）
+      const key = localStorage.getItem('core_master_key') || 'GAUCHE2026';
+      const res = await fetch('/api/track/studio?days=14', { headers: { 'x-master-key': key } });
+      if (res.status === 403) throw new Error("master key が違います（コンソールで localStorage.setItem('core_master_key', '…') → 再読込）");
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const j = await res.json() as ApiResp;
       setDays(j.days || []);
