@@ -245,7 +245,7 @@ export function Bridge() {
 }
 
 // ============================================================
-//  08 ASHITAKA — 音楽を入口に、町の未来をつくる。（高原でのチェロ・実写ループ）
+//  08 ASHITAKA PROJECT × REGIONAL OS — 文化を入口に、地域の運営基盤を再設計する。（高原でのチェロ・実写ループ）
 // ============================================================
 function useLazyLoop() {
   const videoRef = useRef<HTMLVideoElement>(null);

@@ -146,8 +146,8 @@ const TAB_META: Record<CoreTabKey, { title: string; desc: string; path: string }
   os: { title: 'AI COMPANY OS | 株式会社CORE', desc: '経営・営業・顧客対応・バックオフィスを、人とAIエージェントが協働する一つのOperating Systemとして再設計する。', path: '/corp#os' },
   services: { title: 'サービス — AI戦略から運用・ROAI計測まで | 株式会社CORE', desc: 'AI Strategy / Business Redesign / AI Development / AI Security & Quality / AI Operation / ROAI Management。経営成果を生むプロセス別のサービス。', path: '/corp#services' },
   products: { title: '自社プロダクト | 株式会社CORE', desc: '自社で企画・開発し、本番環境で運用しているAIプロダクト群。', path: '/corp#products' },
-  ashitaka: { title: 'ASHITAKA PROJECT — 音楽を入口に、町の未来をつくる | 株式会社CORE', desc: '文化主導の地域変革。一台のチェロが鳴る一日を入口に、注目・来訪・関係人口をつくり、地域のAI/DX・産業・エネルギーへ。ONE REGION, ONE STORY。構想と準備の段階であることを正直に伝えます。', path: '/ashitaka' },
-  energy: { title: 'CORE ENERGY — AIの時代は、エネルギーの時代でもある | 株式会社CORE', desc: '知性は、最後にはエネルギーに依存する。AI×エネルギー×地域変革の交点を、資産を持たず、調査・戦略・設計から始める長期の事業領域として設計します。', path: '/energy' },
+  ashitaka: { title: 'ASHITAKA PROJECT × REGIONAL OS — 文化を入口に、街と村のDXへ | 株式会社CORE', desc: '文化で接点をつくる ASHITAKA PROJECT と、自治体・地域事業者の業務をAI前提で再設計する REGIONAL OS。演奏するのは代表取締役本人。自治体・地域事業者へいま提供できることと、構想段階のものを分けて伝えます。', path: '/ashitaka' },
+  energy: { title: 'CORE ENERGY — AIの電力需要に、地域の分散資源で応える | 株式会社CORE', desc: 'エネルギー事業者との協業領域。Energy Intelligence、AI最適化（需要予測・需給最適化・DR/VPP・設備保全）、地域プロジェクトの組成、計測。資産を持たず、AI・データ解析・設計・地域との合意形成から始めます。', path: '/energy' },
   company: { title: '会社について | 株式会社CORE', desc: 'いつの時代も、変わらない核を。核とは、人。会社概要・理念・代表。', path: '/corp#company' },
   contact: { title: 'AI Transformationを相談する | 株式会社CORE', desc: 'どこへ、いくらAI投資すると、どの程度のReturnが期待できるか。ROAI戦略相談・お問い合わせ。', path: '/corp#contact' },
 };
@@ -194,8 +194,8 @@ const SECTION_TAB: Record<string, CoreTabKey> = {
   change: 'home', process: 'home', onecore: 'home', studio: 'home', bridge: 'home', ashitaka: 'ashitaka', energy: 'energy',
   connection: 'home', vision: 'home', founder: 'home', invite: 'home',
   // /ashitaka・/energy の本編の章
-  'ashitaka-top': 'ashitaka', 'ashitaka-model': 'ashitaka', 'one-region': 'ashitaka', 'ashitaka-day': 'ashitaka', 'ashitaka-offer': 'ashitaka', 'ashitaka-faq': 'ashitaka', 'ashitaka-cta': 'ashitaka',
-  'energy-top': 'energy', 'energy-logic': 'energy', 'energy-intersection': 'energy', 'energy-stages': 'energy', 'energy-cta': 'energy',
+  'ashitaka-top': 'ashitaka', 'ashitaka-entities': 'ashitaka', 'ashitaka-handoff': 'ashitaka', 'ashitaka-performer': 'ashitaka', 'one-region': 'ashitaka', 'ashitaka-day': 'ashitaka', 'regional-os': 'ashitaka', 'ashitaka-offer': 'ashitaka', 'ashitaka-faq': 'ashitaka', 'ashitaka-cta': 'ashitaka',
+  'energy-top': 'energy', 'energy-offering': 'energy', 'energy-partnership': 'energy', 'energy-logic': 'energy', 'energy-intersection': 'energy', 'energy-stages': 'energy', 'energy-faq': 'energy', 'energy-cta': 'energy',
   // Return on AI（独立パス /return-on-ai）
   roai: 'roai', 'roai-fail': 'roai', 'roai-calc': 'roai', 'roai-loss': 'roai', 'roai-capacity': 'roai', 'roai-loop': 'roai', 'roai-measure': 'roai',
   // AI COMPANY OS — 中核商品

@@ -4628,7 +4628,7 @@ header .lp-tab.is-on { color: #fff; border-bottom-color: #38BDF8; background: tr
 .cs-bridge > img { object-position: 50% 60%; }
 .cs-principle { font-size: clamp(1.15rem, 2vw, 1.5rem); font-weight: 800; color: #BAE6FD; letter-spacing: 0.04em; margin: 0 0 1.2rem; }
 .cs-ashitaka { min-height: clamp(640px, 92vh, 980px); }
-.cs-ashitaka-copy { max-width: 820px; }
+.cs-ashitaka-copy { max-width: 900px; }
 .cs-ashitaka-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 45%; opacity: 0; transition: opacity 1.2s ease; pointer-events: none; }
 .cs-ashitaka-video[src] { opacity: 1; }
 @media (prefers-reduced-motion: reduce) { .cs-ashitaka-video { display: none; } }
@@ -4712,6 +4712,119 @@ header .lp-tab.is-on { color: #fff; border-bottom-color: #38BDF8; background: tr
 .cs-logic-lines { list-style: none; margin: 1.6rem 0; padding: 0 0 0 1.2rem; border-left: 2px solid rgba(56,189,248,0.6); display: grid; gap: 0.4rem; }
 .cs-logic-lines li { font-size: clamp(1.1rem, 2vw, 1.5rem); font-weight: 800; color: #fff; }
 
+/* ── /ashitaka 改訂（2026-09-06）: 二つの固有名・引き渡し・演奏者・工程・REGIONAL OS ── */
+.cs-split { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.2rem; margin-top: 2.8rem; }
+.cs-split-card { position: relative; overflow: hidden; border-radius: 20px; border: 1px solid rgba(148,163,184,0.2); background: #0B0F17; min-height: 420px; display: flex; }
+.cs-split-card.is-regional-os { border-color: rgba(125,211,252,0.45); }
+.cs-split-bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 40%; opacity: 0.42; }
+.cs-split-card.is-ashitaka::before { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(7,10,16,0.35) 0%, rgba(7,10,16,0.88) 60%, #070A10 100%); }
+.cs-split-grid { position: absolute; inset: 0; opacity: 0.55; pointer-events: none;
+  background-image: linear-gradient(rgba(56,189,248,0.12) 1px, transparent 1px), linear-gradient(90deg, rgba(56,189,248,0.12) 1px, transparent 1px);
+  background-size: 28px 28px; mask-image: radial-gradient(ellipse at 50% 0%, #000 20%, transparent 75%); -webkit-mask-image: radial-gradient(ellipse at 50% 0%, #000 20%, transparent 75%); }
+.cs-split-card.is-regional-os::before { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(56,189,248,0.10), rgba(7,10,16,0) 45%, rgba(7,10,16,0.6) 100%); }
+.cs-split-body { position: relative; z-index: 1; padding: clamp(1.4rem, 2.6vw, 2.2rem); display: flex; flex-direction: column; justify-content: flex-end; gap: 0.5rem; width: 100%; }
+.cs-split-role { margin: 0; display: flex; align-items: center; gap: 0.6rem; font-size: 0.68rem; letter-spacing: 0.24em; color: rgba(226,232,240,0.7); font-weight: 700; text-transform: uppercase; }
+.cs-split-role span { color: #38BDF8; }
+.cs-split-en { margin: 0; font-size: clamp(1.5rem, 2.6vw, 2.2rem); font-weight: 900; letter-spacing: 0.02em; color: #fff; line-height: 1.1; }
+.cs-split-card.is-regional-os .cs-split-en { color: #E0F2FE; }
+.cs-split-ja { margin: 0; font-size: clamp(1.05rem, 1.6vw, 1.25rem); font-weight: 800; color: #BAE6FD; }
+.cs-split-text { margin: 0.3rem 0 0; font-size: 0.95rem; line-height: 1.9; color: rgba(226,232,240,0.82); }
+.cs-split-points { list-style: none; margin: 0.6rem 0 0; padding: 0; display: grid; gap: 0.35rem; }
+.cs-split-points li { font-size: 0.9rem; font-weight: 700; color: rgba(240,245,252,0.92); padding-left: 1rem; position: relative; }
+.cs-split-points li::before { content: ""; position: absolute; left: 0; top: 0.7em; width: 5px; height: 1px; background: #38BDF8; }
+.cs-split-status { margin: 0.8rem 0 0; display: inline-flex; align-items: center; gap: 8px; font-size: 0.66rem; letter-spacing: 0.2em; font-weight: 700; color: rgba(226,232,240,0.75); }
+
+.cs-handoff { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 1.2rem; align-items: start; margin-top: 2.4rem; }
+.cs-handoff-seg { border: 1px solid rgba(148,163,184,0.2); border-radius: 18px; padding: 1.2rem 1.3rem 1.4rem; background: rgba(255,255,255,0.02); }
+.cs-handoff-seg.is-os { border-color: rgba(125,211,252,0.4); background: linear-gradient(180deg, rgba(56,189,248,0.08), rgba(56,189,248,0.02)); }
+.cs-handoff-seg .cs-chain { margin-top: 0.8rem; }
+.cs-handoff-label { margin: 0; font-size: 0.72rem; letter-spacing: 0.24em; font-weight: 700; color: #BAE6FD; display: flex; align-items: baseline; gap: 0.8rem; }
+.cs-handoff-label span { font-size: 0.9rem; letter-spacing: 0.04em; color: rgba(226,232,240,0.7); }
+.cs-handoff-arrow { align-self: center; display: flex; flex-direction: column; align-items: center; gap: 0.5rem; color: #7DD3FC; font-size: 0.62rem; letter-spacing: 0.26em; font-weight: 700; padding: 0 0.2rem; }
+.cs-handoff-arrow svg { display: block; }
+
+.cs-perf-grid { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr); gap: clamp(1.6rem, 4vw, 3.6rem); margin-top: 3rem; align-items: start; }
+.cs-perf-frame { position: relative; aspect-ratio: 4 / 3; border-radius: 18px; overflow: hidden; border: 1px solid rgba(148,163,184,0.22); background: #070A10; }
+.cs-perf-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 40%; opacity: 0; transition: opacity 0.7s ease; }
+.cs-perf-img.is-on { opacity: 1; }
+.cs-perf-frame::before { content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none; background: linear-gradient(180deg, rgba(7,10,16,0.72) 0%, rgba(7,10,16,0) 28%, rgba(7,10,16,0) 72%, rgba(7,10,16,0.55) 100%); }
+.cs-perf-frame-hud { position: absolute; left: 0; right: 0; top: 0; z-index: 2; display: flex; justify-content: space-between; padding: 1rem 2.6rem; font-size: 0.62rem; letter-spacing: 0.26em; font-weight: 700; color: rgba(240,245,252,0.85); text-shadow: 0 1px 8px rgba(0,0,0,0.6); }
+.cs-perf-frame-hud::before, .cs-perf-frame-hud::after { content: ""; position: absolute; z-index: 2; top: 12px; width: 14px; height: 14px; border-top: 1.5px solid rgba(125,211,252,0.9); }
+.cs-perf-frame-hud::before { left: 12px; border-left: 1.5px solid rgba(125,211,252,0.9); }
+.cs-perf-frame-hud::after { right: 12px; border-right: 1.5px solid rgba(125,211,252,0.9); }
+.cs-perf-frame::after { content: ""; position: absolute; z-index: 2; left: 12px; right: 12px; bottom: 12px; height: 14px; border-bottom: 1.5px solid rgba(125,211,252,0.7); border-left: 1.5px solid rgba(125,211,252,0.7); border-right: 1.5px solid rgba(125,211,252,0.7); pointer-events: none; }
+.cs-perf-fields { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin-top: 0.9rem; }
+.cs-perf-field { min-height: 44px; padding: 0.5rem 1rem; border-radius: 999px; border: 1px solid rgba(148,163,184,0.3); background: transparent; color: rgba(240,245,252,0.85); font-size: 0.9rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 0.6rem; transition: border-color 0.2s ease, background 0.2s ease; }
+.cs-perf-field span { font-size: 0.64rem; letter-spacing: 0.22em; color: #7DD3FC; }
+.cs-perf-field.is-on { border-color: #7DD3FC; background: rgba(56,189,248,0.14); color: #fff; }
+.cs-perf-field:focus-visible { outline: 2px solid #7DD3FC; outline-offset: 2px; }
+.cs-perf-cap { margin: 0; flex-basis: 100%; font-size: 0.8rem; color: rgba(226,232,240,0.6); }
+.cs-perf-sheet { border: 1px solid rgba(125,211,252,0.35); border-radius: 20px; padding: clamp(1.3rem, 2.4vw, 2rem); background: linear-gradient(180deg, rgba(56,189,248,0.07), rgba(7,10,16,0.2)); position: relative; }
+.cs-perf-sheet::before { content: "SPEC SHEET"; position: absolute; top: 14px; right: 18px; font-size: 0.6rem; letter-spacing: 0.3em; font-weight: 700; color: rgba(125,211,252,0.7); font-family: "Inter", "Noto Sans JP", sans-serif; }
+.cs-perf-name { border-bottom: 1px solid rgba(148,163,184,0.2); padding-bottom: 1rem; }
+.cs-perf-en { margin: 0; font-size: clamp(2.2rem, 4vw, 3.2rem); font-weight: 900; letter-spacing: 0.06em; color: #fff; line-height: 1; }
+.cs-perf-ja { margin: 0.4rem 0 0; font-size: 1.05rem; font-weight: 800; color: #E0F2FE; }
+.cs-perf-title { margin: 0.15rem 0 0; font-size: 0.86rem; color: rgba(226,232,240,0.7); }
+.cs-perf-spec { margin: 0; padding: 0.4rem 0 0; }
+.cs-perf-spec > div { display: grid; grid-template-columns: 128px minmax(0, 1fr); gap: 0.8rem; padding: 0.7rem 0; border-bottom: 1px solid rgba(148,163,184,0.14); }
+.cs-perf-spec dt { margin: 0; font-size: 0.64rem; letter-spacing: 0.22em; font-weight: 700; color: #7DD3FC; padding-top: 0.25rem; }
+.cs-perf-spec dd { margin: 0; font-size: 0.92rem; line-height: 1.75; color: rgba(240,245,252,0.92); font-weight: 600; }
+.cs-strings { margin: 1.2rem 0 0; }
+.cs-strings figcaption { font-size: 0.62rem; letter-spacing: 0.26em; font-weight: 700; color: rgba(226,232,240,0.6); margin-bottom: 0.4rem; }
+.cs-strings-body { display: grid; grid-template-columns: minmax(0, 1fr) 96px; gap: 0.8rem; align-items: stretch; border: 1px solid rgba(148,163,184,0.18); border-radius: 14px; padding: 0.8rem 0.9rem; background: rgba(7,10,16,0.5); }
+.cs-strings svg { width: 100%; height: 120px; display: block; }
+.cs-string-ghost { fill: none; stroke: rgba(148,163,184,0.16); stroke-width: 1; }
+.cs-string { fill: none; stroke: #BAE6FD; stroke-linecap: round; filter: drop-shadow(0 0 4px rgba(56,189,248,0.45)); }
+.cs-strings-scale { list-style: none; margin: 0; padding: 0; display: grid; grid-template-rows: repeat(4, 1fr); }
+.cs-strings-scale li { display: flex; align-items: center; justify-content: space-between; gap: 0.4rem; font-size: 0.66rem; letter-spacing: 0.06em; color: rgba(226,232,240,0.7); }
+.cs-strings-scale b { color: #E0F2FE; font-size: 0.9rem; }
+.cs-perf-venues { margin-top: 1.2rem; }
+.cs-perf-venues-label { margin: 0 0 0.5rem; font-size: 0.62rem; letter-spacing: 0.26em; font-weight: 700; color: rgba(226,232,240,0.6); }
+.cs-perf-venue-row { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 0.6rem; align-items: start; padding: 0.4rem 0; }
+.cs-perf-venue-row > span { font-size: 0.62rem; letter-spacing: 0.22em; font-weight: 700; color: #7DD3FC; padding-top: 0.45rem; }
+.cs-perf-venue-row ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.35rem; }
+.cs-perf-venue-row li { padding: 0.32rem 0.7rem; border-radius: 999px; border: 1px solid rgba(148,163,184,0.25); font-size: 0.8rem; font-weight: 700; color: rgba(240,245,252,0.9); }
+
+.cs-program { list-style: none; margin: 2.8rem 0 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; counter-reset: step; }
+.cs-program-step { position: relative; border: 1px solid rgba(148,163,184,0.2); border-radius: 16px; padding: 1.2rem 1.3rem 1.3rem; background: rgba(255,255,255,0.025); }
+.cs-program-step:last-child { border-color: rgba(125,211,252,0.55); background: linear-gradient(135deg, rgba(56,189,248,0.16), rgba(56,189,248,0.04)); }
+.cs-program-no { font-size: 0.7rem; letter-spacing: 0.22em; color: #7DD3FC; font-weight: 700; }
+.cs-program-t { margin: 0.4rem 0 0.3rem; font-size: 1.12rem; font-weight: 800; color: #fff; }
+.cs-program-b { margin: 0; font-size: 0.9rem; line-height: 1.8; color: rgba(226,232,240,0.78); }
+
+.cs-os { position: relative; overflow: hidden; }
+.cs-os-bg { opacity: 0.35; mask-image: radial-gradient(ellipse at 20% 30%, #000 10%, transparent 70%); -webkit-mask-image: radial-gradient(ellipse at 20% 30%, #000 10%, transparent 70%); }
+.cs-os-layers { list-style: none; margin: 2.8rem 0 0; padding: 0; display: grid; gap: 0.6rem; }
+.cs-os-layer { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 1rem; padding: 1.1rem 1.3rem; border-radius: 14px; border: 1px solid rgba(125,211,252,0.35);
+  background: linear-gradient(90deg, rgba(56,189,248, calc(0.2 - var(--i) * 0.04)), rgba(56,189,248,0.02)); margin-left: calc(var(--i) * 1.2rem); }
+.cs-os-en { font-size: 0.7rem; letter-spacing: 0.26em; font-weight: 700; color: #BAE6FD; padding-top: 0.3rem; }
+.cs-os-ja { margin: 0 0 0.25rem; font-size: 1.1rem; font-weight: 800; color: #fff; }
+.cs-os-body { margin: 0; font-size: 0.92rem; line-height: 1.8; color: rgba(226,232,240,0.8); }
+
+.cs-terms { margin: 1.4rem 0 0; padding: 0; display: grid; gap: 0; border-top: 1px solid rgba(148,163,184,0.16); }
+.cs-terms > div { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 0.8rem; padding: 0.75rem 0; border-bottom: 1px solid rgba(148,163,184,0.16); }
+.cs-terms dt { margin: 0; font-size: 0.82rem; font-weight: 800; color: #E0F2FE; }
+.cs-terms dd { margin: 0; font-size: 0.88rem; line-height: 1.75; color: rgba(226,232,240,0.78); }
+
+/* ── /energy 改訂: 送電網のヒーロー・提供範囲・協業の形 ── */
+.cs-energy-hero > img { object-position: 50% 55%; }
+.cs-energy-stagebar { list-style: none; margin: 2.2rem 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.cs-energy-stagebar li { display: inline-flex; align-items: center; gap: 0.6rem; padding: 0.5rem 0.9rem; border-radius: 999px; border: 1px solid rgba(148,163,184,0.3); background: rgba(7,10,16,0.5); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); font-size: 0.66rem; letter-spacing: 0.2em; font-weight: 700; color: rgba(226,232,240,0.7); }
+.cs-energy-stagebar li span { font-size: 0.82rem; letter-spacing: 0.02em; color: rgba(240,245,252,0.9); }
+.cs-energy-stagebar li.is-on { border-color: #7DD3FC; color: #E0F2FE; }
+.cs-energy-stagebar li.is-on b { color: #38BDF8; }
+.cs-offering { list-style: none; margin: 2.8rem 0 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+.cs-offering li { border: 1px solid rgba(148,163,184,0.2); border-radius: 16px; padding: 1.3rem 1.4rem; background: rgba(255,255,255,0.025); }
+.cs-offering-no { font-size: 0.7rem; letter-spacing: 0.22em; color: #38BDF8; font-weight: 700; }
+.cs-offering-t { margin: 0.4rem 0 0.3rem; font-size: 1.15rem; font-weight: 800; color: #fff; }
+.cs-offering-b { margin: 0; font-size: 0.92rem; line-height: 1.85; color: rgba(226,232,240,0.78); }
+.cs-partners { list-style: none; margin: 2.8rem 0 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
+.cs-partner { border: 1px solid rgba(125,211,252,0.35); border-radius: 16px; padding: 1.3rem 1.4rem; background: linear-gradient(180deg, rgba(56,189,248,0.08), rgba(56,189,248,0.02)); }
+.cs-partner-no { font-size: 0.7rem; letter-spacing: 0.22em; color: #7DD3FC; font-weight: 700; }
+.cs-partner-en { margin: 0.5rem 0 0.1rem; font-size: 0.7rem; letter-spacing: 0.24em; color: rgba(226,232,240,0.6); font-weight: 700; }
+.cs-partner-ja { margin: 0 0 0.4rem; font-size: 1.15rem; font-weight: 800; color: #fff; }
+.cs-partner-body { margin: 0; font-size: 0.92rem; line-height: 1.8; color: rgba(226,232,240,0.78); }
+
 /* ── responsive ── */
 @media (max-width: 1024px) {
   .cs-works { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.8rem; }
@@ -4737,6 +4850,14 @@ header .lp-tab.is-on { color: #fff; border-bottom-color: #38BDF8; background: tr
   .cs-tl-dot { left: -1.4rem; top: 4px; }
   .cs-intents { grid-template-columns: minmax(0, 1fr); }
   .cs-scenes { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .cs-split, .cs-perf-grid, .cs-offering, .cs-partners { grid-template-columns: minmax(0, 1fr); }
+  .cs-split-card { min-height: 0; }
+  .cs-handoff { grid-template-columns: minmax(0, 1fr); }
+  .cs-handoff-arrow { flex-direction: row; justify-content: center; padding: 0.2rem 0; gap: 0.8rem; }
+  .cs-handoff-arrow svg { transform: rotate(90deg); width: 40px; }
+  .cs-program { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .cs-os-layer { grid-template-columns: minmax(0, 1fr); gap: 0.3rem; margin-left: calc(var(--i) * 0.5rem); }
+  .cs-perf-spec > div { grid-template-columns: 104px minmax(0, 1fr); }
   .cs-strata { margin-top: 0.5rem; }
 }
 @media (max-width: 640px) {
@@ -4779,3 +4900,4 @@ header .lp-tab.is-on { color: #fff; border-bottom-color: #38BDF8; background: tr
 /* 本編のヒーロー見出しは 12〜13 字の一行が 1440px で折れないよう一段小さく。CTA 帯の見出しは電話で 1.72rem。 */
 .cs-page-hero .cs-bleed-h { font-size: clamp(2.1rem, 4.4vw, 4rem); }
 @media (max-width: 640px) { .cs-bleed-inner h2 { font-size: 1.72rem !important; } .cs-page-hero .cs-bleed-h { font-size: 2.05rem; } }
+@media (max-width: 640px) { .cs-program { grid-template-columns: minmax(0, 1fr); } .cs-strings-body { grid-template-columns: minmax(0, 1fr); } .cs-strings-scale { grid-template-rows: none; grid-template-columns: repeat(4, 1fr); gap: 0.4rem; } .cs-strings-scale li { flex-direction: column; align-items: flex-start; gap: 0; } }
