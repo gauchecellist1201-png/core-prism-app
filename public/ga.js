@@ -10,8 +10,11 @@
  * ここに直接書いてよい。Cookie を使うため、EU向け同意管理を足す場合はこのファイルを起点にする。
  *
  * 設計:
- *  - core-ai.jp とそのサブドメイン (studio.core-ai.jp) は cookie を親ドメインで共有し、
- *    同一の訪問者として数える。別ドメイン (NERI LP) はリンカーで橋渡しする。
+ *  - core-ai.jp とそのサブドメイン (studio.core-ai.jp / nexus.core-ai.jp = NERI LP) は
+ *    cookie を親ドメインで共有し、同一の訪問者として数える。リンカーで橋渡しするのは
+ *    cookie を共有できない本当に別のドメイン (NERI アプリ本体の vercel.app) だけ。
+ *    2026-09-06: corp / Studio から NERI LP へのリンクを nexus.core-ai.jp へ揃えたので、
+ *    LP へのリンクはもうリンカーを通らない (通すと `?_gl=1*...` が付く。下の linker を参照)。
  *  - localhost / vercel.app のプレビューでは送らない（実測を汚さないため）。
  *    [[env_production_tracking_probe_pollutes_real_numbers]] と同じ理由。
  *  - window.coreGA(name, params) を生やす。既存の計測（core:funnel）から
