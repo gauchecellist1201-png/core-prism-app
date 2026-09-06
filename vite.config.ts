@@ -32,6 +32,8 @@ export default defineConfig({
         studioAbout: resolve(__dirname, 'studio-about.html'),
         studioContact: resolve(__dirname, 'studio-contact.html'),
         returnOnAi: resolve(__dirname, 'return-on-ai.html'),
+        ashitaka: resolve(__dirname, 'ashitaka.html'),
+        energy: resolve(__dirname, 'energy.html'),
         roaiScore: resolve(__dirname, 'roai-score.html'),
       },
       output: {

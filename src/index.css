@@ -4096,6 +4096,12 @@ details[open] > summary .disclosure-chev {
 .ch-band-shade { position: absolute; inset: 0; background: radial-gradient(80% 80% at 50% 50%, rgba(7,10,16,0.55) 0%, rgba(7,10,16,0.9) 100%); }
 
 
+/* ── HERO 一行の事業定義（2026-09-06 CORE WEB 2035） ── */
+.ch-hero-line {
+  font-size: clamp(1.05rem, 1.7vw, 1.35rem); font-weight: 700; line-height: 1.7; letter-spacing: 0.01em;
+  color: rgba(240,245,252,0.92); margin: -0.4rem 0 1.6rem; max-width: 34em; text-shadow: 0 1px 12px rgba(0,0,0,0.4);
+}
+@media (max-width: 640px) { .ch-hero-line { font-size: 1rem; margin: -0.2rem 0 1.1rem; } }
 /* ── HERO 理念（2026-09-03 理念ドリブンへ入れ替え） ── */
 .ch-hero-tagline {
   font-size: clamp(1rem, 1.7vw, 1.3rem); font-weight: 700; letter-spacing: 0.06em;
@@ -4505,3 +4511,271 @@ header .lp-tab.is-on { color: #fff; border-bottom-color: #38BDF8; background: tr
 @media (prefers-reduced-motion: reduce) {
   .rs-bar > span, .rs-progress > span, .rs-opt { transition: none; }
 }
+
+/* ══════════════════════════════════════════════════════════
+   CORE WEB 2035（2026-09-06）ホームの新章・/ashitaka・/energy
+   prefix: cs-（core story）。既存の ch-（章の枠）・ro-（ROAI）と併用する。
+   ══════════════════════════════════════════════════════════ */
+/* ── 状態の札（NOW / ENGINE / NEXT / FUTURE） ── */
+.cs-status {
+  display: inline-flex; align-items: center; gap: 8px; align-self: start;
+  font-size: 0.7rem; letter-spacing: 0.22em; font-weight: 700; color: rgba(226,232,240,0.7);
+  border: 1px solid rgba(148,163,184,0.28); border-radius: 999px; padding: 0.45rem 0.9rem; white-space: nowrap;
+}
+.cs-status.is-on { color: #E0F2FE; border-color: rgba(125,211,252,0.55); }
+.cs-status-dot { width: 7px; height: 7px; border-radius: 999px; background: rgba(148,163,184,0.7); display: inline-block; }
+.cs-status.is-on .cs-status-dot, .cs-note .cs-status-dot { background: #38BDF8; box-shadow: 0 0 0 4px rgba(56,189,248,0.16); }
+
+/* ── 道筋（矢印でつなぐ札） ── */
+.cs-chain { list-style: none; margin: 2.2rem 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.7rem 0; align-items: stretch; }
+.cs-chain-step {
+  display: inline-flex; align-items: center; gap: 0.55rem; position: relative;
+  padding: 0.7rem 1rem; border: 1px solid rgba(148,163,184,0.22); border-radius: 12px;
+  background: rgba(255,255,255,0.03); font-weight: 700; font-size: 0.98rem; color: #F3F6FB; margin-right: 2.1rem;
+}
+.cs-chain-step::after {
+  content: ""; position: absolute; right: -1.55rem; top: 50%; width: 1rem; height: 1px; background: rgba(148,163,184,0.45);
+}
+.cs-chain-step::before {
+  content: ""; position: absolute; right: -1.62rem; top: calc(50% - 3px); width: 5px; height: 5px;
+  border-top: 1px solid rgba(148,163,184,0.7); border-right: 1px solid rgba(148,163,184,0.7); transform: rotate(45deg);
+}
+.cs-chain-step:last-child { margin-right: 0; }
+.cs-chain-step:last-child::after, .cs-chain-step:last-child::before { display: none; }
+.cs-chain-no { font-size: 0.66rem; letter-spacing: 0.18em; color: rgba(226,232,240,0.5); font-weight: 700; }
+.cs-chain.is-accent .cs-chain-step { border-color: rgba(125,211,252,0.35); }
+.cs-chain.is-accent .cs-chain-no { color: #7DD3FC; }
+.cs-chain.is-accent .cs-chain-step:last-child { background: linear-gradient(135deg, rgba(56,189,248,0.22), rgba(56,189,248,0.06)); border-color: rgba(125,211,252,0.7); }
+.cs-chain.is-compact { margin-top: 1.4rem; }
+.cs-chain.is-compact .cs-chain-step { padding: 0.55rem 0.85rem; font-size: 0.9rem; }
+
+/* ── いまの段階／ONE REGION の塊 ── */
+.cs-note {
+  border: 1px solid rgba(148,163,184,0.22); border-left: 2px solid #38BDF8; border-radius: 14px;
+  padding: 1.2rem 1.3rem; background: rgba(7,10,16,0.55); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+}
+.cs-note-label { display: flex; align-items: center; gap: 8px; margin: 0 0 0.5rem; font-size: 0.68rem; letter-spacing: 0.24em; color: #7DD3FC; font-weight: 700; text-transform: uppercase; }
+.cs-note-title { margin: 0 0 0.4rem; font-size: 1.15rem; font-weight: 800; color: #fff; }
+.cs-note-body { margin: 0; font-size: 0.92rem; line-height: 1.9; color: rgba(226,232,240,0.82); }
+.cs-two-notes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; margin-top: 2rem; }
+
+/* ── THE CHANGE ── */
+.cs-change { padding: 7rem 1.5rem; background: #070A10; position: relative; overflow: hidden; }
+.cs-change-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.5rem; margin-top: 3rem; }
+.cs-change-col { border-radius: 18px; padding: clamp(1.4rem, 2.4vw, 2.1rem); border: 1px solid rgba(148,163,184,0.18); }
+.cs-change-col.is-changing { background: rgba(255,255,255,0.025); }
+.cs-change-col.is-constant { background: linear-gradient(180deg, rgba(56,189,248,0.10), rgba(56,189,248,0.02)); border-color: rgba(125,211,252,0.4); }
+.cs-change-label { margin: 0 0 1rem; font-size: 0.7rem; letter-spacing: 0.26em; text-transform: uppercase; font-weight: 700; color: rgba(226,232,240,0.6); }
+.cs-change-col.is-constant .cs-change-label { color: #7DD3FC; }
+.cs-change-col ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.55rem; }
+.cs-change-col li { font-size: clamp(1.05rem, 1.6vw, 1.3rem); font-weight: 700; line-height: 1.5; color: rgba(226,232,240,0.7); padding-left: 1rem; position: relative; }
+.cs-change-col li::before { content: ""; position: absolute; left: 0; top: 0.72em; width: 5px; height: 1px; background: rgba(148,163,184,0.6); }
+.cs-change-col.is-constant li { color: #fff; }
+.cs-change-col.is-constant li::before { background: #38BDF8; }
+
+/* ── PROCESS（一般 vs CORE） ── */
+.cs-process { display: grid; gap: 1.4rem; margin-top: 2.6rem; }
+.cs-process-row { border-top: 1px solid rgba(148,163,184,0.16); padding-top: 1.4rem; }
+.cs-process-label { margin: 0; font-size: 0.82rem; letter-spacing: 0.14em; font-weight: 700; color: rgba(226,232,240,0.6); }
+.cs-process-row.is-core .cs-process-label { color: #BAE6FD; }
+.cs-process-row.is-generic .cs-chain-step { color: rgba(226,232,240,0.62); border-style: dashed; }
+
+/* ── ONE CORE（4層） ── */
+.cs-layers { list-style: none; margin: 3rem 0 0; padding: 0; border-top: 1px solid rgba(148,163,184,0.18); }
+.cs-layer {
+  display: grid; grid-template-columns: 64px minmax(0, 1fr) auto; gap: 1.2rem 1.6rem; align-items: start;
+  padding: 1.9rem 0; border-bottom: 1px solid rgba(148,163,184,0.18);
+}
+.cs-layer-no { font-size: 0.82rem; letter-spacing: 0.2em; color: #38BDF8; font-weight: 700; padding-top: 0.35rem; }
+.cs-layer-en { margin: 0 0 0.25rem; font-size: 0.72rem; letter-spacing: 0.26em; text-transform: uppercase; color: rgba(226,232,240,0.6); font-weight: 700; }
+.cs-layer-ja { margin: 0 0 0.5rem; font-size: clamp(1.4rem, 2.4vw, 2rem); font-weight: 800; color: #F3F6FB; line-height: 1.35; letter-spacing: -0.005em; }
+.cs-layer-text { margin: 0 0 0.6rem; font-size: 0.98rem; line-height: 1.9; color: rgba(226,232,240,0.78); max-width: 640px; }
+
+/* ── STUDIO ── */
+.cs-studio-head { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr); gap: clamp(2rem, 5vw, 5rem); align-items: end; }
+.cs-studio-supports { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.6rem; border-left: 2px solid rgba(56,189,248,0.6); padding-left: 1.2rem; }
+.cs-studio-supports li { font-size: 0.98rem; font-weight: 700; color: rgba(240,245,252,0.9); line-height: 1.6; }
+.cs-works { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.2rem; margin-top: 2.8rem; }
+.cs-work { margin: 0; border-radius: 16px; overflow: hidden; border: 1px solid rgba(148,163,184,0.18); background: #0B0F17; position: relative; }
+.cs-work img { width: 100%; aspect-ratio: 4 / 5; object-fit: cover; display: block; }
+.cs-work figcaption {
+  position: absolute; left: 0; right: 0; bottom: 0; padding: 2.4rem 1rem 1rem; display: flex; flex-direction: column; gap: 3px;
+  background: linear-gradient(180deg, rgba(7,10,16,0) 0%, rgba(7,10,16,0.88) 100%);
+}
+.cs-work-status { font-size: 0.64rem; letter-spacing: 0.22em; color: #7DD3FC; font-weight: 700; }
+.cs-work-client { font-size: 0.92rem; font-weight: 700; color: #fff; }
+
+/* ── 全面写真の章（BRIDGE / ASHITAKA / 本編ヒーロー） ── */
+.cs-bleed { position: relative; overflow: hidden; background: #070A10; min-height: clamp(520px, 78vh, 820px); display: flex; align-items: center; }
+.cs-bleed > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 45%; }
+.cs-bleed-shade {
+  position: absolute; inset: 0;
+  background:
+    linear-gradient(90deg, rgba(7,10,16,0.95) 0%, rgba(7,10,16,0.84) 38%, rgba(7,10,16,0.42) 72%, rgba(7,10,16,0.25) 100%),
+    linear-gradient(180deg, #070A10 0%, rgba(7,10,16,0) 18%, rgba(7,10,16,0) 80%, #070A10 100%);
+}
+.cs-bleed-shade.is-center {
+  background:
+    radial-gradient(70% 70% at 50% 55%, rgba(7,10,16,0.35) 0%, rgba(7,10,16,0.82) 100%),
+    linear-gradient(180deg, #070A10 0%, rgba(7,10,16,0) 22%, rgba(7,10,16,0) 78%, #070A10 100%);
+}
+.cs-bleed-inner { position: relative; z-index: 2; padding: 7rem 1.5rem; }
+.cs-bleed-inner.is-center { text-align: center; }
+.cs-bleed-h { font-size: clamp(2.3rem, 5.4vw, 4.6rem); font-weight: 900; line-height: 1.16; letter-spacing: -0.02em; color: #fff; margin: 0.2rem 0 1rem; text-shadow: 0 2px 24px rgba(0,0,0,0.4); }
+.cs-bleed-lead { font-size: clamp(1rem, 1.5vw, 1.15rem); line-height: 2; color: rgba(240,245,252,0.9); font-weight: 500; margin: 0; max-width: 640px; }
+.cs-bleed-inner.is-center .cs-bleed-lead { margin: 0 auto; }
+.cs-bridge { min-height: clamp(460px, 64vh, 680px); }
+.cs-bridge > img { object-position: 50% 60%; }
+.cs-principle { font-size: clamp(1.15rem, 2vw, 1.5rem); font-weight: 800; color: #BAE6FD; letter-spacing: 0.04em; margin: 0 0 1.2rem; }
+.cs-ashitaka { min-height: clamp(640px, 92vh, 980px); }
+.cs-ashitaka-copy { max-width: 820px; }
+.cs-ashitaka-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 45%; opacity: 0; transition: opacity 1.2s ease; pointer-events: none; }
+.cs-ashitaka-video[src] { opacity: 1; }
+@media (prefers-reduced-motion: reduce) { .cs-ashitaka-video { display: none; } }
+
+/* ── ENERGY ── */
+.cs-energy { position: relative; overflow: hidden; padding: 7rem 1.5rem; background: #0B0F17; }
+.cs-energy-bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0.22; pointer-events: none; }
+.cs-energy::before { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, #070A10 0%, rgba(7,10,16,0.55) 40%, rgba(7,10,16,0.7) 70%, #070A10 100%); }
+.cs-energy-grid { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr); gap: clamp(2rem, 5vw, 5rem); align-items: start; }
+.cs-stages { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.9rem; }
+.cs-stage { border: 1px solid rgba(148,163,184,0.2); border-radius: 16px; padding: 1.2rem 1.3rem; background: rgba(7,10,16,0.5); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); display: grid; grid-template-columns: 74px minmax(0, 1fr); gap: 0.1rem 1rem; }
+.cs-stage-when { grid-row: span 3; font-size: 0.72rem; letter-spacing: 0.22em; color: #7DD3FC; font-weight: 700; padding-top: 0.2rem; }
+.cs-stage-en { margin: 0; font-size: 0.68rem; letter-spacing: 0.2em; color: rgba(226,232,240,0.6); font-weight: 700; }
+.cs-stage-ja { margin: 0.1rem 0 0.3rem; font-size: 1.12rem; font-weight: 800; color: #fff; }
+.cs-stage-body { margin: 0; font-size: 0.9rem; line-height: 1.8; color: rgba(226,232,240,0.78); }
+.cs-energy-foot { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr); gap: clamp(1.5rem, 4vw, 4rem); align-items: center; margin-top: 3rem; }
+
+/* ── CONNECTION ── */
+.cs-connection { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr); gap: clamp(2rem, 5vw, 5rem); align-items: center; }
+.cs-conn-lines { list-style: none; margin: 0 0 1.2rem; padding: 0; display: grid; gap: 0.3rem; }
+.cs-conn-lines li { font-size: clamp(1.2rem, 2.2vw, 1.7rem); font-weight: 800; color: rgba(240,245,252,0.92); line-height: 1.5; }
+.cs-conn-answer { margin: 0; font-size: clamp(1.9rem, 3.8vw, 3rem); font-weight: 900; color: #fff; line-height: 1.3; letter-spacing: -0.01em; }
+.cs-strata { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.5rem; }
+.cs-stratum {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 1rem;
+  padding: 1.1rem 1.3rem; border-radius: 12px; border: 1px solid rgba(125,211,252,0.35);
+  background: linear-gradient(90deg, rgba(56,189,248,0.16), rgba(56,189,248,0.03));
+}
+.cs-stratum-en { font-size: 0.78rem; letter-spacing: 0.26em; font-weight: 700; color: #BAE6FD; }
+.cs-stratum-ja { font-size: 1.05rem; font-weight: 800; color: #fff; }
+.cs-stratum + .cs-stratum { margin-left: 1.2rem; }
+
+/* ── CORE 2035 ── */
+.cs-timeline { list-style: none; margin: 3rem 0 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.4rem; position: relative; }
+.cs-timeline::before { content: ""; position: absolute; left: 0; right: 0; top: 6px; height: 1px; background: linear-gradient(90deg, #38BDF8, rgba(56,189,248,0.15)); }
+.cs-tl { position: relative; padding-top: 1.6rem; }
+.cs-tl-dot { position: absolute; left: 0; top: 0; width: 13px; height: 13px; border-radius: 999px; background: #070A10; border: 2px solid #38BDF8; box-shadow: 0 0 0 5px rgba(56,189,248,0.14); }
+.cs-tl-when { font-size: 0.72rem; letter-spacing: 0.24em; color: #7DD3FC; font-weight: 700; }
+.cs-tl-en { margin: 0.4rem 0 0.2rem; font-size: 0.7rem; letter-spacing: 0.2em; color: rgba(226,232,240,0.6); font-weight: 700; }
+.cs-tl-ja { margin: 0 0 0.5rem; font-size: clamp(1.3rem, 2vw, 1.7rem); font-weight: 800; color: #fff; }
+.cs-tl-body { margin: 0; font-size: 0.94rem; line-height: 1.85; color: rgba(226,232,240,0.78); }
+.cs-stance { margin: 3rem 0 0; font-size: clamp(1.1rem, 1.8vw, 1.4rem); font-weight: 800; color: #BAE6FD; }
+
+/* ── INVITATION ── */
+.cs-invite { position: relative; overflow: hidden; padding: 8rem 1.5rem; background: #070A10; }
+.cs-invite > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.cs-intents { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; max-width: 980px; margin: 2.6rem auto 0; }
+.cs-intent {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 0.35rem; text-align: left; text-decoration: none;
+  padding: 1.3rem 1.4rem; min-height: 96px; border-radius: 16px;
+  border: 1px solid rgba(125,211,252,0.4); background: rgba(7,10,16,0.62); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+}
+.cs-intent:hover { border-color: #7DD3FC; background: rgba(7,10,16,0.8); transform: translateY(-2px); }
+.cs-intent:focus-visible { outline: 2px solid #7DD3FC; outline-offset: 2px; }
+.cs-intent-label { font-size: 1.15rem; font-weight: 800; color: #fff; }
+.cs-intent-sub { font-size: 0.7rem; letter-spacing: 0.16em; color: #BAE6FD; font-weight: 600; }
+.cs-quiet { list-style: none; margin: 1.6rem auto 0; padding: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 0.4rem 2rem; }
+
+/* ── 本編ページ（/ashitaka・/energy） ── */
+.cs-page-hero { min-height: clamp(560px, 82vh, 860px); }
+.cs-scenes { list-style: none; margin: 2.4rem 0 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.9rem; }
+.cs-scenes li { padding: 1.1rem 1.2rem; border-radius: 14px; border: 1px solid rgba(148,163,184,0.2); background: rgba(255,255,255,0.03); font-weight: 700; color: #F3F6FB; font-size: 1rem; }
+.cs-offer { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr); gap: clamp(2rem, 5vw, 5rem); margin-top: 2.6rem; }
+.cs-offer-now { list-style: none; margin: 0; padding: 0; display: grid; gap: 1rem; }
+.cs-offer-now li { display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 0.7rem; padding: 1rem 0; border-top: 1px solid rgba(148,163,184,0.16); }
+.cs-offer-now li:last-child { border-bottom: 1px solid rgba(148,163,184,0.16); }
+.cs-offer-t { margin: 0 0 0.3rem; font-size: 1.1rem; font-weight: 800; color: #fff; }
+.cs-offer-b { margin: 0; font-size: 0.94rem; line-height: 1.85; color: rgba(226,232,240,0.78); }
+.cs-offer-next { list-style: none; margin: 0; padding: 1.2rem 1.3rem; border-radius: 16px; border: 1px dashed rgba(148,163,184,0.3); display: grid; gap: 0.5rem; }
+.cs-offer-next li { font-size: 0.95rem; font-weight: 700; color: rgba(226,232,240,0.75); }
+.cs-faq { margin: 2.4rem 0 0; display: grid; gap: 0.6rem; }
+.cs-faq details { border: 1px solid rgba(148,163,184,0.2); border-radius: 14px; background: rgba(255,255,255,0.025); }
+.cs-faq summary { cursor: pointer; padding: 1rem 1.2rem; font-weight: 800; color: #fff; font-size: 1rem; list-style: none; display: flex; justify-content: space-between; gap: 1rem; min-height: 44px; align-items: center; }
+.cs-faq summary::-webkit-details-marker { display: none; }
+.cs-faq summary::after { content: "+"; color: #7DD3FC; font-size: 1.2rem; flex-shrink: 0; }
+.cs-faq details[open] summary::after { content: "−"; }
+.cs-faq details > p { margin: 0; padding: 0 1.2rem 1.1rem; font-size: 0.95rem; line-height: 1.9; color: rgba(226,232,240,0.8); }
+.cs-fields { list-style: none; margin: 2rem 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.6rem; }
+.cs-fields li { padding: 0.55rem 0.95rem; border-radius: 999px; border: 1px solid rgba(148,163,184,0.25); font-size: 0.9rem; font-weight: 700; color: rgba(240,245,252,0.9); }
+.cs-logic-lines { list-style: none; margin: 1.6rem 0; padding: 0 0 0 1.2rem; border-left: 2px solid rgba(56,189,248,0.6); display: grid; gap: 0.4rem; }
+.cs-logic-lines li { font-size: clamp(1.1rem, 2vw, 1.5rem); font-weight: 800; color: #fff; }
+
+/* ── responsive ── */
+@media (max-width: 1024px) {
+  .cs-works { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.8rem; }
+  .cs-timeline { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 860px) {
+  .cs-change-grid, .cs-two-notes, .cs-studio-head, .cs-energy-grid, .cs-energy-foot, .cs-connection, .cs-offer { grid-template-columns: minmax(0, 1fr); }
+  .cs-change-grid { gap: 1rem; margin-top: 2rem; }
+  .cs-layer { grid-template-columns: 44px minmax(0, 1fr); }
+  .cs-layer .cs-status { grid-column: 2; }
+  .cs-works { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.6rem; }
+  .cs-work img { aspect-ratio: 3 / 4; }
+  .cs-work figcaption { padding: 1.6rem 0.7rem 0.7rem; }
+  .cs-work-client { font-size: 0.8rem; }
+  .cs-bleed { min-height: 0; }
+  .cs-bleed-inner { padding: 5rem 1.25rem; }
+  .cs-bleed-shade, .cs-bleed-shade.is-center { background: linear-gradient(180deg, rgba(7,10,16,0.92) 0%, rgba(7,10,16,0.8) 55%, rgba(7,10,16,0.95) 100%); }
+  .cs-ashitaka { min-height: 0; }
+  .cs-ashitaka-video { display: none; }
+  .cs-timeline { grid-template-columns: minmax(0, 1fr); gap: 1.6rem; padding-left: 1.4rem; }
+  .cs-timeline::before { left: 6px; right: auto; top: 0; bottom: 0; width: 1px; height: auto; background: linear-gradient(180deg, #38BDF8, rgba(56,189,248,0.15)); }
+  .cs-tl { padding-top: 0; }
+  .cs-tl-dot { left: -1.4rem; top: 4px; }
+  .cs-intents { grid-template-columns: minmax(0, 1fr); }
+  .cs-scenes { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .cs-strata { margin-top: 0.5rem; }
+}
+@media (max-width: 640px) {
+  .cs-change { padding: 5rem 1.25rem; }
+  .cs-energy, .cs-invite { padding: 5rem 1.25rem; }
+  .cs-bleed-h { font-size: 2.15rem; }
+  .cs-conn-answer { font-size: 1.8rem; }
+  /* 道筋は縦に積む（横に折り返すと矢印の向きが読めない） */
+  .cs-chain { flex-direction: column; gap: 0.45rem; }
+  .cs-chain-step { margin-right: 0; padding: 0.7rem 0.95rem; }
+  .cs-chain-step::after, .cs-chain-step::before { display: none; }
+  .cs-chain-step + .cs-chain-step { position: relative; }
+  .cs-chain-step + .cs-chain-step::before { content: ""; display: block; position: absolute; left: 1.1rem; top: -0.45rem; width: 1px; height: 0.45rem; background: rgba(148,163,184,0.5); border: none; transform: none; right: auto; }
+  .cs-stage { grid-template-columns: minmax(0, 1fr); }
+  .cs-stage-when { grid-row: auto; }
+  .cs-stratum + .cs-stratum { margin-left: 0.6rem; }
+  .cs-scenes { grid-template-columns: minmax(0, 1fr); }
+  .cs-works { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+/* CORE WEB 2035（2026-09-06）モバイルの微調整。
+   ・タブ6枚（CORE／AI変革／地域／ENERGY／会社／相談）が 390px で 441px に伸びて「相談」が切れていた（Playwright実測）
+     → 余白を詰めて 1 画面に収める。
+   ・Studio の実績3枚は 390px では 1 枚 110px で読めない → 横スワイプの棚（72vw）にする。 */
+@media (max-width: 640px) {
+  header .lp-tabs { padding: 0 0.4rem; gap: 0; }
+  header .lp-tab { padding: 0 0.55rem; font-size: 0.8rem; }
+  .cs-works {
+    display: grid; grid-auto-flow: column; grid-auto-columns: 72vw; grid-template-columns: none;
+    gap: 0.8rem; overflow-x: auto; scroll-snap-type: x mandatory; padding: 0.2rem 0 0.8rem; scrollbar-width: none; -webkit-overflow-scrolling: touch;
+  }
+  .cs-works::-webkit-scrollbar { display: none; }
+  .cs-work { scroll-snap-align: start; }
+  .cs-work img { aspect-ratio: 4 / 5; }
+  .cs-work figcaption { padding: 2rem 1rem 1rem; }
+  .cs-work-client { font-size: 0.92rem; }
+}
+/* ONE CORE の各層を少し詰める（PCのホームが 17,000px 超に伸びたため） */
+.cs-layer { padding: 1.5rem 0; }
+/* 本編のヒーロー見出しは 12〜13 字の一行が 1440px で折れないよう一段小さく。CTA 帯の見出しは電話で 1.72rem。 */
+.cs-page-hero .cs-bleed-h { font-size: clamp(2.1rem, 4.4vw, 4rem); }
+@media (max-width: 640px) { .cs-bleed-inner h2 { font-size: 1.72rem !important; } .cs-page-hero .cs-bleed-h { font-size: 2.05rem; } }

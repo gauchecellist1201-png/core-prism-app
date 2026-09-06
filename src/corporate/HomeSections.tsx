@@ -26,6 +26,7 @@ import { SUITE_COUNT } from './suiteData';
 import { COMPANY_INFO } from '../data/companyInfo';
 import { rememberSource, track } from './roai/track';
 import { SIZES_CARD, SIZES_FULL, photoSrcSet } from './photoSet';
+import { HERO, FOUNDER } from './coreStory';
 
 type AnchorHandler = (e: ReactMouseEvent<HTMLAnchorElement>, href: string) => void;
 
@@ -112,10 +113,13 @@ export function HomeHero({ onAnchor }: { onAnchor: AnchorHandler }) {
             <br />
             変わらない核を。
           </h1>
+          {/* 2026-09-06 CORE WEB 2035: 社是の直下に「何の会社か」の一行。
+              社是だけでは10秒後に「AIで仕組みを再設計する会社」が残らなかった（08_HERO_CONCEPTS A）。 */}
+          <p className="ch-hero-line" style={{ fontFamily: FONT_JA }}>{HERO.line}</p>
           <div className="ch-cta-row">
-            <a href="/roai-score" onClick={e => { rememberSource('home-hero'); track('corp_cta_click', 'home-hero'); onAnchor(e, '/roai-score'); }} style={ctaHero}>ROAIを無料診断する</a>
-            <a href="#contact" onClick={e => onAnchor(e, '#contact')} style={{ ...ctaGhost, backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}>
-              AI Transformationを相談する
+            <a href="/roai-score" onClick={e => { rememberSource('home-hero'); track('corp_cta_click', 'home-hero'); onAnchor(e, '/roai-score'); }} style={ctaHero}>{HERO.primary}</a>
+            <a href="#invite" onClick={e => { track('corp_cta_click', 'home-hero-invite'); onAnchor(e, '#invite'); }} style={{ ...ctaGhost, backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}>
+              {HERO.secondary}
             </a>
           </div>
         </motion.div>
@@ -420,46 +424,29 @@ export function AssessmentHome({ onAnchor }: { onAnchor: AnchorHandler }) {
 //  FOUNDER — 代表の言葉。実在の写真（ceo-naoki-ide）を使う。
 // ============================================================
 export function FounderMessage({ onAnchor }: { onAnchor: AnchorHandler }) {
+  // 2026-09-06 CORE WEB 2035: 「論理と感情。技術と人。」— 長い伝記ではなく、この珍しい会社が存在する戦略的な意味を語る。
+  // 言葉の正本は coreStory.ts（FOUNDER）。年齢・年・学歴は書かない（03_FACT_EVIDENCE_MAP G）。
   return (
-    <section id="philosophy" className="lp-section-pad" style={{ padding: '7rem 1.5rem', background: INK_2, scrollMarginTop: 70, position: 'relative', overflow: 'hidden' }}>
+    <section id="founder" className="lp-section-pad" style={{ padding: '7rem 1.5rem', background: INK_2, scrollMarginTop: 70, position: 'relative', overflow: 'hidden' }}>
       <div className="ch-wrap ch-two" style={{ position: 'relative' }}>
         <div>
-          <Kick>Founder’s Message</Kick>
+          <Kick>{FOUNDER.kicker}</Kick>
           <h2 style={{ ...sectionH2, margin: 0 }}>
-            技術は変わる。
-            <br />
-            人という核は、変わらない。
+            {FOUNDER.h2.split('\n').map((l, i, a) => <span key={l}>{l}{i < a.length - 1 && <br />}</span>)}
           </h2>
           <div style={{ fontFamily: FONT_JA, color: TEXT_BODY, fontSize: 'clamp(0.95rem, 1.4vw, 1.05rem)', lineHeight: 2.2, marginTop: '1.6rem', maxWidth: 560 }}>
-            <p style={{ margin: '0 0 1.2rem' }}>
-              私は神戸で、チェロを教えています。生徒が一曲を弾き切った日の顔は、どんな技術にも代えられません。
-              けれど、その教室の裏では、予定の調整や請求書や連絡に、弾く時間より長い時間を使っていました。
-              その時間を返してくれたのが、AIでした。
-            </p>
-            <p style={{ margin: '0 0 1.2rem' }}>
-              AIも、ツールも、いずれ入れ替わります。五年前に正しかった構成は、五年後には残っていないかもしれません。
-              では、何が残るのか。
-            </p>
-            <p style={{ margin: '0 0 1.2rem' }}>
-              <strong style={{ color: PAPER, fontWeight: 800 }}>核とは、人だと、私は思っています。</strong>
-              人の役に立つこと。人が価値を生むこと。人が人らしく笑っていられること。
-              その核だけは、時代が変わっても同じです。
-            </p>
-            <p style={{ margin: '0 0 1.2rem' }}>
-              私はチェロ奏者として舞台に立ってきました。音楽は、人の手でしか届かない。
-              けれど、その手を空けるためにこそ、技術はある。AIが賢くなるほど、人の温度が価値になる。
-              そう信じて、この会社をつくりました。
-            </p>
-            <p style={{ margin: 0 }}>
-              CORE が見ているのは、売上の数字ではなく、人が輝いているかどうかです。
-              最新の技術を、いちばん古い理由のために使い切る。それが、私たちの仕事です。
-            </p>
+            <p style={{ margin: '0 0 1.2rem', color: PAPER, fontWeight: 700 }}>{FOUNDER.intro}</p>
+            <p style={{ margin: '0 0 1.2rem' }}><strong style={{ color: PAPER, fontWeight: 800 }}>{FOUNDER.thesis}</strong></p>
+            {FOUNDER.story.map(p => <p key={p.slice(0, 12)} style={{ margin: '0 0 1.2rem' }}>{p}</p>)}
           </div>
+          <ul style={{ listStyle: 'none', margin: '0.4rem 0 0', padding: '0 0 0 1.1rem', borderLeft: `2px solid ${ACCENT}`, display: 'grid', gap: '0.35rem', maxWidth: 560 }}>
+            {FOUNDER.track.map(t => <li key={t} style={{ fontFamily: FONT_JA, fontSize: '0.92rem', lineHeight: 1.8, color: 'rgba(226,232,240,0.82)', fontWeight: 600 }}>{t}</li>)}
+          </ul>
           <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginTop: '2rem' }}>
             <div>
               <p style={{ fontFamily: FONT_JA, fontSize: '1.05rem', fontWeight: 800, color: '#fff', margin: 0 }}>{COMPANY_INFO.representative}</p>
               <p style={{ fontFamily: FONT_EN, fontSize: '0.74rem', letterSpacing: '0.12em', color: TEXT_MUTED, margin: '2px 0 0' }}>
-                {COMPANY_INFO.representativeEn} — Founder &amp; CEO, {COMPANY_INFO.nameEn}
+                {COMPANY_INFO.representativeEn} — Founder &amp; CEO, {COMPANY_INFO.nameEn} ／ Cellist GAUCHE
               </p>
             </div>
           </div>

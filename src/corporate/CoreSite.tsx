@@ -48,6 +48,9 @@ import { RoaiBand, ExecutiveQuestion, Differentiation, RoaiModelSection, ScoreTe
 import ReturnOnAiPage from './roai/ReturnOnAiPage';
 import RoaiScore from './roai/RoaiScore';
 import { setCorpTab } from './corpRouteStore';
+import { TheChange, ProcessContrast, OneCore, StudioSection, Bridge, AshitakaHome, EnergyHome, Connection, Core2035, Invitation } from './StorySections';
+import AshitakaPage from './AshitakaPage';
+import EnergyPage from './EnergyPage';
 import { track } from './roai/track';
 
 const COMPANY = {
@@ -119,28 +122,32 @@ function jumpToHash(e: ReactMouseEvent<HTMLAnchorElement>, href: string) {
 //      SECTION_TAB でどの章がどのタブに載っているかを引き、
 //      必要ならタブを切り替えてからその章へ送る。
 // ============================================================
-export type CoreTabKey = 'home' | 'roai' | 'score' | 'os' | 'services' | 'products' | 'company' | 'contact';
+export type CoreTabKey = 'home' | 'roai' | 'score' | 'os' | 'services' | 'products' | 'ashitaka' | 'energy' | 'company' | 'contact';
 
 /**
  * 2026-09-03 MASTER PROMPT: Return on AI と CORE ROAI SCORE は中心的な知的資産なので、
  * ハッシュではなく独立したパスを持つ（検索・共有・AI検索のため）。中身は同じ CoreSite のタブ。
  */
-const TAB_PATH: Partial<Record<CoreTabKey, string>> = { roai: '/return-on-ai', score: '/roai-score' };
-const PATH_TAB: Record<string, CoreTabKey> = { '/return-on-ai': 'roai', '/roai-score': 'score' };
+/** 2026-09-06 CORE WEB 2035: ASHITAKA PROJECT と CORE Energy も独立パス（検索・共有のため）。 */
+const TAB_PATH: Partial<Record<CoreTabKey, string>> = { roai: '/return-on-ai', score: '/roai-score', ashitaka: '/ashitaka', energy: '/energy' };
+const PATH_TAB: Record<string, CoreTabKey> = { '/return-on-ai': 'roai', '/roai-score': 'score', '/ashitaka': 'ashitaka', '/energy': 'energy' };
 function tabFromPath(): CoreTabKey | null {
   if (typeof window === 'undefined') return null;
-  const p = window.location.pathname.replace(/\/$/, '');
+  // `/ashitaka.html` のように入口ファイル名で直接開かれても同じタブへ（vite preview・共有URLの取り違え対策）
+  const p = window.location.pathname.replace(/\/$/, '').replace(/\.html$/, '');
   return PATH_TAB[p] ?? null;
 }
 
 /** タブごとの title / description / canonical（SEO・AI検索向け） */
 const TAB_META: Record<CoreTabKey, { title: string; desc: string; path: string }> = {
-  home: { title: '株式会社CORE | AI Transformation Company — Return on AI', desc: '核とは、人。AIは、人にしかできない仕事を人に返すための道具です。AI前提で会社そのものをつくり直し、AI投資を経営成果へ変えるAI Transformation Company。', path: '/corp' },
+  home: { title: '株式会社CORE | いつの時代も、変わらない核を。— AI Transformation Company', desc: 'いつの時代も、変わらない核を。AI前提で、企業・地域・社会の仕組みを再設計する神戸のAI Transformation Company。AI投資を経営成果（Return on AI）へ。企業から地域へ、地域からエネルギーへ。', path: '/corp' },
   roai: { title: 'Return on AI とは | 株式会社CORE', desc: 'AI投資は目的ではない。AIが何を返したかを、売上・コスト・時間・リスク・新しい価値で測る。CORE ROAI MODEL・ROAIの計算・損失回避・投資余力の逆算・Transformation Loop。', path: '/return-on-ai' },
   score: { title: 'CORE ROAI SCORE — 約3分のAI投資優先順位診断 | 株式会社CORE', desc: '約3分で、あなたの会社の次にAI投資すべき場所・削減できる時間・経済価値の概算・AI Readiness・投資余力の目安を可視化。連絡先不要、算定根拠つき。', path: '/roai-score' },
   os: { title: 'AI COMPANY OS | 株式会社CORE', desc: '経営・営業・顧客対応・バックオフィスを、人とAIエージェントが協働する一つのOperating Systemとして再設計する。', path: '/corp#os' },
   services: { title: 'サービス — AI戦略から運用・ROAI計測まで | 株式会社CORE', desc: 'AI Strategy / Business Redesign / AI Development / AI Security & Quality / AI Operation / ROAI Management。経営成果を生むプロセス別のサービス。', path: '/corp#services' },
   products: { title: '自社プロダクト | 株式会社CORE', desc: '自社で企画・開発し、本番環境で運用しているAIプロダクト群。', path: '/corp#products' },
+  ashitaka: { title: 'ASHITAKA PROJECT — 音楽を入口に、町の未来をつくる | 株式会社CORE', desc: '文化主導の地域変革。一台のチェロが鳴る一日を入口に、注目・来訪・関係人口をつくり、地域のAI/DX・産業・エネルギーへ。ONE REGION, ONE STORY。構想と準備の段階であることを正直に伝えます。', path: '/ashitaka' },
+  energy: { title: 'CORE ENERGY — AIの時代は、エネルギーの時代でもある | 株式会社CORE', desc: '知性は、最後にはエネルギーに依存する。AI×エネルギー×地域変革の交点を、資産を持たず、調査・戦略・設計から始める長期の事業領域として設計します。', path: '/energy' },
   company: { title: '会社について | 株式会社CORE', desc: 'いつの時代も、変わらない核を。核とは、人。会社概要・理念・代表。', path: '/corp#company' },
   contact: { title: 'AI Transformationを相談する | 株式会社CORE', desc: 'どこへ、いくらAI投資すると、どの程度のReturnが期待できるか。ROAI戦略相談・お問い合わせ。', path: '/corp#contact' },
 };
@@ -151,14 +158,21 @@ const TAB_META: Record<CoreTabKey, { title: string; desc: string; path: string }
  * いちばん右の「お問い合わせ」が画面外に完全に消えていた。
  * 英字の副題も 640px 以下では隠す（CSS 側）。
  */
+/*
+ * 2026-09-06 CORE WEB 2035: 一次導線を「物語 → AI変革 → 地域 → エネルギー → 会社 → 相談」に。
+ *   roai / score（/return-on-ai・/roai-score）はバーから外し、AI変革タブの冒頭・ヘッダーの「ROAIを診断」・
+ *   フッターから入る（中身・パス・SECTION_TAB は無傷）。バー上ではAI変革の札を点灯させる（TAB_CHIP）。
+ */
 const CORE_TABS: { key: CoreTabKey; label: string; short: string; sub: string }[] = [
-  { key: 'home', label: '変革', short: '変革', sub: 'TRANSFORMATION' },
-  { key: 'roai', label: 'Return on AI', short: 'ROAI', sub: 'CONCEPT' },
-  { key: 'score', label: 'ROAI SCORE', short: '診断', sub: 'DIAGNOSIS' },
-  { key: 'services', label: 'サービス', short: 'サービス', sub: 'SERVICES' },
+  { key: 'home', label: 'CORE', short: 'CORE', sub: 'PHILOSOPHY' },
+  { key: 'services', label: 'AI変革', short: 'AI変革', sub: 'TRANSFORMATION' },
+  { key: 'ashitaka', label: 'ASHITAKA', short: '地域', sub: 'REGION' },
+  { key: 'energy', label: 'ENERGY', short: 'ENERGY', sub: 'FUTURE' },
   { key: 'company', label: '会社について', short: '会社', sub: 'COMPANY' },
   { key: 'contact', label: 'ご相談', short: '相談', sub: 'CONTACT' },
 ];
+/** バーに無いタブ（roai / score / os / products）を開いているとき、どの札を点灯させるか。 */
+const TAB_CHIP: Partial<Record<CoreTabKey, CoreTabKey>> = { roai: 'services', score: 'services', os: 'services', products: 'services' };
 /*
  * 2026-09-06 一次導線を 11 → 8 に減らした（[[09_UI_UX_AUDIT]] 問題2）。
  * バーから外したのは 2枚:
@@ -175,7 +189,13 @@ const SECTION_TAB: Record<string, CoreTabKey> = {
   // 変革 — この会社が何をするのか
   top: 'home', philosophy: 'home', whatwedo: 'home', difference: 'home', assessment: 'home',
   why: 'home', proof: 'home', overview: 'home', cta: 'home', values: 'home',
-  'roai-band': 'home', question: 'home', 'roai-model': 'home', 'score-teaser': 'home',
+  'roai-band': 'home', question: 'services', 'roai-model': 'home', 'score-teaser': 'home',
+  // CORE WEB 2035（2026-09-06）ホームの新章
+  change: 'home', process: 'home', onecore: 'home', studio: 'home', bridge: 'home', ashitaka: 'ashitaka', energy: 'energy',
+  connection: 'home', vision: 'home', founder: 'home', invite: 'home',
+  // /ashitaka・/energy の本編の章
+  'ashitaka-top': 'ashitaka', 'ashitaka-model': 'ashitaka', 'one-region': 'ashitaka', 'ashitaka-day': 'ashitaka', 'ashitaka-offer': 'ashitaka', 'ashitaka-faq': 'ashitaka', 'ashitaka-cta': 'ashitaka',
+  'energy-top': 'energy', 'energy-logic': 'energy', 'energy-intersection': 'energy', 'energy-stages': 'energy', 'energy-cta': 'energy',
   // Return on AI（独立パス /return-on-ai）
   roai: 'roai', 'roai-fail': 'roai', 'roai-calc': 'roai', 'roai-loss': 'roai', 'roai-capacity': 'roai', 'roai-loop': 'roai', 'roai-measure': 'roai',
   // AI COMPANY OS — 中核商品
@@ -528,10 +548,10 @@ export default function CoreSite() {
               type="button"
               role="tab"
               data-tab={t.key}
-              aria-selected={tab === t.key}
+              aria-selected={(TAB_CHIP[tab] ?? tab) === t.key}
               aria-label={t.label}
               onClick={() => goTab(t.key)}
-              className={'lp-tab' + (tab === t.key ? ' is-on' : '')}
+              className={'lp-tab' + ((TAB_CHIP[tab] ?? tab) === t.key ? ' is-on' : '')}
             >
               {isNarrow ? t.short : t.label}
               <span className="lp-tab-sub">{t.sub}</span>
@@ -558,24 +578,38 @@ export default function CoreSite() {
         {/* 2026-09-03 MASTER PROMPT: 思想理解 → 問題認識 → ROAI理解 → 自己診断 → 相談 の順に並べる。
             理念（核とは、人）と人の写真は Humanity の章として残す（§15）。 */}
         {/* 2026-09-04 オーナー指示: 動画のヒーローの「次のページ」は理念。理念→約束→人→ROAI の順へ。 */}
+        {/* 2026-09-06 CORE WEB 2035: 9幕の物語。
+            理念 → AIの時代 → AI Transformation（ROAI・順序・5つのReturn・診断）→ ONE CORE → Studio →
+            地域へ → ASHITAKA → ENERGY → つながり → 2035 → 証明 → 代表 → 会社概要 → 招待。
+            ホームから外した章（ExecutiveQuestion / Differentiation / WhyCore / ServicesEditorial / ApproachSection /
+            PeopleMosaic / ProofStrip / FinalCta）は AI変革タブ・会社タブ・/return-on-ai に残る。 */}
         <Manifesto onAnchor={handleAnchor} />
         <Values />
-        <PeopleMosaic />
+        <TheChange />
         <RoaiBand onAnchor={handleAnchor} />
-        <ExecutiveQuestion onAnchor={handleAnchor} />
-        <Differentiation />
-        <RoaiModelSection onAnchor={handleAnchor} />
+        <ProcessContrast />
+        <RoaiModelSection onAnchor={handleAnchor} compact />
         <ScoreTeaser onAnchor={handleAnchor} />
-        <ProofStrip onAnchor={handleAnchor} />
-        <WhyCore />
-        <ServicesEditorial onAnchor={handleAnchor} />
+        <OneCore onAnchor={handleAnchor} />
+        <StudioSection />
+        <Bridge />
+        <AshitakaHome onAnchor={handleAnchor} />
+        <EnergyHome onAnchor={handleAnchor} />
+        <Connection />
+        <Core2035 />
         <ProductsProof onAnchor={handleAnchor} />
-        <ApproachSection />
         <FounderMessage onAnchor={handleAnchor} />
         <CompanyOverview onAnchor={handleAnchor} />
-        <FinalCta onAnchor={handleAnchor} />
+        <Invitation onAnchor={handleAnchor} />
       </>
       )}
+
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
+      {/*  ASHITAKA PROJECT（/ashitaka）  */}
+      {/*  CORE ENERGY（/energy）         */}
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
+      {tab === 'ashitaka' && <AshitakaPage onAnchor={handleAnchor} />}
+      {tab === 'energy' && <EnergyPage onAnchor={handleAnchor} />}
 
       {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
       {/*  RETURN ON AI（/return-on-ai）  */}
@@ -599,6 +633,14 @@ export default function CoreSite() {
       {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
       {tab === 'services' && (
       <>
+        {/* 2026-09-06: ホームから移した章。AI変革タブは「ROAI → 順序の違い → なぜCORE → 何をするか → 進め方」で始まる。 */}
+        <RoaiBand onAnchor={handleAnchor} />
+        <ExecutiveQuestion onAnchor={handleAnchor} />
+        <Differentiation />
+        <WhyCore />
+        <ServicesEditorial onAnchor={handleAnchor} />
+        <ApproachSection />
+        <ScoreTeaser onAnchor={handleAnchor} />
         <ServiceLayersSection />
         {/* 「何ができるか」の直後に「どう進むか・やめられるか」を置く（稟議に持ち込める形にする） */}
         <EngagementSection onAnchor={handleAnchor} />
@@ -609,6 +651,7 @@ export default function CoreSite() {
         <BusinessDevSection />
         <PartnerSection onAnchor={handleAnchor} />
         <InvestmentSection onAnchor={handleAnchor} />
+        <FinalCta onAnchor={handleAnchor} />
       </>
       )}
 
@@ -1435,6 +1478,8 @@ export default function CoreSite() {
       {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
       {tab === 'company' && (
       <>
+        <PeopleMosaic />
+        <ProofStrip onAnchor={handleAnchor} />
         <CreedBand onAnchor={handleAnchor} />
         <PhilosophyCore />
         <CoreNumbersSection />
@@ -2025,6 +2070,10 @@ export default function CoreSite() {
           <div>
             <p style={footHead}>サービス</p>
             <a href="#whatwedo" onClick={e => handleAnchor(e, '#whatwedo')} style={footLink} className="lp-tap-link">事業内容</a>
+            <a href="/return-on-ai" onClick={e => handleAnchor(e, '/return-on-ai')} style={footLink} className="lp-tap-link">Return on AI</a>
+            <a href="/roai-score" onClick={e => handleAnchor(e, '/roai-score')} style={footLink} className="lp-tap-link">CORE ROAI SCORE</a>
+            <a href="/ashitaka" onClick={e => handleAnchor(e, '/ashitaka')} style={footLink} className="lp-tap-link">ASHITAKA PROJECT</a>
+            <a href="/energy" onClick={e => handleAnchor(e, '/energy')} style={footLink} className="lp-tap-link">CORE Energy</a>
             <a href="#companyos" onClick={e => handleAnchor(e, '#companyos')} style={footLink} className="lp-tap-link">AI COMPANY OS</a>
             <a href="#assessment" onClick={e => handleAnchor(e, '#assessment')} style={footLink} className="lp-tap-link">AI Transformation診断</a>
             <a href="#ai-native" onClick={e => handleAnchor(e, '#ai-native')} style={footLink} className="lp-tap-link">開発思想と技術</a>

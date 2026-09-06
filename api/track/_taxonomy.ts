@@ -39,6 +39,7 @@ export const CORE_EVENTS = [
   'secondary_cta_click',    // 副導線（料金へ・実績へ 等）
   'pricing_view',           // 料金が実際に画面に入った
   'case_study_view',        // 実績を開いた
+  'interest_view',          // 事業の章が画面に入った（label = transformation / ashitaka / energy …）。「誰が何に興味を持ったか」の母数
   'contact_intent',         // LINE / メールを押した（★連絡が来た、ではない）
   'contact_start',          // フォームを書き始めた
   'contact_complete',       // フォームを送った
@@ -66,6 +67,8 @@ export const LEGACY_TO_CORE: Readonly<Record<string, CoreEvent>> = {
   // corp / ROAI SCORE
   corp_page_view: 'page_view',
   corp_cta_click: 'cta_click',
+  corp_interest: 'interest_view',
+  corp_intent: 'cta_click',
   roai_start: 'ai_diagnosis_start',
   roai_result_view: 'ai_diagnosis_complete',
   roai_report_request: 'proposal_request',

@@ -383,19 +383,19 @@
     },
     {
       "source": "/ashitaka",
-      "destination": "/corp.html"
+      "destination": "/ashitaka.html"
     },
     {
       "source": "/ashitaka/",
-      "destination": "/corp.html"
+      "destination": "/ashitaka.html"
     },
     {
       "source": "/energy",
-      "destination": "/corp.html"
+      "destination": "/energy.html"
     },
     {
       "source": "/energy/",
-      "destination": "/corp.html"
+      "destination": "/energy.html"
     },
     {
       "source": "/return-on-ai",

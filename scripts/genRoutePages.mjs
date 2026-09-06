@@ -255,6 +255,128 @@ export const PAGES = [
     footer: `<p>株式会社CORE — 〒658-0025 兵庫県神戸市東灘区魚崎南町7丁目11番7号 ／ info@core-ai.jp</p>
           <p><a href="/corp">会社について</a>　<a href="/return-on-ai">Return on AI とは</a></p>`,
   },
+
+  // ──────────────────────────────── CORE WEB 2035（2026-09-06）────────────────────────────────
+  // ASHITAKA PROJECT は構想・準備段階（03_FACT_EVIDENCE_MAP D）。実績として書かない。ジブリの公式事業ではないと明記する。
+  {
+    file: 'ashitaka.html', theme: 'corp', url: `${CORP}/ashitaka`,
+    title: 'ASHITAKA PROJECT — 音楽を入口に、町の未来をつくる | 株式会社CORE',
+    description: 'ASHITAKA PROJECTは、株式会社COREの文化主導の地域変革の構想です。一台のチェロが鳴る一日を入口に、注目・来訪・関係人口をつくり、地域のAI/DX・産業・エネルギーへ。ONE REGION, ONE STORY。コンサート事業ではなく、スタジオジブリの公式事業でもありません。構想と準備の段階であることを正直にお伝えします。',
+    keywords: 'ASHITAKA PROJECT,地方創生,地域活性化,文化 地域 活性化,音楽 地方創生,自治体DX,地域DX,関係人口,株式会社CORE,神戸',
+    og: `${CORP}/og-core-v8.png`,
+    ld: [
+      { '@type': 'Project', '@id': `${CORP}/ashitaka#project`, name: 'ASHITAKA PROJECT', alternateName: 'ASHITAKA PROJECT by CORE',
+        url: `${CORP}/ashitaka`, founder: { '@id': `${CORP}/#founder` }, parentOrganization: { '@id': ORG }, inLanguage: 'ja',
+        description: '株式会社COREの文化主導の地域変革の構想。音楽を入口に、注目・来訪・関係人口をつくり、地域のAI/DX・産業・エネルギーへ。構想と準備の段階。スタジオジブリの公式事業・後援・提携ではない。' },
+      crumbs(`${CORP}/ashitaka`, [['株式会社CORE', `${CORP}/corp`], ['ASHITAKA PROJECT', `${CORP}/ashitaka`]]),
+      faq(`${CORP}/ashitaka`, [
+        ['ASHITAKA PROJECT とは何ですか。', '株式会社COREの文化主導の地域変革の構想です。代表がチェリストとして演奏する一日を入口に、注目・来訪・関係人口をつくり、その先で自治体業務・地元産業・データ・エネルギーの構造課題に取り組みます。'],
+        ['スタジオジブリとの関係はありますか。', 'ありません。ASHITAKA PROJECTは株式会社COREの独自の構想で、スタジオジブリの公式事業・後援・提携ではありません。作品の図像やキャラクターは使用しません。'],
+        ['コンサート事業ですか。', '違います。音楽は入口で、本業は地域の変革です。一日の文化的な出来事を起点に、注目・来訪・関係人口をつくり、その先で自治体業務・地元産業・データ・エネルギーの構造課題に取り組みます。'],
+        ['費用と規模は。', '地域の規模と物語によって設計するため、一律の料金はありません。対話から始めます。'],
+        ['すでに実施した地域はありますか。', 'まだありません。構想と準備の段階であることを、正直にお伝えします。最初の一つの地域を、一緒につくる相手を探しています。'],
+      ]),
+    ],
+    body: `
+          <p class="k">ASHITAKA PROJECT — CULTURE-LED REGIONAL TRANSFORMATION</p>
+          <h1>音楽を入口に、町の未来をつくる。</h1>
+          <p class="lead"><strong>音楽は、入口。変革が、本業。</strong> 一台のチェロが、森で、湖のほとりで、古い村の中で鳴る。その日、町の子どもも、職人も、農家も、宿も、役場も、同じ時間を分け合う。ASHITAKA PROJECTは、その一日を、地域変革の入口にします。</p>
+
+          <section>
+            <h2>一日の音楽が、長期の地域価値になるまで</h2>
+            <p>入口は音楽。けれど、そこで終わらせません。感情が人を動かし、人の動きが注目になり、注目が来訪と関係人口になり、地域のブランドが立つ。そこから株式会社COREの本業——AI・DX・産業・エネルギー——が始まります。</p>
+            <ol>
+              <li>音楽</li><li>感情</li><li>人</li><li>動き</li><li>注目</li><li>メディア</li><li>観光</li><li>関係人口</li><li>地域ブランド</li><li>AI・DX</li><li>地域産業</li><li>エネルギー</li><li>長期の地域価値</li>
+            </ol>
+          </section>
+
+          <section>
+            <h2>ONE REGION, ONE STORY — 一つの地域に、一つの物語。</h2>
+            <p>全国一律のツアーにはしません。景色も、人も、歴史も、神話も、産業も、課題も、土地ごとに違う。その土地にすでにある物語を見つけ、大きくする。</p>
+          </section>
+
+          <section>
+            <h2>その一日を、町のすべてが分け合う</h2>
+            <p>森の中のチェロ。湖のほとりのコンサート。古い村の中の音楽。町の子どもたちの参加。地元の職人・農家・飲食店・宿。学校・住民・首長・来訪者。</p>
+            <p>CORE Studioがその一日を映像にし、映像が全国の注目を集める。注目が来訪になり、来訪が関係になり、関係が経済活動になる。そこから、COREは町の構造的な課題——観光、自治体の業務、地元企業、データ、産業、エネルギー——に向き合います。</p>
+          </section>
+
+          <section>
+            <h2>自治体・地域に、いま提供できること</h2>
+            <ol>
+              <li><strong>対話と構想設計</strong>：地域の物語・資源・課題を代表が直接伺い、ONE REGION, ONE STORY の設計を一緒につくる。</li>
+              <li><strong>文化の一日の企画</strong>：演奏・映像・地域参加を一体にした「一日」の企画。代表がチェリストとして演奏する。</li>
+              <li><strong>映像と発信</strong>：CORE Studioによる映像化と発信設計。</li>
+              <li><strong>地域のAI・DX</strong>：自治体業務・観光・地元企業のAI変革（本業のAI Transformationをそのまま持ち込む）。</li>
+            </ol>
+            <p>これから：関係人口・来訪の計測設計／地域データの基盤／地域産業のAI化／エネルギー（CORE Energy と接続）。</p>
+          </section>
+
+          <section>
+            <h2>いまの段階</h2>
+            <p><strong>構想と準備の段階です。実施地域・自治体・提携先はまだありません。</strong>代表がチェリストとして自然の中で演奏し映像にしてきたこと、企業のAI変革を本業にしていることが、この構想の土台です。スタジオジブリの公式事業・後援・提携ではありません。</p>
+          </section>
+
+          <section>
+            <h2>最初の一つの地域を、一緒につくりませんか</h2>
+            <p>ご相談：<a href="/corp#contact">相談フォーム</a>　／　<a href="mailto:info@core-ai.jp">info@core-ai.jp</a></p>
+          </section>`,
+    footer: `<p>株式会社CORE — 〒658-0025 兵庫県神戸市東灘区魚崎南町7丁目11番7号 ／ info@core-ai.jp</p>
+          <p><a href="/corp">会社について</a>　<a href="/energy">CORE Energy</a>　<a href="/return-on-ai">Return on AI</a>　<a href="https://studio.core-ai.jp/studio">CORE Studio</a></p>`,
+  },
+  // CORE Energy は長期領域（VISION）。電力事業者でもインフラ所有者でもないと必ず言う（03_FACT_EVIDENCE_MAP E）。
+  {
+    file: 'energy.html', theme: 'corp', url: `${CORP}/energy`,
+    title: 'CORE ENERGY — AIの時代は、エネルギーの時代でもある | 株式会社CORE',
+    description: '計算資源も、データセンターも、ロボットも、AIが動かす産業も、すべて電力の上に立っています。知性は、最後にはエネルギーに依存する。株式会社COREは、AI×エネルギー×地域変革の交点を、資産を持たず、調査・戦略・設計から始める長期の事業領域として設計します。現在は電力事業者でもインフラの所有者でもありません。',
+    keywords: 'AI エネルギー,AI データセンター 電力,エネルギー最適化 AI,分散型エネルギー,マイクログリッド,地域 再生可能エネルギー,Energy Intelligence,株式会社CORE',
+    og: `${CORP}/og-core-v8.png`,
+    ld: [
+      { '@type': 'Article', '@id': `${CORP}/energy#article`, headline: 'CORE ENERGY — AIの時代は、エネルギーの時代でもある',
+        author: { '@id': `${CORP}/#founder` }, publisher: { '@id': ORG }, inLanguage: 'ja',
+        datePublished: TODAY, dateModified: TODAY, image: `${CORP}/og-core-v8.png`, mainEntityOfPage: `${CORP}/energy` },
+      crumbs(`${CORP}/energy`, [['株式会社CORE', `${CORP}/corp`], ['CORE Energy', `${CORP}/energy`]]),
+      faq(`${CORP}/energy`, [
+        ['CORE Energy はエネルギー事業ですか。', '長期の事業領域です。株式会社COREは現在、電力事業者でもインフラの所有者でもありません。AI・エネルギー・地域変革の交点を、資産を持たず、調査・戦略・設計から始めます。'],
+        ['なぜAIの会社がエネルギーを扱うのですか。', 'AIは純粋にデジタルなものではないからです。計算・データセンター・ロボット・AIが動かす産業はすべて電力の上に立ち、知性は最後にはエネルギーに依存します。企業の変革は地域に届き、地域の変革はエネルギーとインフラに届く。その順序を最初から設計に入れています。'],
+        ['いま何ができますか。', '地域と企業のエネルギーの現状をAIで読み、戦略と設計をつくること（Energy Intelligence）です。最適化・地域プロジェクト・提携は次の段階です。'],
+      ]),
+    ],
+    body: `
+          <p class="k">CORE ENERGY — AI × ENERGY × REGION</p>
+          <h1>AIの時代は、エネルギーの時代でもある。</h1>
+          <p class="lead">AIは、純粋にデジタルなものではありません。計算資源も、データセンターも、ロボットも、AIが動かす産業も、すべて電力の上に立っています。<strong>知性は、最後にはエネルギーに依存する。</strong></p>
+
+          <section>
+            <h2>知性は、エネルギーに依存する</h2>
+            <ul><li>計算には、電力が要る。</li><li>データセンターには、電力が要る。</li><li>ロボットには、電力が要る。</li><li>AIが動かす産業には、電力が要る。</li></ul>
+            <p>だからAIの時代の変革は、ソフトウェアの中で完結しません。企業の変革は地域に届き、地域の変革はエネルギーとインフラに届く。株式会社COREはその順序を、最初から設計に入れています。</p>
+          </section>
+
+          <section>
+            <h2>AI × エネルギー × 地域</h2>
+            <p>日本の地域には、森・川・土地・地熱・太陽・風・バイオマスという、使われていない資源があります。ASHITAKA PROJECTで築く地域との関係と、AI Transformationで培う設計・計測の力が、エネルギーの領域で一つになります。地域の資源を、AIで最も賢く使う。それが、COREが目指す交点です。</p>
+            <p>地域 → 資源 → エネルギー → インフラ</p>
+            <p>将来の領域：Energy Intelligence／AIによるエネルギー最適化／分散型エネルギーの管理／蓄電・マイクログリッド／再生可能エネルギーの統合／地域データセンター・AI計算基盤／強靭なインフラ。</p>
+          </section>
+
+          <section>
+            <h2>資産を持たず、知性と設計から始める</h2>
+            <ol>
+              <li><strong>NOW — Energy Intelligence</strong>：地域と企業のエネルギーの現状を、AIで読み、設計する。</li>
+              <li><strong>NEXT — AI Energy Optimization</strong>：需要と供給の最適化。企業・自治体と組むエネルギープロジェクト。</li>
+              <li><strong>FUTURE — Partnership &amp; Participation</strong>：共同事業・インフラ提携。長期では、選択的なインフラへの参画。</li>
+            </ol>
+            <p><strong>いまの段階：</strong>株式会社COREは現在、電力事業者でも、インフラの所有者でもありません。資産を持たず、知性と設計から始めます。構想と現在の能力を、分けてお伝えします。</p>
+          </section>
+
+          <section>
+            <h2>AI・地域・エネルギーの交点を、一緒に設計しませんか</h2>
+            <p>ご相談：<a href="/corp#contact">相談フォーム</a>　／　<a href="mailto:info@core-ai.jp">info@core-ai.jp</a></p>
+          </section>`,
+    footer: `<p>株式会社CORE — 〒658-0025 兵庫県神戸市東灘区魚崎南町7丁目11番7号 ／ info@core-ai.jp</p>
+          <p><a href="/corp">会社について</a>　<a href="/ashitaka">ASHITAKA PROJECT</a>　<a href="/return-on-ai">Return on AI</a>　<a href="https://studio.core-ai.jp/studio">CORE Studio</a></p>`,
+  },
 ];
 
 // ──────────────────────────────── CORE Studio ────────────────────────────────

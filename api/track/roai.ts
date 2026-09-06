@@ -36,7 +36,7 @@ const MASTER_KEY = (typeof process !== 'undefined' && process.env?.MASTER_KEY) |
 
 // src/corporate/roai/track.ts の ROAI_EVENTS と揃える
 export const ROAI_EVENTS = [
-  'corp_page_view', 'corp_cta_click',
+  'corp_page_view', 'corp_cta_click', 'corp_interest', 'corp_intent',
   'roai_view', 'roai_start', 'roai_step', 'roai_back', 'roai_resume', 'roai_complete',
   'roai_result_view', 'roai_basis_open', 'roai_report_request', 'roai_consult_click', 'roai_consult_submit', 'roai_restart',
 ] as const;

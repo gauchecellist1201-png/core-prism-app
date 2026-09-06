@@ -24,6 +24,7 @@ import {
   sectionLabel, sectionLabelMain, sectionLabelSub, sectionH2, sectionLead, reveal,
 } from './corpTheme';
 import { CONTACT_INTERESTS, CONTACT_BUDGETS, CONTACT_SIZES } from './transformData';
+import { peekIntent } from './corpIntent';
 
 /**
  * partial = サーバーは受け取って記録したが、オーナーへの通知メールが1通も出なかった状態。
@@ -93,7 +94,12 @@ export default function CorpContactForm() {
   const [email, setEmail] = useState('');
   const [tel, setTel] = useState('');
   const [size, setSize] = useState('');
-  const [interests, setInterests] = useState<string[]>([]);
+  // 2026-09-06 CORE WEB 2035: 招待（企業を変えたい／地域を変えたい／協業したい）や
+  // ASHITAKA・ENERGY の相談ボタンで選んだ意図を、希望内容の事前選択として受け取る。
+  const [interests, setInterests] = useState<string[]>(() => {
+    const it = peekIntent();
+    return it && CONTACT_INTERESTS.includes(it.interest) ? [it.interest] : [];
+  });
   const [budget, setBudget] = useState('');
   const [message, setMessage] = useState('');
   const [phase, setPhase] = useState<Phase>('idle');
