@@ -28,6 +28,7 @@
 // ============================================================
 import type { KnowledgeItem, AppSettings } from '../types/identity';
 import { callAiWithFallback } from '../lib/aiFallbackChain';
+import { tokenize, scoreItem, recencyBonus } from './knowledgeMatch';
 
 // ─── 取り込み対象ファイル ───────────────────────────────────
 // fileParser が扱える形式すべて。ここを絞りすぎると「入れたのに入らない」が起きる。
@@ -128,48 +129,8 @@ export function digestItem(item: KnowledgeItem, maxChars: number): string {
 }
 
 // ─── 質問との関連度でならべかえる ───────────────────────
-function tokenize(q: string): string[] {
-  const words = q
-    .toLowerCase()
-    .split(/[\s　、。,.:;!?！？「」『』（）()\[\]/]+/)
-    .filter(w => w.length >= 2);
-  // 日本語は分かち書きされないので、2〜4文字の部分列も鍵にする
-  const grams: string[] = [];
-  const jp = q.replace(/[\s　]/g, '');
-  for (let n = 2; n <= 4; n++) {
-    for (let i = 0; i + n <= jp.length && grams.length < 120; i++) {
-      const g = jp.slice(i, i + n);
-      if (/[぀-ヿ一-鿿]/.test(g)) grams.push(g.toLowerCase());
-    }
-  }
-  return Array.from(new Set([...words, ...grams]));
-}
-
-function scoreItem(item: KnowledgeItem, keys: string[]): number {
-  if (keys.length === 0) return 0;
-  const title = item.title.toLowerCase();
-  const tags = item.tags.join(' ').toLowerCase();
-  // 本文は先頭 20,000 文字だけを対象にする（全文走査は件数が増えると重い）
-  const body = (item.content || '').slice(0, 20000).toLowerCase();
-  let score = 0;
-  for (const k of keys) {
-    if (title.includes(k)) score += 12;
-    if (tags.includes(k)) score += 5;
-    const hits = body.split(k).length - 1;
-    if (hits > 0) score += Math.min(hits, 8);
-  }
-  return score;
-}
-
-function recencyBonus(item: KnowledgeItem): number {
-  const t = Date.parse(item.createdAt);
-  if (!Number.isFinite(t)) return 0;
-  const days = (Date.now() - t) / 86400000;
-  if (days < 7) return 6;
-  if (days < 30) return 3;
-  if (days < 90) return 1;
-  return 0;
-}
+// tokenize / scoreItem / recencyBonus は knowledgeMatch.ts へ移した（中身は無変更）。
+// クイック・キャプチャの「近いメモ」と同じ物差しを使うため＝基準を2つに増やさない。
 
 // ─── 索引（全件） + 精読（関連順） の 2 段コンテキスト ─────
 export interface BrainContext {

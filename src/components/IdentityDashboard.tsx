@@ -305,6 +305,9 @@ export default function IdentityDashboard({
   useReengagement(dailyStreak, { brand: 'prism' });
   const [showOnboarding, setShowOnboarding] = useState(() => !isOnboarded());
   const [showKnowledge, setShowKnowledge] = useState(false);
+  // クイック・キャプチャの「近いメモ → 開く」で名指しされた1件。閉じたら必ず捨てる
+  // （捨てないと、次に別の入口からナレッジを開いた時に無関係な1件が開いた状態で出る）。
+  const [knowledgeFocusId, setKnowledgeFocusId] = useState<string | null>(null);
   const [showCredits, setShowCredits] = useState(false);
   // 残高表示はサイドメニュー最小化で環境設定内 (CoreCreditsPanel) に一本化。付与だけ続ける
   const [, setCreditBalance] = useState(0);
@@ -2095,7 +2098,8 @@ export default function IdentityDashboard({
             onUpdate={onUpdateKnowledge}
             onDelete={onDeleteKnowledge}
             onReanalyze={onReanalyzeKnowledge}
-            onClose={() => setShowKnowledge(false)}
+            initialExpandedId={knowledgeFocusId ?? undefined}
+            onClose={() => { setShowKnowledge(false); setKnowledgeFocusId(null); }}
           />
         )}
         {showMeeting && (
@@ -2517,7 +2521,12 @@ export default function IdentityDashboard({
       </button>
 
       {/* ★クイック・キャプチャ：左下・コマンドFABの上に常設。思いつきを1〜2タップで知識へ（貯める→効く） */}
-      <PrismQuickCapture onAddNote={onAddKnowledgeNote} accentColor={persona.accentColor} />
+      <PrismQuickCapture
+        onAddNote={onAddKnowledgeNote}
+        accentColor={persona.accentColor}
+        knowledge={personaKnowledge}
+        onOpenKnowledge={(id) => { setKnowledgeFocusId(id); setShowKnowledge(true); }}
+      />
 
       <SupportChat
         brand="prism"

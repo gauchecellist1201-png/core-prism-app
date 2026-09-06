@@ -171,6 +171,11 @@ interface Props {
   onDelete: (id: string) => void;
   onReanalyze?: (id: string) => Promise<void>;
   onClose: () => void;
+  /**
+   * この 1 件を開いた状態で開く（クイック・キャプチャの「近いメモ → 開く」用）。
+   * 渡されない時は今までとまったく同じ（既定タブも畳んだ状態も変わらない）。
+   */
+  initialExpandedId?: string;
 }
 
 interface BatchProgress {
@@ -281,8 +286,8 @@ function RelatedStrip({ current, items, accent, onOpen }: {
   );
 }
 
-export default function KnowledgeBase({ persona, settings, items, onAddFile, onAddNote, onUpdate, onDelete, onReanalyze, onClose }: Props) {
-  const [expanded, setExpanded] = useState<string | null>(null);
+export default function KnowledgeBase({ persona, settings, items, onAddFile, onAddNote, onUpdate, onDelete, onReanalyze, onClose, initialExpandedId }: Props) {
+  const [expanded, setExpanded] = useState<string | null>(initialExpandedId ?? null);
   // ── その場で直す（Notion のインライン編集の移植）──────────────
   // 別画面へ飛ばさない。開いているカードの中で見出し・本文を直して、押した瞬間に一覧へ返す。
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -341,7 +346,20 @@ export default function KnowledgeBase({ persona, settings, items, onAddFile, onA
     targets.forEach(i => onDelete(i.id));
     setExpanded(null);
   };
-  const [tab, setTab] = useState<'propose' | 'list' | 'add-file' | 'add-note'>(items.length > 0 ? 'propose' : 'add-file');
+  // 名指しで開かれた時は必ず一覧。既定の 'propose' のままだと、開いたのに当の1件が見えない。
+  const [tab, setTab] = useState<'propose' | 'list' | 'add-file' | 'add-note'>(
+    initialExpandedId ? 'list' : (items.length > 0 ? 'propose' : 'add-file'),
+  );
+
+  // 名指しの1件を画面の中へ。件数が多いと開いていても画面の外にいる（下に隠れて気づけない）。
+  useEffect(() => {
+    if (!initialExpandedId) return;
+    const t = setTimeout(() => {
+      document.getElementById(`kb-item-${initialExpandedId}`)
+        ?.scrollIntoView({ block: 'center' });
+    }, 120);
+    return () => clearTimeout(t);
+  }, [initialExpandedId]);
   const [noteTitle, setNoteTitle] = useState('');
   const [noteContent, setNoteContent] = useState('');
   const [isDragging, setIsDragging] = useState(false);

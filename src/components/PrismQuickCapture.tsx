@@ -8,26 +8,72 @@
 // 2026-09-05 追加: さっきコピーしたものを候補チップで出す (Raycast「クリップボード履歴」)。
 // 貼り直す手間を消す。ブラウザは他アプリの履歴を読めないので、拾えるのは
 // 「この画面でコピーしたもの」だけ — 読めるふりはしない (copyStash.ts)。
+//
+// 2026-09-06 追加: 書いている最中に「それ、前にも書いています」を1件だけ出す (Mem「関連ノート」)。
+// ここまで Prism の知識は **引く (質問された時だけ返す) 一方通行** で、同じことを
+// 3回書いても3件並ぶだけだった。貯めた意味が次の質問まで一度も返ってこない。
+// **AI 呼び出しゼロ・往復ゼロ・保存ゼロ** (knowledgeMatch.ts の物差しはナレッジ脳と同じ)。
+// 守っていること: 打鍵ごとに走らせない (止まって 0.4 秒) / 点が低ければ何も出さない /
+// 勝手に統合も上書きもしない (出すのは「見に行く」だけ) / 候補の中身をどこにも保存しない。
 // ============================================================
 import React, { useEffect, useRef, useState } from 'react';
-import { NotebookPen, X, Check, ClipboardList } from 'lucide-react';
+import { NotebookPen, X, Check, ClipboardList, Link2 } from 'lucide-react';
 import {
   chipLabel, getRecentCopies, startCopyCapture, subscribeCopies,
   type CopyStashEntry,
 } from '../lib/copyStash';
+import { findSimilarKnowledge } from '../prism/knowledgeMatch';
+import type { KnowledgeItem } from '../types/identity';
 
 interface Props {
   // 既存の onAddKnowledgeNote(title, content) をそのまま受ける（同期・即時）。
   onAddNote: (title: string, content: string) => unknown;
   accentColor?: string;
+  /** 「前にも書いています」を照らし合わせる相手。渡されない時はこの行を1pxも出さない。 */
+  knowledge?: KnowledgeItem[];
+  /** 近いメモを開く。渡されない時はボタンにしない（押しても何も起きない口を作らない）。 */
+  onOpenKnowledge?: (id: string) => void;
 }
 
-export default function PrismQuickCapture({ onAddNote, accentColor = '#8b5cf6' }: Props) {
+/** 「8月12日」。日付が壊れている古いデータでは何も出さない（嘘の日付を出さない）。 */
+function noteDate(item: KnowledgeItem): string {
+  const t = Date.parse(item.updatedAt || item.createdAt);
+  if (!Number.isFinite(t)) return '';
+  const d = new Date(t);
+  return `${d.getMonth() + 1}月${d.getDate()}日`;
+}
+
+/** 入力が止まってから照合するまで。打鍵ごとの再計算は重いし、書いている最中にちらつく。 */
+const SIMILAR_DEBOUNCE_MS = 400;
+
+export default function PrismQuickCapture({
+  onAddNote, accentColor = '#8b5cf6', knowledge, onOpenKnowledge,
+}: Props) {
   const [open, setOpen] = useState(false);
   const [text, setText] = useState('');
   const [justSaved, setJustSaved] = useState(false);
   const [recent, setRecent] = useState<CopyStashEntry[]>([]);
+  const [similar, setSimilar] = useState<KnowledgeItem | null>(null);
   const taRef = useRef<HTMLTextAreaElement | null>(null);
+
+  // 「前にも書いています」— 入力が止まって 0.4 秒たった時だけ 1 回。
+  // AI は呼ばない・保存もしない (候補は画面に出すだけ・copyStash と同じ作法)。
+  //
+  // ★親は personaKnowledge を毎回 filter で作り直すので、配列を依存に入れると
+  //   **親が再描画するたびにタイマーが振り出しに戻り、いつまでも照合されない**
+  //   （画面には何も出ないので、壊れていることに気づけない形の事故）。
+  //   中身は ref で読み、依存は「件数」だけにする。
+  const knowledgeRef = useRef(knowledge);
+  useEffect(() => { knowledgeRef.current = knowledge; }, [knowledge]);
+  const knowledgeCount = knowledge?.length ?? 0;
+  useEffect(() => {
+    if (!open) return;
+    const t = setTimeout(() => {
+      const items = knowledgeRef.current;
+      setSimilar(items && items.length ? findSimilarKnowledge(items, text)?.item ?? null : null);
+    }, SIMILAR_DEBOUNCE_MS);
+    return () => clearTimeout(t);
+  }, [text, open, knowledgeCount]);
 
   // 選んで ⌘C した分も拾う。控えるのはメモリだけ (保存しない・30分で消える)
   useEffect(() => {
@@ -58,6 +104,7 @@ export default function PrismQuickCapture({ onAddNote, accentColor = '#8b5cf6' }
     const title = (firstLine.length > 24 ? firstLine.slice(0, 24) + '…' : firstLine) || 'メモ';
     try { onAddNote(title, content); } catch { /* 失敗しても入力は残す */ }
     setText('');
+    setSimilar(null);
     setJustSaved(true);
     // “入った”を見せてから畳む（楽観的フィードバック）。
     setTimeout(() => { setJustSaved(false); setOpen(false); }, 1100);
@@ -148,6 +195,33 @@ export default function PrismQuickCapture({ onAddNote, accentColor = '#8b5cf6' }
           color: '#fff', fontSize: 16, lineHeight: 1.55, padding: '10px 12px', outline: 'none',
         }}
       />
+      {/* 「それ、前にも書いています」— 止めない・確認ダイアログにしない・押さなければそのまま保存できる。
+          出すのは1件だけ（外れが3倍見えるのを避ける）。押すとその知識をひらく＝統合も上書きもしない。 */}
+      {similar && !justSaved && (
+        <button
+          onClick={() => onOpenKnowledge?.(similar.id)}
+          disabled={!onOpenKnowledge}
+          title={similar.title}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 7, width: '100%', marginTop: 8,
+            minHeight: 44, padding: '0 11px', borderRadius: 12, textAlign: 'left',
+            background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.13)',
+            color: 'rgba(255,255,255,0.82)', fontSize: '0.76rem',
+            cursor: onOpenKnowledge ? 'pointer' : 'default',
+          }}
+        >
+          <Link2 size={13} strokeWidth={2.2} style={{ color: accentColor, flexShrink: 0 }} />
+          <span style={{ flexShrink: 0, color: 'rgba(255,255,255,0.45)' }}>近いメモ</span>
+          {/* minWidth:0 が無いと flex の中で縮まず、右端の日付を押し出して見出しが切れない */}
+          <span style={{ flex: 1, minWidth: 0, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {similar.title}
+          </span>
+          <span style={{ marginLeft: 'auto', flexShrink: 0, color: 'rgba(255,255,255,0.4)' }}>
+            {noteDate(similar)}{onOpenKnowledge ? ' ・開く' : ''}
+          </span>
+        </button>
+      )}
+
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 9 }}>
         {justSaved ? (
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, color: '#34d399', fontSize: '0.82rem', fontWeight: 700 }}>
