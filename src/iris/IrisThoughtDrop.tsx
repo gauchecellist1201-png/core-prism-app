@@ -11,7 +11,7 @@
 // ============================================================
 import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Mic, Square, Sparkles, RefreshCw, Loader2 } from 'lucide-react';
+import { Mic, Square, Sparkles, RefreshCw, Loader2, Bookmark } from 'lucide-react';
 import { useVoiceInput } from '../hooks/useVoiceInput';
 import { useAudioDictation, isIosSafari } from '../hooks/useAudioDictation';
 import { enqueueClaudeCall } from '../lib/apiQueue';
@@ -19,6 +19,8 @@ import { TONE_HEADLINE } from '../lib/aiTone';
 import { logIrisActivity } from './irisActivity';
 import { IRIS_FONTS, type IrisBackgroundDef } from './irisStyle';
 import GenerationOrb from '../components/GenerationOrb';
+import IrisInspirationShelf from './IrisInspirationShelf';
+import { addInspiration } from './inspirationStash';
 import { aiFetch } from '../lib/aiFetch';
 import { humanizeAiError, humanizeNonAiError, aiErrorMessage } from '../lib/aiErrorMessage';
 
@@ -229,6 +231,10 @@ export default function IrisThoughtDrop({ bg, model, onResult, hideHeading }: Pr
   const lastThoughtRef = useRef('');
   const stageTimerRef = useRef<number | null>(null);
   const taRef = useRef<HTMLTextAreaElement | null>(null);
+  // 「あとで」— AI を呼ばずにそのまま置くだけ。棚を読み直す合図と、置けた時の一言
+  const [stashN, setStashN] = useState(0);
+  const [stashMsg, setStashMsg] = useState<string | null>(null);
+  const stashTimerRef = useRef<number | null>(null);
 
   // 書き出しチップ: 空欄に stem を入れて本人が続きを書ける状態に（カーソル末尾）
   const applyStarter = (stem: string) => {
@@ -271,7 +277,28 @@ export default function IrisThoughtDrop({ bg, model, onResult, hideHeading }: Pr
 
   useEffect(() => () => {
     if (stageTimerRef.current) window.clearInterval(stageTimerRef.current);
+    if (stashTimerRef.current) window.clearTimeout(stashTimerRef.current);
   }, []);
+
+  // 「あとで」に置く: AI 呼び出しゼロ・往復ゼロ。置けなかった時は「置きました」と言わない
+  const stashForLater = () => {
+    const raw = (text + (interim || '')).trim();
+    if (!raw || busy) return;
+    const next = addInspiration(raw);
+    // 置いたあとに、聞き取りの続きが空の欄へ流れ込まないように止める (submit と同じ作法)
+    if (useRecorder) { if (dict.state === 'recording') dict.stop(); }
+    else if (web.state === 'listening') { web.stop(); web.reset(); }
+    setText('');
+    setErr(null);
+    setStashN(n => n + 1);
+    // null = 同じものが既に置いてある (空欄はこの関数に入る前に弾いている)。
+    // 「置きました」と嘘をつかず、既に在ることを伝える（どちらでも棚には在る）
+    setStashMsg(next
+      ? '「あとで」に置きました。台本を書くときに、下に出てきます'
+      : '同じものが、もう「あとで」に置いてあります');
+    if (stashTimerRef.current) window.clearTimeout(stashTimerRef.current);
+    stashTimerRef.current = window.setTimeout(() => setStashMsg(null), 4000);
+  };
 
   const toggleMic = () => {
     if (busy) return;
@@ -529,6 +556,36 @@ export default function IrisThoughtDrop({ bg, model, onResult, hideHeading }: Pr
           </div>
         )}
 
+        {/* 「あとで」— まだ形にしないけど覚えておきたいものを、AI を呼ばずに置く。
+            夜中に見つけた参考が朝に消えないための場所。文字がある時だけ出す
+            (空欄に置き場所の話をしても意味が無い) */}
+        {!busy && (text.trim().length > 0 || interim.trim().length > 0) && (
+          <button
+            type="button"
+            onClick={stashForLater}
+            style={{
+              marginTop: 8, width: '100%', minHeight: 44,
+              background: 'transparent', border: 'none',
+              // この入力カードの面は白で固定。暗いテーマ (Neon Night) の bg.accentText は
+              // #FCB045 で白の上では 1.84:1 まで落ちるので、濃い方で固定する
+              color: '#B81B57', fontSize: '0.8rem', fontWeight: 700,
+              fontFamily: IRIS_FONTS.body, cursor: 'pointer',
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+            }}
+          >
+            <Bookmark size={14} strokeWidth={2.2} />
+            いまは作らず、「あとで」に置く
+          </button>
+        )}
+        {stashMsg && !busy && (
+          <p role="status" style={{
+            margin: '2px 0 0', textAlign: 'center',
+            fontSize: '0.74rem', color: '#3D3247', fontFamily: IRIS_FONTS.body,
+          }}>
+            {stashMsg}
+          </p>
+        )}
+
         {/* エラー: 必ず再試行とセット (silent fail 禁止) */}
         {err && !busy && (
           <div role="alert" style={{
@@ -559,6 +616,21 @@ export default function IrisThoughtDrop({ bg, model, onResult, hideHeading }: Pr
           </div>
         )}
       </div>
+
+      {/* 置いたものは、次にここへ来た時に下に出る。空なら何も出ない (からっぽの棚を見せない) */}
+      <IrisInspirationShelf
+        refreshKey={stashN}
+        hint="タップすると、続きをここに書けます"
+        onUse={(seed) => {
+          setText(seed);
+          requestAnimationFrame(() => {
+            const ta = taRef.current;
+            if (!ta) return;
+            ta.focus();
+            try { ta.setSelectionRange(seed.length, seed.length); } catch { /* 一部環境で未対応でも無害 */ }
+          });
+        }}
+      />
 
       <style>{`
         .iris-tdrop-ta::placeholder { color: #A99BBE; }

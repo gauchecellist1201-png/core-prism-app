@@ -34,6 +34,7 @@ import {
   snapDurationToBgm,
 } from './reelAiCaption';
 import { generateReelScript, generateReelCaption, type ReelScriptResult } from './reelAiScript';
+import IrisInspirationShelf from './IrisInspirationShelf';
 import type { ReelStudioSeed } from './IrisReelStudio';
 import {
   putReelAsset, getReelAsset, saveReelProject, loadReelProject,
@@ -2315,6 +2316,13 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
                 }}>{t}</button>
               ))}
             </div>
+            {/* 「あとで」に置いた参考を、台本を書くこの場所で下敷きにする。
+                タップはテーマ欄に入れるだけ = AI は呼ばない。置いていなければ出ない */}
+            <IrisInspirationShelf
+              hint="タップすると、テーマの下敷きになります"
+              style={{ marginBottom: 10 }}
+              onUse={(seed) => setThemeHint(seed)}
+            />
             <button
               onClick={() => runAiScript()}
               disabled={scriptBusy || !themeHint.trim()}
@@ -3090,6 +3098,13 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
                     marginBottom: 8,
                     minHeight: 44, // タップ対象 (Apple HIG)
                   }}
+                />
+                {/* 「あとで」に置いた参考は、ここでも同じように下敷きにできる
+                    (片方だけだと「出る時と出ない時がある」になる) */}
+                <IrisInspirationShelf
+                  hint="タップすると、テーマの下敷きになります"
+                  style={{ marginBottom: 8 }}
+                  onUse={(seed) => setThemeHint(seed)}
                 />
                 {/* AI 台本生成 (3 シーン × 4-6 秒) */}
                 <button
