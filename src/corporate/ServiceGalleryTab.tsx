@@ -10,6 +10,8 @@
 //   一覧そのものが空白になる(過去に別サービスで実際に起きている)。
 // ============================================================
 
+import { neriLpUrl } from '../lib/coreLinks';
+
 type Service = {
   slug: string;
   name: string;
@@ -22,7 +24,7 @@ const SERVICES: Service[] = [
   { slug: 'corehp', name: 'CORE', tagline: '人手が足りない仕事を、AIが引き受ける', category: '会社', url: 'https://core-hp.vercel.app' },
   { slug: 'ichibannori', name: 'イチバンノリ', tagline: '問い合わせに、AIが60秒で一番乗り返信', category: '営業', url: 'https://ichibannori.vercel.app' },
   { slug: 'prism', name: 'CORE Prism', tagline: 'レシートは撮るだけ。請求書も営業文もAIが作る', category: '経営', url: 'https://core-prism-app.vercel.app' },
-  { slug: 'nexus', name: 'CORE NERI', tagline: '話すだけで、会社が動く。Voice-First Company OS', category: '経営', url: 'https://core-nexus-kappa.vercel.app/lp/' },
+  { slug: 'nexus', name: 'CORE NERI', tagline: '話すだけで、会社が動く。Voice-First Company OS', category: '経営', url: neriLpUrl('corp-galry') },
   { slug: 'universe', name: 'CORE Universe', tagline: 'どの仕事からAIに任せるかを、星図で示す', category: '経営', url: 'https://core-universe.vercel.app/lp' },
   { slug: 'resonance', name: 'Resonance', tagline: '公式LINEの返信を、AIが先に書いておく', category: '接客', url: 'https://resonancebot-ivory.vercel.app' },
   { slug: 'crystal', name: 'CRYSTAL', tagline: '受付と接客を、タブレット1台で24時間AIに', category: '接客', url: 'https://crystal-nine-self.vercel.app' },

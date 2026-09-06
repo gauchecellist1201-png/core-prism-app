@@ -7,6 +7,8 @@
 // ★技術仕様は書かない。読む相手はお客様と、お客様に説明する自分。
 // ============================================================
 
+import { neriLpUrl, NERI_APP } from '../lib/coreLinks';
+
 export type Plan = {
   name: string;
   price: string;
@@ -194,8 +196,8 @@ export const GUIDES: Guide[] = [
       '説明を読むより1回話しかけたほうが早いです。「今週やることを4つ出して」と言ってみてください。10秒で本当かどうか分かります。',
       '登録もカードも要りません。このページからそのまま本物が動きます。',
     ],
-    url: 'https://core-nexus-kappa.vercel.app/lp/',
-    tryUrl: 'https://core-nexus-kappa.vercel.app',
+    url: neriLpUrl('corp-guide'),
+    tryUrl: NERI_APP,
     tryLabel: '実物に話しかける（登録不要）',
   },
 

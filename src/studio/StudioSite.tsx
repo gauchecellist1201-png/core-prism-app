@@ -19,6 +19,7 @@ import { Reveal, Band, H2, Note, IconArrow, LineCta } from './ui';
 import { Faq } from './PageHero';
 import { track } from './track';
 import { TABS, isTabId, pathOf, type TabId } from './tabs';
+import NeriHandoff from './NeriHandoff';
 
 const FilmTab = lazy(() => import('./FilmTab'));
 // 下層5ページ (2026-09-04 全面刷新)。ホームの初回表示に載せないよう、開いた時だけ読む
@@ -919,6 +920,9 @@ function HomeTab({ go }: { go: (t: TabId) => void }) {
           ))}
         </ol>
       </Band>
+
+      {/* 公開したあと — 制作の次の段 (NERI)。理由は NeriHandoff.tsx の冒頭に書いた */}
+      <NeriHandoff where="home" />
 
       {/* 実績ダイジェスト */}
       <Band alt wide pad="clamp(52px, 6vw, 84px) 0">

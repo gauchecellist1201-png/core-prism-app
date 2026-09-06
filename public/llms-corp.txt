@@ -111,7 +111,7 @@ CORE の順序: 経営目標 → ベースライン測定 → KPI設定 → ROAI
 ## 関連サイト
 
 - CORE Studio（映像制作・ウェブ制作・受託開発）: https://studio.core-ai.jp/studio
-- CORE NERI（音声先行の会社OS）: https://core-nexus-kappa.vercel.app/lp/
+- CORE NERI（音声先行の会社OS）: https://nexus.core-ai.jp/lp/
 
 ## よくある質問
 

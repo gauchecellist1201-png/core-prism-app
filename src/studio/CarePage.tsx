@@ -9,6 +9,7 @@ import { CARE_PLANS, CONTACT, STUDIO_FAQ } from './plans';
 import { C, D } from './theme';
 import { Band, H2, Note, IconCheck, LineCta } from './ui';
 import { PageStyle, PageHero, ClosingCta } from './PageHero';
+import NeriHandoff from './NeriHandoff';
 import type { Go } from './tabs';
 
 const RING = [
@@ -131,6 +132,9 @@ export default function CarePage({ go }: { go: Go }) {
           )}
         </div>
       </Band>
+
+      {/* 運用の話の延長で、会社そのものの運用へ橋を架ける (NeriHandoff.tsx 参照) */}
+      <NeriHandoff where="care" />
 
       <Band alt wide pad="clamp(52px, 6vw, 84px) 0">
         <ClosingCta title="いまのサイトのURLだけ、お送りください。" body="現行サイトの状態を確認したうえで、保守・更新代行・改善提案の範囲と月額をご提案します。">

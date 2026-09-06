@@ -15,6 +15,7 @@
 import { useEffect, useState } from 'react';
 import { PrismLogo, IrisLogo, ResonanceLogo, LumeLogo, GuildLogo, CrystalLogo, PulseLogo, NexusLogo } from '../components/Logo';
 import { setFinderPick } from './finderStore';
+import { neriLpUrl } from '../lib/coreLinks';
 
 const FONT_DISPLAY = '"Inter", "Noto Sans JP", sans-serif';
 const FONT_SERIF_JA = '"Noto Serif JP", "游明朝", "Yu Mincho", serif';
@@ -68,7 +69,7 @@ export const SERVICES: Service[] = [
     can: '話すだけで予定・メール・売上・記憶が動く。答えながら画面に描き、勝手には外へ出さない',
     price: '¥39,800', priceNote: '〜 / 月（税込）・無料は1日5回',
     firstStep: '大切にしていることを3つ書くと、あなたの夢リストづくりが始まります',
-    accent: '#4dc3ff', url: 'https://core-nexus-kappa.vercel.app/lp/', Logo: NexusLogo,
+    accent: '#4dc3ff', url: neriLpUrl('corp-finder'), Logo: NexusLogo,
   },
   {
     key: 'lume', name: 'Lume',

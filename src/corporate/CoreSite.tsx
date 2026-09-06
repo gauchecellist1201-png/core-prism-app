@@ -52,6 +52,7 @@ import { TheChange, ProcessContrast, OneCore, StudioSection, Bridge, AshitakaHom
 import AshitakaPage from './AshitakaPage';
 import EnergyPage from './EnergyPage';
 import { track } from './roai/track';
+import { neriLpUrl } from '../lib/coreLinks';
 
 const COMPANY = {
   nameJa: COMPANY_INFO.name,
@@ -70,7 +71,7 @@ const PLATFORM_PLANS: Array<{
   accent: string; url: string; Logo: typeof PrismLogo; step: string; featured?: boolean;
 }> = [
   // オーナー指示 2026-08-07: NEXUS（話しながら画面に描く秘書）を最上段に追加。
-  { name: 'NERI', role: 'Company OS', copy: '話すだけで、会社が動く。予定・メール・売上・記憶を一つの入口に。', price: '¥39,800〜', priceNote: '/ 月（税込）・無料は1日5回', accent: '#4dc3ff', url: 'https://core-nexus-kappa.vercel.app/lp/', Logo: NexusLogo, step: '新登場 — 夢を叶える秘書を', featured: true },
+  { name: 'NERI', role: 'Company OS', copy: '話すだけで、会社が動く。予定・メール・売上・記憶を一つの入口に。', price: '¥39,800〜', priceNote: '/ 月（税込）・無料は1日5回', accent: '#4dc3ff', url: neriLpUrl('corp-plans'), Logo: NexusLogo, step: '新登場 — 夢を叶える秘書を', featured: true },
   // オーナー指示 2026-07-30: 主力は Prism → Resonance → Crystal。この順で先頭に置く。
   // ラベルは「STEP 1..5」の導線順だったが、主力を先に出す並びと矛盾するため
   // 「主力 / そのほか」の役割表記に変えた（読み手が順番を導線と誤解しないように）。
@@ -525,7 +526,7 @@ export default function CoreSite() {
             {/* ブランド階層は CORE ＞ NERI ＞ CORE Studio の3層（[[05_BRAND_ARCHITECTURE]]）。
                 Continuum は4つ目のポジションを名乗っていたのでここから外した（ページは /continuum に残る）。 */}
             <a
-              href="https://nexus.core-ai.jp/lp/"
+              href={neriLpUrl('corp-head')}
               target="_blank"
               rel="noopener noreferrer"
               onClick={() => track('corp_cta_click', 'header-neri')}
@@ -936,7 +937,7 @@ export default function CoreSite() {
             ]}
             accentColor="#4dc3ff"
             accentGradient="linear-gradient(135deg,#a5e6ff,#4dc3ff,#2f9fd6)"
-            url="https://core-nexus-kappa.vercel.app/lp/"
+            url={neriLpUrl('corp-card')}
           />
 
           {/* オーナー指示 2026-07-30: 主力は Prism → Resonance → Crystal。この順に並べる。
@@ -2058,7 +2059,7 @@ export default function CoreSite() {
           </div>
           <div>
             <p style={footHead}>プロダクト</p>
-            <a href="https://core-nexus-kappa.vercel.app/lp/" target="_blank" rel="noopener noreferrer" style={footLink} className="lp-tap-link">CORE NERI</a>
+            <a href={neriLpUrl('corp-foot')} target="_blank" rel="noopener noreferrer" style={footLink} className="lp-tap-link" onClick={() => track('corp_cta_click', 'foot-neri')}>CORE NERI</a>
             <a href="/?lp=1" style={footLink} className="lp-tap-link">CORE Prism</a>
             <a href="/iris?lp=1" style={footLink} className="lp-tap-link">CORE Iris</a>
             <a href="https://guild-gauches-projects.vercel.app/?lp=1" target="_blank" rel="noopener noreferrer" style={footLink} className="lp-tap-link">CORE Guild</a>
@@ -2431,6 +2432,9 @@ function FeatureProduct({
         <a
           href={url}
           {...(url.startsWith('http') ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+          /* 2026-09-06: 8枚の製品カードは、これまでクリックが 1 件も記録されていなかった。
+             corp が NERI（や他プロダクト）へ何人送ったかを、送った側でも数える。 */
+          onClick={() => track('corp_cta_click', `product-${brand}`)}
           style={{
             display: 'inline-flex',
             alignItems: 'center',
