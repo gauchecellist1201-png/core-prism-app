@@ -59,6 +59,94 @@
   ],
   "redirects": [
     {
+      "source": "/robots.txt",
+      "has": [
+        {
+          "type": "host",
+          "value": "www.core-ai.jp"
+        }
+      ],
+      "destination": "/robots-corp.txt",
+      "permanent": false
+    },
+    {
+      "source": "/sitemap.xml",
+      "has": [
+        {
+          "type": "host",
+          "value": "www.core-ai.jp"
+        }
+      ],
+      "destination": "/sitemap-corp.xml",
+      "permanent": false
+    },
+    {
+      "source": "/llms.txt",
+      "has": [
+        {
+          "type": "host",
+          "value": "www.core-ai.jp"
+        }
+      ],
+      "destination": "/llms-corp.txt",
+      "permanent": false
+    },
+    {
+      "source": "/pricing.md",
+      "has": [
+        {
+          "type": "host",
+          "value": "www.core-ai.jp"
+        }
+      ],
+      "destination": "/pricing-corp.md",
+      "permanent": false
+    },
+    {
+      "source": "/robots.txt",
+      "has": [
+        {
+          "type": "host",
+          "value": "studio.core-ai.jp"
+        }
+      ],
+      "destination": "/robots-studio.txt",
+      "permanent": false
+    },
+    {
+      "source": "/sitemap.xml",
+      "has": [
+        {
+          "type": "host",
+          "value": "studio.core-ai.jp"
+        }
+      ],
+      "destination": "/sitemap-studio.xml",
+      "permanent": false
+    },
+    {
+      "source": "/llms.txt",
+      "has": [
+        {
+          "type": "host",
+          "value": "studio.core-ai.jp"
+        }
+      ],
+      "destination": "/llms-studio.txt",
+      "permanent": false
+    },
+    {
+      "source": "/pricing.md",
+      "has": [
+        {
+          "type": "host",
+          "value": "studio.core-ai.jp"
+        }
+      ],
+      "destination": "/pricing-studio.md",
+      "permanent": false
+    },
+    {
       "source": "/",
       "has": [
         {
@@ -67,7 +155,7 @@
         }
       ],
       "destination": "/studio",
-      "permanent": false
+      "permanent": true
     },
     {
       "source": "/",
@@ -78,7 +166,7 @@
         }
       ],
       "destination": "/corp",
-      "permanent": false
+      "permanent": true
     },
     {
       "source": "/",
@@ -89,7 +177,7 @@
         }
       ],
       "destination": "/corp",
-      "permanent": false
+      "permanent": true
     }
   ],
   "rewrites": [
@@ -433,6 +521,66 @@
         {
           "key": "Content-Security-Policy",
           "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://accounts.google.com https://apis.google.com https://js.stripe.com https://www.googletagmanager.com https://www.youtube.com https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https: ; media-src 'self' data: blob: https:; connect-src 'self' https: wss:; frame-src 'self' https://accounts.google.com https://js.stripe.com https://www.youtube.com https://www.youtube-nocookie.com; worker-src 'self' blob:; child-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self' https://accounts.google.com https://checkout.stripe.com; frame-ancestors *; upgrade-insecure-requests"
+        }
+      ]
+    },
+    {
+      "source": "/corp",
+      "has": [
+        {
+          "type": "host",
+          "value": "core-prism-app.vercel.app"
+        }
+      ],
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, follow"
+        }
+      ]
+    },
+    {
+      "source": "/corp/(.*)",
+      "has": [
+        {
+          "type": "host",
+          "value": "core-prism-app.vercel.app"
+        }
+      ],
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, follow"
+        }
+      ]
+    },
+    {
+      "source": "/studio",
+      "has": [
+        {
+          "type": "host",
+          "value": "core-prism-app.vercel.app"
+        }
+      ],
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, follow"
+        }
+      ]
+    },
+    {
+      "source": "/studio/(.*)",
+      "has": [
+        {
+          "type": "host",
+          "value": "core-prism-app.vercel.app"
+        }
+      ],
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, follow"
         }
       ]
     }

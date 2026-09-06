@@ -1,25 +1,24 @@
+# robots.txt — 株式会社CORE 公式サイト (https://www.core-ai.jp/)
+# 生成元: public/robots-corp.txt（/robots.txt からホスト条件付きで転送）
+
 User-agent: *
 Allow: /
 
-# 講演会後の限定ランディングは検索除外
-Disallow: /keynote
-
-# オーナー / 管理者専用ページは検索除外
+# 管理者専用・共有用一時URLは検索に載せない
 Disallow: /master
 Disallow: /master/
 Disallow: /strategy
 Disallow: /billing/
 Disallow: /stripe-status
 Disallow: /ai-stats
-
-# 共有用一時 URL も noindex
-Disallow: /?share=
-Disallow: /?capture=
-
+Disallow: /keynote
+Disallow: /*?share=
+Disallow: /*?capture=
 
 # ------------------------------------------------------------------
 # AI検索・回答エンジンのクローラー（明示的に許可）
 # 引用されるにはクロールを許可している必要がある。
+# 学習専用の CCBot も、AI検索での引用可能性を優先して許可している。
 # ------------------------------------------------------------------
 User-agent: GPTBot
 Allow: /
@@ -75,4 +74,4 @@ Allow: /
 User-agent: CCBot
 Allow: /
 
-Sitemap: https://core-prism-app.vercel.app/sitemap.xml
+Sitemap: https://www.core-ai.jp/sitemap-corp.xml

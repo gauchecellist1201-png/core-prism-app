@@ -39,7 +39,7 @@
     <meta property="og:description" content="核とは、人。AIは、人にしかできない仕事を人に返すための道具です。AI前提で会社そのものをつくり直し、AI投資を経営成果へ変えるAI Transformation Company。約3分のROAI診断つき。" />
     <meta property="og:locale" content="ja_JP" />
     <meta property="og:site_name" content="CORE" />
-    <meta property="og:image" content="https://core-prism-app.vercel.app/og-core-v7.png" />
+    <meta property="og:image" content="https://www.core-ai.jp/og-core-v7.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content="CORE — いつの時代も、変わらない核を。" />
@@ -48,7 +48,7 @@
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="株式会社CORE | AI Transformation Company — Return on AI" />
     <meta name="twitter:description" content="核とは、人。AIは、人にしかできない仕事を人に返すための道具です。約3分のROAI診断で、次にAI投資すべき場所が分かります。" />
-    <meta name="twitter:image" content="https://core-prism-app.vercel.app/og-core-v7.png" />
+    <meta name="twitter:image" content="https://www.core-ai.jp/og-core-v7.png" />
 
     <!-- Structured data (Organization + WebSite). 数字・実績は入れない（確認できるものだけ） -->
     <script type="application/ld+json">
@@ -58,9 +58,185 @@
       {"@type":"WebApplication","name":"CORE ROAI SCORE","url":"https://www.core-ai.jp/roai-score","applicationCategory":"BusinessApplication","operatingSystem":"Web","offers":{"@type":"Offer","price":"0","priceCurrency":"JPY"},"provider":{"@id":"https://www.core-ai.jp/#org"},"description":"約3分で、AI投資の優先領域・削減可能時間・経済価値の概算・AI Readiness を可視化する診断。"}
     ]}
     </script>
+
+    <!-- 静的コンテンツ層の体裁。React がマウントするまでの一瞬だけ見える面でもあるので、
+         黒地・本文書体で「速く出た本文」として読めるようにしておく（素の白背景だと本文が見えない）。 -->
+    <style>
+      #pre-corp{max-width:760px;margin:0 auto;padding:56px 20px 80px;color:#e8e8ea;background:#050505;font-family:'Noto Sans JP',system-ui,-apple-system,'Hiragino Sans',sans-serif;line-height:1.9;font-size:16px}
+      #pre-corp h1{font-size:clamp(30px,6vw,52px);line-height:1.2;letter-spacing:-.02em;margin:10px 0 24px;font-weight:800;color:#fff}
+      #pre-corp h2{font-size:clamp(20px,3.4vw,28px);margin:48px 0 12px;font-weight:700;letter-spacing:-.01em;color:#fff}
+      #pre-corp h3{font-size:17px;margin:26px 0 8px;font-weight:700;color:#fff}
+      #pre-corp p,#pre-corp li,#pre-corp dd{color:#b9bcc4;margin:0 0 14px}
+      #pre-corp .pre-kicker{font-size:11px;letter-spacing:.22em;color:#8a8f9a;margin:0}
+      #pre-corp .pre-lead{font-size:18px;color:#d6d8de}
+      #pre-corp strong{color:#fff;font-weight:600}
+      #pre-corp a{color:#fff}
+      #pre-corp ul,#pre-corp ol{padding-left:1.25em;margin:0 0 18px}
+      #pre-corp dt{color:#8a8f9a;font-size:13px;margin-top:14px}
+      #pre-corp dd{margin:0}
+      #pre-corp footer{margin-top:64px;padding-top:24px;border-top:1px solid #23262c;font-size:13px;color:#8a8f9a}
+    </style>
+    <!-- Google Analytics 4。計測IDは public/ga.js の GA_ID 1か所だけ。未設定のあいだは何も読み込まない -->
+    <script defer src="/ga.js" data-ga-site="corp"></script>
+    <!-- 構造化データ（追記分）: 代表・サービス・FAQ・ページ本体。
+         AI検索が「誰の会社か・何を提供するか・いくらか」を取り出せるようにする。
+         内容は #pre-corp と public/llms-corp.txt に書いてあることと必ず一致させる。 -->
+    <script type="application/ld+json">
+    {"@context":"https://schema.org","@graph":[
+      {"@type":"Person","@id":"https://www.core-ai.jp/#founder","name":"井出 直毅","alternateName":"Naoki Ide","jobTitle":"代表取締役 / Founder & CEO","worksFor":{"@id":"https://www.core-ai.jp/#org"},"knowsAbout":["AI Transformation","Return on AI","AI導入支援","チェロ"],"description":"株式会社CORE 代表取締役。チェロ奏者として舞台に立ち、神戸でチェロ教室も運営している。教室運営の事務作業に演奏より長い時間を使っていた経験が創業の出発点。"},
+      {"@type":"WebPage","@id":"https://www.core-ai.jp/corp#page","url":"https://www.core-ai.jp/corp","name":"株式会社CORE | AI Transformation Company — Return on AI","isPartOf":{"@id":"https://www.core-ai.jp/#site"},"about":{"@id":"https://www.core-ai.jp/#org"},"inLanguage":"ja","dateModified":"2026-09-06","primaryImageOfPage":"https://www.core-ai.jp/og-core-v7.png"},
+      {"@type":"DefinedTerm","@id":"https://www.core-ai.jp/return-on-ai#term","name":"Return on AI","alternateName":["ROAI","リターン・オン・AI"],"url":"https://www.core-ai.jp/return-on-ai","inDefinedTermSet":"https://www.core-ai.jp/return-on-ai","description":"AIへの投資額ではなく、AIが返した経営成果で投資を評価する指標。売上(GROW)・コスト削減(SAVE)・速度(ACCELERATE)・損失回避(PROTECT)・新しい価値(CREATE)の5つのReturnで測る。株式会社COREが提唱し、診断・設計・開発・運用の全工程で使用している。"},
+      {"@type":"Service","@id":"https://www.core-ai.jp/corp#service-transformation","name":"AI Transformation（AI前提の会社再設計）","provider":{"@id":"https://www.core-ai.jp/#org"},"areaServed":{"@type":"Country","name":"日本"},"serviceType":"AI transformation consulting","description":"経営目標から逆算し、ベースライン測定・KPI設定・ROAIシミュレーション・業務再設計・開発・導入・計測・改善までを一貫して担当する。","offers":{"@type":"Offer","priceCurrency":"JPY","description":"初回相談・お見積り提示は無料。範囲と期間により個別見積り。"}},
+      {"@type":"Service","@id":"https://www.core-ai.jp/corp#service-development","name":"AI・システム開発","provider":{"@id":"https://www.core-ai.jp/#org"},"serviceType":"Software development","areaServed":{"@type":"Country","name":"日本"}},
+      {"@type":"Service","@id":"https://www.core-ai.jp/corp#service-security","name":"AI Security & Quality","provider":{"@id":"https://www.core-ai.jp/#org"},"serviceType":"AI security and quality assurance","areaServed":{"@type":"Country","name":"日本"}},
+      {"@type":"FAQPage","@id":"https://www.core-ai.jp/corp#faq","mainEntity":[
+        {"@type":"Question","name":"株式会社COREは何をする会社ですか。","acceptedAnswer":{"@type":"Answer","text":"企業をAI前提で再設計する AI Transformation Company です。AIツールを納品して終わりにせず、経営目標から逆算して業務・組織・システムを設計し直し、AI投資が返した成果（Return on AI）を計測するところまでを担当します。兵庫県神戸市に本社があります。"}},
+        {"@type":"Question","name":"Return on AI（ROAI）とは何ですか。","acceptedAnswer":{"@type":"Answer","text":"AIへの投資額ではなく、AIが返した経営成果で投資を評価する指標です。売上（GROW）、コスト削減（SAVE）、速度（ACCELERATE）、損失回避（PROTECT）、新しい価値（CREATE）の5つのReturnで測ります。"}},
+        {"@type":"Question","name":"相談は有料ですか。","acceptedAnswer":{"@type":"Answer","text":"初回のご相談とお見積りのご提示は無料です。約3分のCORE ROAI SCORE（無料・連絡先不要）から始めることもできます。"}},
+        {"@type":"Question","name":"対応地域はどこですか。","acceptedAnswer":{"@type":"Answer","text":"兵庫県神戸市に本社があり、オンラインを含めて全国のご相談に対応しています。"}},
+        {"@type":"Question","name":"一般的なAI開発会社・コンサルティング会社との違いは何ですか。","acceptedAnswer":{"@type":"Answer","text":"作って納めるところで終わらない点です。経営目標とベースラインを先に決め、ROAIを試算してから業務を再設計し、導入後に実際の数字を計測して改善まで続けます。加えて、自社でAIプロダクトを開発・運営しているため、検証済みの設計をそのまま持ち込めます。"}},
+        {"@type":"Question","name":"CORE ROAI SCORE は何が分かりますか。","acceptedAnswer":{"@type":"Answer","text":"約3分・選択式で、AI投資の優先領域／削減できる時間／経済価値の概算／売上・コスト・リスクの改善余地／AI Readiness／投資余力の目安が分かります。無料・連絡先の入力不要で、算定根拠を画面上で確認できます。"}}
+      ]}
+    ]}
+    </script>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <!-- ====================================================================
+           静的コンテンツ層（JS を実行しないクローラー・AI検索エンジン向け）
+
+           なぜ必要か（2026-09-06 実測）:
+             GPTBot の User-Agent で /corp を取得すると、本文は **51文字** しかなかった。
+             このページは React が描くので、JS を実行しない取得側（GPTBot / ClaudeBot /
+             PerplexityBot / 各種テキスト抽出）には title 以外ほぼ何も残らない。
+             会社の説明・Return on AI の定義・会社概要・料金が一切引用できない状態だった。
+
+           仕組み:
+             この節は #root の中にある。React の createRoot().render() が最初の描画で
+             #root の中身を全部入れ替えるため、JS が動く閲覧者には一瞬で本来の画面になる。
+             JS を実行しない相手にはこの節が「ページの中身」として残る。
+
+           守ること:
+             ・書いてある内容は React 側の表示と必ず同じにする（別内容を出すのは cloaking）。
+             ・数字・価格・住所を変えたら、ここと public/llms-corp.txt も同時に直す。
+        ==================================================================== -->
+      <div id="pre-corp">
+        <main>
+          <p class="pre-kicker">AI TRANSFORMATION COMPANY — KOBE, JAPAN</p>
+          <h1>いつの時代も、変わらない核を。</h1>
+          <p class="pre-lead">
+            株式会社CORE（CORE Inc.）は、兵庫県神戸市に本社を置く AI Transformation Company です。
+            AIを導入するところで終わらせず、AI前提で会社そのもの——戦略・業務・組織・システム——を設計し直し、
+            AI投資が経営に返した成果を <strong>Return on AI（ROAI）</strong> という指標で計測するところまでを担当します。
+          </p>
+
+          <section>
+            <h2>核とは、人。</h2>
+            <p>私たちはテクノロジーの会社です。けれど、いちばん大切にしているのは、人です。AIが賢くなるほど、人の温度が価値になる。私たちは技術を追いかける会社ではなく、人のために技術を使い切る会社です。</p>
+            <p>測るのは、AIが代わった仕事の数ではなく、<strong>人に返った時間</strong>です。</p>
+            <h3>変わらずに守る三つのこと</h3>
+            <ul>
+              <li><strong>01 HUMAN AT THE CORE — 人を、真ん中に。</strong> 設計の最初に置くのはモデルでも画面でもなく、その仕事をしている人です。その人の一日が楽になるか。それだけを基準に決めます。</li>
+              <li><strong>02 NEWEST FOR THE OLDEST — 変わらないもののために、最新を使う。</strong> 人の役に立つ。価値を生む。本質を解く。この古い理由のために、いちばん新しい技術を惜しまず使います。</li>
+              <li><strong>03 SMILES ARE THE METRIC — 笑顔が増えたかを、成果にする。</strong> 納品した数ではなく、現場の人が早く帰れたか、経営者が本業に戻れたか。変わったかどうかが成果です。</li>
+            </ul>
+          </section>
+
+          <section>
+            <h2>Return on AI（ROAI）とは</h2>
+            <p>
+              Return on AI とは、AIへの<strong>投資額</strong>ではなく、AIが返した<strong>経営成果</strong>で投資を評価する指標です。
+              株式会社COREが提唱し、診断・設計・開発・運用のすべての工程で一貫して使っています。
+              AI投資は目的ではなく、売上・コスト・時間・リスク・新しい価値のいずれかを返して初めて成果になる、という立場を取ります。
+            </p>
+            <h3>CORE ROAI MODEL — AIが返すものを5つで測る</h3>
+            <ol>
+              <li><strong>GROW（売上・利益・顧客価値を増やす）</strong>：売上成長、商談→受注率、顧客LTV、営業1人あたりの生産性。</li>
+              <li><strong>SAVE（コスト・工数を減らす）</strong>：人件費（時間換算）、外注費、管理部門コスト、手作業の時間。</li>
+              <li><strong>ACCELERATE（企業の速度を上げる）</strong>：意思決定までの時間、承認・稟議の日数、顧客への初回返答時間、提案作成の時間。</li>
+              <li><strong>PROTECT（損失・リスクを減らす）</strong>：期待損失（発生確率×影響額）、人的ミス件数、コンプライアンス違反、品質不良。</li>
+              <li><strong>CREATE（新しい価値を生む）</strong>：新規売上、新サービスの数、顧客体験の変化、新しい事業モデル。</li>
+            </ol>
+            <p><a href="/return-on-ai">Return on AI の考え方をすべて読む</a></p>
+          </section>
+
+          <section>
+            <h2>AIから考えない。経営成果から逆算する。</h2>
+            <p>一般的なAI会社は「何を作りますか」から始めます。COREは「経営として何を達成しますか」から入ります。</p>
+            <p>
+              CORE の順序：<strong>経営目標 → ベースライン測定 → KPI設定 → ROAIシミュレーション → 業務再設計 → 開発 → 導入 → 計測 → 改善 → 拡大。</strong>
+              納品はゴールではなく、計測の始まりです（Build, Measure and Evolve）。
+            </p>
+          </section>
+
+          <section>
+            <h2>CORE ROAI SCORE — 約3分の無料診断</h2>
+            <p>
+              約3分・選択式の診断で、どこへAI投資すると最も大きな経営Returnが生まれる可能性があるかを可視化します。
+              料金は無料、連絡先の入力も不要です。数字はすべて入力と公開された仮定から決定論的に計算し、算定根拠を画面上で開いて確かめられます。
+            </p>
+            <p>分かること：AI投資の優先領域／削減できる時間／経済価値の概算／売上改善余地／コスト削減余地／リスク削減余地／AI Readiness／投資余力の目安。</p>
+            <p><a href="/roai-score">CORE ROAI SCORE を無料で受ける</a></p>
+          </section>
+
+          <section>
+            <h2>自社で開発・運営しているAIプロダクト</h2>
+            <ul>
+              <li><strong>CORE NERI</strong> — 話すだけで会社が動く、経営者のための音声先行の会社OS。答えるAIではなく実行するAI。月39,800円／113,800円／168,800円。</li>
+              <li><strong>CORE Prism</strong> — ひとり社長の経理・請求書・営業文を引き受けるAI参謀。月2,980円から・3日間無料。</li>
+              <li><strong>CORE Iris / Guild / Resonance / Lume / Crystal / Pulse</strong> — 制作・業務・顧客対応・集客・電話応対などの領域別AIプロダクト。</li>
+            </ul>
+            <p>制作（映像・ウェブ・受託開発）は <a href="https://studio.core-ai.jp/studio">CORE Studio</a> が担当します。</p>
+          </section>
+
+          <section>
+            <h2>会社概要</h2>
+            <dl>
+              <dt>会社名</dt><dd>株式会社CORE（CORE Inc.）</dd>
+              <dt>設立</dt><dd>2026年</dd>
+              <dt>資本金</dt><dd>200万円</dd>
+              <dt>代表取締役</dt><dd>井出 直毅（Naoki Ide）</dd>
+              <dt>本社所在地</dt><dd>〒658-0025 兵庫県神戸市東灘区魚崎南町7丁目11番7号</dd>
+              <dt>事業内容</dt><dd>AI変革コンサルティング／AI・システム開発／AI変革パートナー／業界特化AIプロダクト／自社AIプロダクトの開発・運営</dd>
+              <dt>連絡先</dt><dd><a href="mailto:info@core-ai.jp">info@core-ai.jp</a></dd>
+            </dl>
+          </section>
+
+          <section>
+            <h2>代表について</h2>
+            <p>
+              代表取締役の井出直毅は、神戸でチェロを教えています。生徒が一曲を弾き切った日の顔は、どんな技術にも代えられません。
+              けれどその教室の裏では、予定の調整や請求書や連絡に、弾く時間より長い時間を使っていました。その時間を返してくれたのがAIでした。
+              技術は五年で入れ替わります。人が人らしくあることの価値は、入れ替わりません。
+            </p>
+          </section>
+
+          <section>
+            <h2>よくある質問</h2>
+            <h3>株式会社COREは何をする会社ですか。</h3>
+            <p>企業をAI前提で再設計する AI Transformation Company です。AIツールを納品して終わりにせず、経営目標から逆算して業務・組織・システムを設計し直し、AI投資が返した成果（Return on AI）を計測するところまでを担当します。</p>
+            <h3>Return on AI（ROAI）とは何ですか。</h3>
+            <p>AIへの投資額ではなく、AIが返した経営成果で投資を評価する指標です。売上（GROW）、コスト削減（SAVE）、速度（ACCELERATE）、損失回避（PROTECT）、新しい価値（CREATE）の5つのReturnで測ります。</p>
+            <h3>相談は有料ですか。</h3>
+            <p>初回のご相談とお見積りのご提示は無料です。約3分のCORE ROAI SCORE（無料・連絡先不要）から始めることもできます。</p>
+            <h3>対応地域はどこですか。</h3>
+            <p>兵庫県神戸市に本社があり、オンラインを含めて全国のご相談に対応しています。</p>
+            <h3>一般的なAI開発会社・コンサルティング会社との違いは何ですか。</h3>
+            <p>作って納めるところで終わらない点です。経営目標とベースラインを先に決め、ROAIを試算してから業務を再設計し、導入後に実際の数字を計測して改善まで続けます。加えて、自社でAIプロダクトを開発・運営しているため、検証済みの設計をそのまま持ち込めます。</p>
+          </section>
+
+          <section>
+            <h2>ご相談</h2>
+            <p>初回のご相談に費用はいただきません。その場で、AIに任せられる業務と、人が担うべき業務を切り分けてお返しします。</p>
+            <p>メール：<a href="mailto:info@core-ai.jp">info@core-ai.jp</a>　／　<a href="/roai-score">ROAIを無料診断する</a></p>
+          </section>
+        </main>
+        <footer>
+          <p>© 2026 株式会社CORE — 〒658-0025 兵庫県神戸市東灘区魚崎南町7丁目11番7号 ／ info@core-ai.jp</p>
+          <p><a href="https://studio.core-ai.jp/studio">CORE Studio</a>　<a href="/return-on-ai">Return on AI</a>　<a href="/roai-score">CORE ROAI SCORE</a>　<a href="/corp/sier">SIer向けAI開発パートナー</a></p>
+        </footer>
+      </div>
+    </div>
     <script type="module" src="/src/corpMain.tsx"></script>
   </body>
 </html>

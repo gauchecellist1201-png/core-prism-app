@@ -26,7 +26,7 @@
     <meta name="description" content="COREは、AIプロダクトを自社で開発・運営する制作スタジオです。AIショートドラマなどの映像制作から、ウェブサイト制作、システム受託開発まで。戦略設計から公開後の運用改善まで一貫体制で担当します。" />
     <meta name="keywords" content="CORE Studio,映像制作,AI動画制作,ホームページ制作,受託開発,システム開発,神戸,大阪" />
     <meta name="author" content="CORE" />
-    <link rel="canonical" href="https://core-prism-app.vercel.app/studio" />
+    <link rel="canonical" href="https://studio.core-ai.jp/studio" />
 
     <!-- Open Graph (CORE 法人専用)
          v4 (2026-09-01): 白地の小さめロゴ+価格バッジ (v3) から、
@@ -35,7 +35,7 @@
          (値上げのたびに画像だけ古くなるため。金額は description 側で言う)。
          作り直しは scripts/generateStudioOgV4.mjs。差し替える時は版番号を上げること。 -->
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://core-prism-app.vercel.app/studio" />
+    <meta property="og:url" content="https://studio.core-ai.jp/studio" />
     <meta property="og:title" content="CORE Studio — 映像制作・ウェブ制作・受託開発" />
     <meta property="og:description" content="COREは、AIプロダクトを自社で開発・運営する制作スタジオです。AIショートドラマなどの映像制作から、ウェブサイト制作、システム受託開発まで。戦略設計から公開後の運用改善まで一貫体制で担当します。" />
     <meta property="og:locale" content="ja_JP" />
@@ -50,9 +50,166 @@
     <meta name="twitter:title" content="CORE Studio — 映像制作・ウェブ制作・受託開発" />
     <meta name="twitter:description" content="COREは、AIプロダクトを自社で開発・運営する制作スタジオです。AIショートドラマなどの映像制作から、ウェブサイト制作、システム受託開発まで。戦略設計から公開後の運用改善まで一貫体制で担当します。" />
     <meta name="twitter:image" content="https://core-prism-app.vercel.app/og-studio-v4.png" />
+
+
+    <!-- 構造化データ。AI検索・回答エンジンが「誰が・何を・いくらで」を取り出せるようにする。
+         価格を変えたら #pre-studio / public/llms-studio.txt / public/pricing-studio.md も同時に直すこと。 -->
+    <script type="application/ld+json">
+    {"@context":"https://schema.org","@graph":[
+      {"@type":"Organization","@id":"https://www.core-ai.jp/#org","name":"株式会社CORE","alternateName":"CORE Inc.","url":"https://www.core-ai.jp/corp","logo":"https://www.core-ai.jp/core-512-v2.png","email":"info@core-ai.jp","foundingDate":"2026","address":{"@type":"PostalAddress","postalCode":"658-0025","addressRegion":"兵庫県","addressLocality":"神戸市東灘区","streetAddress":"魚崎南町7丁目11番7号","addressCountry":"JP"}},
+      {"@type":"ProfessionalService","@id":"https://studio.core-ai.jp/#studio","name":"CORE Studio","alternateName":"コアスタジオ","url":"https://studio.core-ai.jp/studio","image":"https://studio.core-ai.jp/og-studio-v4.png","parentOrganization":{"@id":"https://www.core-ai.jp/#org"},"email":"info@core-ai.jp","priceRange":"¥¥","currenciesAccepted":"JPY","inLanguage":"ja","description":"株式会社COREが運営する制作スタジオ。映像制作・ウェブサイト制作・システム受託開発・公開後の運用までをひとつの体制で担当する。","address":{"@type":"PostalAddress","postalCode":"658-0025","addressRegion":"兵庫県","addressLocality":"神戸市東灘区","streetAddress":"魚崎南町7丁目11番7号","addressCountry":"JP"},"areaServed":{"@type":"Country","name":"日本"},"knowsAbout":["映像制作","AI動画制作","ウェブサイト制作","システム受託開発","保守運用"],
+        "hasOfferCatalog":{"@type":"OfferCatalog","name":"CORE Studio のサービスと料金","itemListElement":[
+          {"@type":"Offer","name":"映像制作 TRIAL（15秒1本・1社1本・修正2回）","price":"49800","priceCurrency":"JPY","url":"https://studio.core-ai.jp/studio/film","availability":"https://schema.org/InStock","itemOffered":{"@type":"Service","name":"映像制作","serviceType":"Video production"}},
+          {"@type":"Offer","name":"映像制作 STANDARD（広告出稿向け）","price":"128000","priceCurrency":"JPY","priceSpecification":{"@type":"PriceSpecification","minPrice":"128000","priceCurrency":"JPY"},"url":"https://studio.core-ai.jp/studio/film","itemOffered":{"@type":"Service","name":"広告用映像制作","serviceType":"Video production"}},
+          {"@type":"Offer","name":"ウェブサイト制作 Spark（1ページ・約2週間）","priceSpecification":{"@type":"PriceSpecification","minPrice":"50000","priceCurrency":"JPY"},"priceCurrency":"JPY","url":"https://studio.core-ai.jp/studio/plans","itemOffered":{"@type":"Service","name":"ウェブサイト制作","serviceType":"Web design"}},
+          {"@type":"Offer","name":"システム受託開発 MVP（2週間〜1.5ヶ月）","priceSpecification":{"@type":"PriceSpecification","minPrice":"500000","priceCurrency":"JPY"},"priceCurrency":"JPY","url":"https://studio.core-ai.jp/studio/dev","itemOffered":{"@type":"Service","name":"システム受託開発","serviceType":"Software development"}},
+          {"@type":"Offer","name":"運用・保守（月次レポート付き）","priceSpecification":{"@type":"UnitPriceSpecification","minPrice":"10000","priceCurrency":"JPY","unitCode":"MON"},"priceCurrency":"JPY","url":"https://studio.core-ai.jp/studio/care","itemOffered":{"@type":"Service","name":"サイト運用・保守","serviceType":"Website maintenance"}}
+        ]}},
+      {"@type":"WebSite","@id":"https://studio.core-ai.jp/#site","url":"https://studio.core-ai.jp/studio","name":"CORE Studio","publisher":{"@id":"https://www.core-ai.jp/#org"},"inLanguage":"ja"},
+      {"@type":"WebPage","@id":"https://studio.core-ai.jp/studio#page","url":"https://studio.core-ai.jp/studio","name":"CORE Studio — 映像制作・ウェブ制作・受託開発","isPartOf":{"@id":"https://studio.core-ai.jp/#site"},"about":{"@id":"https://studio.core-ai.jp/#studio"},"inLanguage":"ja","dateModified":"2026-09-06"},
+      {"@type":"FAQPage","@id":"https://studio.core-ai.jp/studio#faq","mainEntity":[
+        {"@type":"Question","name":"CORE Studio はどこの制作会社ですか。","acceptedAnswer":{"@type":"Answer","text":"兵庫県神戸市の株式会社COREが運営する制作スタジオです。映像制作・ウェブ制作・受託開発・運用を一社で担当します。"}},
+        {"@type":"Question","name":"映像制作はいくらからですか。","acceptedAnswer":{"@type":"Answer","text":"初めての1本は15秒1本 49,800円（1社1本・修正2回）です。通常価格は 89,800円、広告出稿用は STANDARD 128,000円 からです。"}},
+        {"@type":"Question","name":"ホームページ制作はいくらからですか。","acceptedAnswer":{"@type":"Answer","text":"1ページ構成の Spark が 50,000円から、制作期間は約2週間です。予約や決済を備えた企業サイトまで対応します。"}},
+        {"@type":"Question","name":"見積り後に追加費用は発生しますか。","acceptedAnswer":{"@type":"Answer","text":"発生しません。お見積り時点で金額を確定し、以後の追加費用はいただきません。"}},
+        {"@type":"Question","name":"原稿や写真がなくても依頼できますか。","acceptedAnswer":{"@type":"Answer","text":"できます。原稿と写真がない状態からでも着手できる進め方をとっています。"}},
+        {"@type":"Question","name":"他社で作ったサイトの運用だけ頼めますか。","acceptedAnswer":{"@type":"Answer","text":"承ります。運用プラン（月10,000円から）は、他社制作サイトのみのご依頼にも対応しています。"}},
+        {"@type":"Question","name":"NDAや請求書払いには対応していますか。","acceptedAnswer":{"@type":"Answer","text":"どちらも対応しています。ご相談からお見積りのご提示までは無料です。"}}
+      ]}
+    ]}
+    </script>
+
+    <!-- 静的コンテンツ層の体裁（Studio は白地）。 -->
+    <style>
+      #pre-studio{max-width:820px;margin:0 auto;padding:56px 20px 80px;color:#1b1b1f;background:#fff;font-family:'Noto Sans JP',system-ui,-apple-system,'Hiragino Sans',sans-serif;line-height:1.9;font-size:16px}
+      #pre-studio h1{font-size:clamp(28px,5.4vw,46px);line-height:1.25;letter-spacing:-.02em;margin:10px 0 22px;font-weight:800}
+      #pre-studio h2{font-size:clamp(19px,3.2vw,26px);margin:46px 0 12px;font-weight:700;letter-spacing:-.01em}
+      #pre-studio h3{font-size:16.5px;margin:24px 0 6px;font-weight:700}
+      #pre-studio p,#pre-studio li,#pre-studio td{color:#43464e;margin:0 0 14px}
+      #pre-studio .pre-kicker{font-size:11px;letter-spacing:.22em;color:#8a8f9a;margin:0}
+      #pre-studio .pre-lead{font-size:18px;color:#2b2e35}
+      #pre-studio strong{color:#000;font-weight:600}
+      #pre-studio a{color:#0b57d0}
+      #pre-studio ul,#pre-studio ol{padding-left:1.25em;margin:0 0 18px}
+      #pre-studio table{border-collapse:collapse;width:100%;font-size:14.5px;margin:8px 0 16px}
+      #pre-studio caption{text-align:left;color:#71757e;font-size:13px;padding-bottom:8px}
+      #pre-studio th,#pre-studio td{border:1px solid #e3e5ea;padding:9px 10px;text-align:left;vertical-align:top;margin:0}
+      #pre-studio th{background:#f6f7f9;font-weight:600;color:#1b1b1f}
+      #pre-studio footer{margin-top:64px;padding-top:24px;border-top:1px solid #e3e5ea;font-size:13px;color:#71757e}
+    </style>
+    <!-- Google Analytics 4。計測IDは public/ga.js の GA_ID 1か所だけ。未設定のあいだは何も読み込まない -->
+    <script defer src="/ga.js" data-ga-site="studio"></script>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <!-- ====================================================================
+           静的コンテンツ層（JS を実行しないクローラー・AI検索エンジン向け）
+           2026-09-06 実測: GPTBot で /studio を取得すると本文は **29文字** だった。
+           React が描くページなので、JS を実行しない相手には料金も実績も何も残らない。
+           #root の中に置いてあるので、createRoot().render() の最初の描画で入れ替わる。
+           内容は React 側の表示と必ず一致させること。価格を変えたら public/llms-studio.txt と
+           public/pricing-studio.md も同時に直す。
+        ==================================================================== -->
+      <div id="pre-studio">
+        <main>
+          <p class="pre-kicker">FILM / WEB / DEVELOPMENT — KOBE, JAPAN</p>
+          <h1>映像も、ウェブも、成果から逆算してつくる。</h1>
+          <p class="pre-lead">
+            CORE Studio は、兵庫県神戸市の株式会社COREが運営する制作スタジオです。
+            映像制作・ウェブサイト制作・システム受託開発・公開後の運用まで、ひとつの体制で担当します。
+            ご相談からお見積りのご提示までは無料。NDAの締結・請求書払いにも対応します。
+          </p>
+
+          <section>
+            <h2>サービスと料金</h2>
+            <table>
+              <caption>2026-09-06 時点の価格。お見積り時点で金額を確定し、以後の追加費用はいただきません。</caption>
+              <thead><tr><th>領域</th><th>内容</th><th>価格</th><th>期間</th></tr></thead>
+              <tbody>
+                <tr><td>映像制作</td><td>TRIAL：15秒1本・1社1本まで・修正2回（通常 ¥89,800 の初回限定価格）</td><td>¥49,800〜</td><td>初稿まで約1週間</td></tr>
+                <tr><td>映像制作</td><td>STANDARD：広告出稿を前提とする映像</td><td>¥128,000〜</td><td>個別</td></tr>
+                <tr><td>サイト制作</td><td>Spark：1ページ構成。原稿と写真がなくても着手できます</td><td>¥50,000〜</td><td>約2週間</td></tr>
+                <tr><td>受託開発</td><td>MVP：業務システム・SaaS・AIを組み込んだアプリ</td><td>¥500,000〜</td><td>2週間〜1.5ヶ月</td></tr>
+                <tr><td>運用・保守</td><td>監視・更新代行・改善提案・月次レポート。他社制作サイトのみの依頼も可</td><td>月 ¥10,000〜</td><td>継続</td></tr>
+              </tbody>
+            </table>
+            <p>修正は2回まで無料。3回目以降は1回 ¥5,500 です。</p>
+            <p>
+              <a href="/studio/film">映像制作</a>　<a href="/studio/plans">サイト制作</a>　<a href="/studio/dev">受託開発</a>　<a href="/studio/care">運用</a>　<a href="/studio/works">実績</a>　<a href="/studio/about">会社案内</a>　<a href="/studio/contact">お問い合わせ</a>
+            </p>
+          </section>
+
+          <section>
+            <h2>企画から公開後の運用まで、ひとつの窓口で担当します</h2>
+            <p>
+              株式会社COREは、神戸を拠点に、映像制作・Webサイト制作・システム開発を行う制作会社です。
+              ご相談から企画・構成、撮影・編集、公開後の運用まで、代表が一貫して窓口を担当します。
+              途中で担当者が変わらないため、最初にお聞きした意図が、そのまま最終形まで残ります。
+            </p>
+            <p>
+              制作は納品で終わりではありません。公開から2週間後に、再生数や反応をご一緒に確認する時間をいただき、
+              何が伝わり、何が伝わらなかったかを整理します。その結果が、次の一手を決める材料になります。
+            </p>
+          </section>
+
+          <section>
+            <h2>CORE Studio が選ばれる理由</h2>
+            <ol>
+              <li><strong>自社プロダクトを持つ制作会社です。</strong> 受託だけの会社と違い、当社はAIエージェントをはじめとする8つの自社サービスを開発・運営しています。日々自分たちの事業で検証を重ねた設計と技術を、貴社の案件にそのまま投入します。</li>
+              <li><strong>戦略から運用まで、一貫体制。</strong> ヒアリングで貴社の事業目標から逆算し、情報設計・デザイン・実装・公開後の改善までを一気通貫で担当します。分業の伝言ゲームで意図が薄まることがありません。</li>
+              <li><strong>AI活用による速度と品質の両立。</strong> AI-nativeな制作フローにより、従来の制作会社の数分の一の期間で、妥協のない品質を実現します。短縮した時間は、設計と検証の密度に還元します。</li>
+            </ol>
+          </section>
+
+          <section>
+            <h2>制作の流れ</h2>
+            <ol>
+              <li><strong>お問い合わせ</strong>：フォームまたはメールでご連絡ください。1営業日以内にご返信します。</li>
+              <li><strong>ヒアリング・ご提案</strong>：貴社の事業目標と課題を伺い、最適な構成とプランをご提案します。</li>
+              <li><strong>お見積り・ご契約</strong>：この時点で金額を確定します。以後の追加費用はありません。</li>
+              <li><strong>設計・デザイン</strong>：情報設計から画面・構成を固めます。</li>
+              <li><strong>実装・撮影／編集</strong>：制作を進め、進捗は随時ご報告します。</li>
+              <li><strong>公開</strong>：最短2週間で公開できます。</li>
+              <li><strong>公開2週間後のふりかえり</strong>：反応を一緒に確認し、次の一手を決めます。</li>
+            </ol>
+          </section>
+
+          <section>
+            <h2>制作実績（いずれも公開中）</h2>
+            <p><strong>映像：</strong>Laguna Beauté（商品広告）／株式会社CORE ブランドフィルム／ライブイベント主催者様（イベントブランディング）／株式会社グローバルジョイントコミットメント（ブランドフィルム）／JRC 日本記録協会</p>
+            <p><strong>ウェブ・システム：</strong>ヘッドスパ「天国」／株式会社クロスオーバー／GAUCHE チェロ音楽教室／朝日館／RAD HOOKAH／ANIMA／SOMA／モデル個人サイト</p>
+            <p><a href="/studio/works">8件の実績を見る</a></p>
+          </section>
+
+          <section>
+            <h2>よくある質問</h2>
+            <h3>CORE Studio はどこの制作会社ですか。</h3>
+            <p>兵庫県神戸市の株式会社COREが運営する制作スタジオです。映像制作・ウェブ制作・受託開発・運用を一社で担当します。</p>
+            <h3>映像制作はいくらからですか。</h3>
+            <p>初めての1本は15秒1本 ¥49,800（1社1本・修正2回）です。通常価格は ¥89,800、広告出稿用は STANDARD ¥128,000 からです。</p>
+            <h3>ホームページ制作はいくらからですか。</h3>
+            <p>1ページ構成の Spark が ¥50,000〜、制作期間は約2週間です。予約や決済を備えた企業サイトまで対応します。</p>
+            <h3>見積り後に追加費用は発生しますか。</h3>
+            <p>発生しません。お見積り時点で金額を確定し、以後の追加費用はいただきません。</p>
+            <h3>原稿や写真がなくても依頼できますか。</h3>
+            <p>できます。原稿と写真がない状態からでも着手できる進め方をとっています。</p>
+            <h3>他社で作ったサイトの運用だけ頼めますか。</h3>
+            <p>承ります。運用プラン（月 ¥10,000〜）は、他社制作サイトのみのご依頼にも対応しています。</p>
+            <h3>NDAや請求書払いには対応していますか。</h3>
+            <p>どちらも対応しています。ご相談からお見積りのご提示までは無料です。</p>
+          </section>
+
+          <section>
+            <h2>お問い合わせ</h2>
+            <p>フォームまたはメールでご連絡ください。1営業日以内にご返信します。メール：<a href="mailto:info@core-ai.jp">info@core-ai.jp</a></p>
+          </section>
+        </main>
+        <footer>
+          <p>CORE Studio ／ 株式会社CORE — 〒658-0025 兵庫県神戸市東灘区魚崎南町7丁目11番7号 ／ info@core-ai.jp</p>
+          <p><a href="https://www.core-ai.jp/corp">株式会社CORE 公式サイト</a></p>
+        </footer>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
