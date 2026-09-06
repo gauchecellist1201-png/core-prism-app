@@ -157,7 +157,14 @@ export default function CheckoutModal({ brand: initialBrand, plan: initialPlan, 
         if (linkUrl) {
           await signup({ email, password, brand, plan: plan.id });
           sendEmail(email, 'welcome', { name: email.split('@')[0], brand });
-          window.location.href = linkUrl;
+          // 静的 Payment Link には metadata を付けられない（Stripe 側で作成済みの固定リンク）。
+          // Stripe が公式にサポートする client_reference_id / prefilled_email だけは URL で渡せて
+          // webhook の checkout.session.completed に届くので、そこで brand を復元する
+          // （api/_lib/coreFunnel.ts brandFromClientReferenceId）。[[env_static_payment_link_makes_checkout_dead_code]]
+          const url = new URL(linkUrl);
+          url.searchParams.set('client_reference_id', `${plan.id}:${brand}`);
+          url.searchParams.set('prefilled_email', email);
+          window.location.href = url.toString();
           return;
         }
 

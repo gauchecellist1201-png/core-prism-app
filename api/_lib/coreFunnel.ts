@@ -80,6 +80,17 @@ export interface CheckoutSessionLike {
   payment_status?: string;
   amount_total?: number;
   metadata?: Record<string, string> | null;
+  /** 静的 Payment Link 経由（サーバーで Checkout Session を作れず metadata が付かない）
+   *  購入は `?client_reference_id=<plan>:<brand>` を付けて誘導している。metadata が
+   *  無いときはここから brand を拾う。[[env_static_payment_link_makes_checkout_dead_code]] */
+  client_reference_id?: string | null;
+}
+
+/** "<plan>:<brand>" 形式の client_reference_id から brand 部分だけ取り出す。 */
+function brandFromClientReferenceId(raw: unknown): string {
+  const s = String(raw ?? '');
+  const brand = s.includes(':') ? s.slice(s.indexOf(':') + 1) : s;
+  return brand;
 }
 
 /**
@@ -91,7 +102,8 @@ export function funnelFromCheckoutSession(sess: CheckoutSessionLike | null | und
   if (sess.mode !== 'payment') return null;
   if (sess.payment_status !== 'paid') return null;
   if (!(Number(sess.amount_total) > 0)) return null;
-  return { event: 'purchase', label: brandLabel(sess.metadata?.brand) };
+  const brand = sess.metadata?.brand ?? brandFromClientReferenceId(sess.client_reference_id);
+  return { event: 'purchase', label: brandLabel(brand) };
 }
 
 async function upPipeline(cmds: (string | number)[][]): Promise<void> {

@@ -331,6 +331,7 @@ export default async function handler(req: Request) {
           id?: string; subscription?: string; customer?: string;
           mode?: string; payment_status?: string; amount_total?: number;
           metadata?: Record<string, string> | null;
+          client_reference_id?: string | null;
         };
         // 単発決済（CORE Studio の映像など）はここでしか確定が分からない。
         // サブスクは invoice.payment_succeeded 側で数える（二重計上しない）。

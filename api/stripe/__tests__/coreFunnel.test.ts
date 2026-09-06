@@ -52,6 +52,18 @@ describe('Stripe → 全社ファネル', () => {
     expect(funnelFromCheckoutSession({ mode: 'payment', payment_status: 'paid', amount_total: 0 })).toBeNull();
   });
 
+  it('静的 Payment Link 経由（metadata なし）は client_reference_id の "<plan>:<brand>" から brand を復元する', () => {
+    expect(funnelFromCheckoutSession({
+      mode: 'payment', payment_status: 'paid', amount_total: 55000,
+      client_reference_id: 'studio-film:film',
+    })).toEqual({ event: 'purchase', label: 'studio_film' });
+    // metadata がある時はそちらを優先する
+    expect(funnelFromCheckoutSession({
+      mode: 'payment', payment_status: 'paid', amount_total: 55000,
+      metadata: { brand: 'prism' }, client_reference_id: 'x:film',
+    })).toEqual({ event: 'purchase', label: 'prism' });
+  });
+
   it('brand ラベルは Redis のフィールドに使える形へ落ちる', () => {
     expect(brandLabel('  NEXUS ')).toBe('neri');
     expect(brandLabel('新商品 α')).toBe('');   // 使えない文字だけなら内訳を立てない
