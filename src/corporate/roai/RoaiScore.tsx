@@ -11,10 +11,11 @@
 import { useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent, type FormEvent } from 'react';
 import { FONT_JA, FONT_EN, ACCENT, ACCENT_LIGHT, PAPER, TEXT_BODY, TEXT_MUTED, LINE, INK, ctaHero, ctaGhost } from '../corpTheme';
 import { activeQuestions, findOption, CATEGORY_LABEL, INDUSTRY_LABEL, type Question } from './schema';
-import { computeRoai, formatRangeYen, formatYen, formatHours, ASSUMPTIONS, type RoaiResult, type Basis } from './engine';
+import { computeRoai, formatRangeYen, formatYen, formatHours, showsDailyStep, ASSUMPTIONS, type RoaiResult, type Basis } from './engine';
 import { RETURN_BY_KEY, RETURNS } from './model';
 import { loadSession, saveSession, clearSession, newSession, type RoaiSession } from './store';
 import { track, takeSource } from './track';
+import { NERI_FACTS, neriLpUrl } from '../../lib/coreLinks';
 import { ScoreGauge } from './HomeRoaiSections';
 
 type AnchorHandler = (e: ReactMouseEvent<HTMLAnchorElement>, href: string) => void;
@@ -319,6 +320,9 @@ function Brief({ session, onAnchor, onRestart, onLeadSent }: { session: RoaiSess
         </div>
       </section>
 
+      {/* 90日を待たずに始められる場所。受託が妥当な結果（build）の人には出さない。 */}
+      {showsDailyStep(r.recommendation.mode) && <NeriStep mode={r.recommendation.mode} />}
+
       {/* Next action */}
       <NextAction session={session} r={r} onAnchor={onAnchor} onLeadSent={onLeadSent} />
 
@@ -382,6 +386,52 @@ function BasisPanel({ r }: { r: RoaiResult }) {
         <p style={{ fontFamily: FONT_JA, fontSize: '0.74rem', color: TEXT_MUTED, margin: '1rem 0 0' }}>人件費単価 ¥{ASSUMPTIONS.hourlyCost.toLocaleString('ja-JP')}/時 は賞与・社会保険を含む総額ベースの概算中央値。御社の実数に置き換えると精度が上がります。</p>
       </div>
     </details>
+  );
+}
+
+// ── 90日を待たずに始められる場所（2026-09-07 オーナー判断で追加） ──────
+//
+// なぜ条件つきか:
+//   BRIEF の NEXT ACTION は「メールを渡す」2択（60分相談 / 詳細レポート）しかなく、
+//   渡さなかった人には何も残らなかった。一方で全員に自己解決の道を見せると、
+//   相談を選ぶはずだった人まで逃がす。
+//   ・prepare … データ整備と業務標準化が先。いま受託 300 万〜を勧める状態ではない
+//   ・focus  … 突出した機会が無い。大きな投資より 1 業務の Before / After
+//   この 2 つのときだけ出す。build（受託が妥当）のときは出さない。
+//
+// 置き方:
+//   ・NEXT ACTION の「前」。ページの最後は今まで通り相談フォームで終わる。
+//   ・ボタンは ctaGhost（枠線）。主導線の ctaHero と強さを並べない。
+//   ・金額は NERI_FACTS からだけ引く。
+function NeriStep({ mode }: { mode: 'prepare' | 'focus' }) {
+  return (
+    <section className="rs-shell rs-sec rs-neri" aria-labelledby="rs-neri-h">
+      <p style={{ fontFamily: FONT_EN, fontSize: '0.66rem', letterSpacing: '0.24em', color: ACCENT_LIGHT, fontWeight: 700, margin: '0 0 0.5rem' }}>START TODAY</p>
+      <h2 id="rs-neri-h" className="rs-h2" style={{ fontFamily: FONT_JA }}>90日を待たずに、<br />今日から測れる場所。</h2>
+      <p className="rs-lead" style={{ fontFamily: FONT_JA }}>
+        {mode === 'prepare'
+          ? 'いまは、AIを作るより先に「どこで時間と機会が失われているか」を見える形にする段階です。棚卸し・手順の言語化・記録の置き場を決める作業そのものを、話しかけながら進められます。'
+          : '突出した機会が見当たらないときは、大きな投資より、1つの業務のBefore / Afterを測る方が確実です。その1つを、今日から始められます。'}
+      </p>
+      <div className="rs-neri-card">
+        <p style={{ fontFamily: FONT_JA, fontSize: '0.98rem', fontWeight: 800, color: '#fff', margin: 0, lineHeight: 1.6 }}>CORE NERI — 話すだけで、会社が動く。</p>
+        <p style={{ fontFamily: FONT_JA, fontSize: '0.86rem', color: TEXT_BODY, lineHeight: 1.9, margin: '0.6rem 0 0' }}>
+          当社が開発・運営している、経営者のためのAIです。答えるAIではなく、聞いたことをその場で仕事にします。予定・メール・売上・記録が、話しかけた場で動きます。外へ出る操作（送信・決済）の前には必ず確認を挟みます。
+        </p>
+        <p style={{ fontFamily: FONT_JA, fontSize: '0.9rem', fontWeight: 800, color: '#fff', margin: '1.1rem 0 0' }}>{NERI_FACTS.from}</p>
+        <p style={{ fontFamily: FONT_JA, fontSize: '0.78rem', color: TEXT_MUTED, lineHeight: 1.8, margin: '0.25rem 0 1.2rem' }}>{NERI_FACTS.free}。</p>
+        <a
+          href={neriLpUrl('roai-brief')}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={() => track('corp_cta_click', `brief-neri-${mode}`)}
+          style={{ ...ctaGhost, display: 'block', textAlign: 'center' }}
+        >CORE NERI を見る</a>
+      </div>
+      <p style={{ fontFamily: FONT_JA, fontSize: '0.76rem', color: TEXT_MUTED, lineHeight: 1.85, margin: '1.1rem 0 0' }}>
+        上の金額は AI Transformation（御社の実数での算定と実装）の話です。NERI はその置き換えではなく、決まるまでの間と、決まったあとの毎日を動かすものです。
+      </p>
+    </section>
   );
 }
 

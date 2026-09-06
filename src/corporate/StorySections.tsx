@@ -2,7 +2,8 @@
 // StorySections — CORE WEB 2035（2026-09-06）ホームの新しい章。
 //
 //   THE CHANGE（技術は変わる。本質は変わらない）／PROCESS（AIから考えない）／ONE CORE（4層）／
-//   STUDIO（伝える層）／BRIDGE（会社の境界を越える）／ASHITAKA／ENERGY／CONNECTION／CORE 2035／INVITATION。
+//   STUDIO（伝える層）／NERI（毎日を動かす層）／BRIDGE（会社の境界を越える）／ASHITAKA／ENERGY／
+//   CONNECTION／CORE 2035／INVITATION。
 //   言葉の正本は coreStory.ts。写真は public/corp/ashitaka-*.webp（オーナー本人の演奏映像から切り出した実写）。
 //
 //   計測: 各章が画面に入ったら corp_interest を1回だけ送る（「誰が何に興味を持ったか」の母数）。
@@ -18,9 +19,10 @@ import { rememberIntent } from './corpIntent';
 import { SIZES_FULL, photoSrcSet } from './photoSet';
 import { FILM_WORKS } from '../studio/works';
 import {
-  CHANGE, PROCESS, ONE_CORE, STUDIO, BRIDGE, ASHITAKA, ENERGY, CONNECTION, VISION, INVITE, STATUS_LABEL,
+  CHANGE, PROCESS, ONE_CORE, STUDIO, NERI, BRIDGE, ASHITAKA, ENERGY, CONNECTION, VISION, INVITE, STATUS_LABEL,
   type LayerStatus,
 } from './coreStory';
+import { NERI_FACTS, neriLpUrl } from '../lib/coreLinks';
 
 type AnchorHandler = (e: ReactMouseEvent<HTMLAnchorElement>, href: string) => void;
 
@@ -220,6 +222,47 @@ export function StudioSection() {
         <motion.div {...reveal} style={{ marginTop: '2rem' }}>
           <a href={STUDIO.href} onClick={() => track('corp_cta_click', 'studio-section')} style={ctaGhost}>{STUDIO.cta}</a>
         </motion.div>
+      </div>
+    </section>
+  );
+}
+
+// ============================================================
+//  06.5 NERI — 変わったあとの毎日を、動かし続ける。
+//
+//  Studio（伝える）の直後・BRIDGE（地域へ）の前。営業設計の真ん中がホームに無かったので置いた。
+//  写真は使わない。前が Studio の実写3枚、次が BRIDGE の全面写真なので、間は文字だけにする。
+//  金額は NERI_FACTS からだけ引く（章の中に書き写さない）。
+// ============================================================
+export function NeriSection() {
+  const ref = useInterest('neri');
+  return (
+    <section id="neri" ref={ref} className="lp-section-pad" style={{ padding: '7rem 1.5rem', background: INK, scrollMarginTop: 70 }} aria-labelledby="neri-h">
+      <div className="ch-wrap">
+        <motion.div {...reveal} className="ch-head">
+          <Kick>{NERI.kicker}</Kick>
+          <h2 id="neri-h" style={{ ...sectionH2, margin: 0 }}><Lines text={NERI.h2} /></h2>
+          <p style={{ ...sectionLead, margin: '1.2rem 0 0' }}>{NERI.lead}</p>
+        </motion.div>
+        <div className="cs-neri">
+          <motion.div {...reveal}>
+            <ul className="cs-neri-points" style={{ fontFamily: FONT_JA }}>
+              {NERI.points.map(x => <li key={x}>{x}</li>)}
+            </ul>
+            <p className="cs-neri-note" style={{ fontFamily: FONT_JA }}>{NERI.note}</p>
+          </motion.div>
+          <motion.aside {...reveal} className="cs-neri-card">
+            <p className="cs-neri-price" style={{ fontFamily: FONT_JA }}>{NERI_FACTS.from}</p>
+            <p className="cs-neri-free" style={{ fontFamily: FONT_JA }}>{NERI_FACTS.free}。</p>
+            <a
+              href={neriLpUrl('corp-home')}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => track('corp_cta_click', 'home-neri')}
+              style={{ ...ctaHero, display: 'block', textAlign: 'center' }}
+            >{NERI.cta}</a>
+          </motion.aside>
+        </div>
       </div>
     </section>
   );

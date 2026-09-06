@@ -29,4 +29,17 @@ describe('NERI へのリンク', () => {
   it('金額は 1 か所にだけ持つ（章の中に書き写さない）', () => {
     expect(NERI_FACTS.from).toContain('39,800');
   });
+
+  // 印は LP 側で 12 文字に切られる。切られた印は GA4 の探索で別の流入元と混ざり、
+  // 「どこから来たか」を分けられなくなる（気づけないまま数字だけが残る）。
+  it('実際に使っている印が、12文字で切られずにそのまま届く', () => {
+    const USED = [
+      'corp-head', 'corp-foot', 'corp-card', 'corp-plans',
+      'corp-finder', 'corp-galry', 'corp-guide',
+      'corp-home',   // ホーム9幕の NERI の章
+      'roai-brief',  // ROAI診断の結果（prepare / focus のときだけ）
+      'studio-home', 'studio-care',
+    ];
+    for (const f of USED) expect(neriLpUrl(f)).toBe(`https://nexus.core-ai.jp/lp/?from=${f}`);
+  });
 });

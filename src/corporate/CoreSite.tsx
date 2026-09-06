@@ -48,7 +48,7 @@ import { RoaiBand, ExecutiveQuestion, Differentiation, RoaiModelSection, ScoreTe
 import ReturnOnAiPage from './roai/ReturnOnAiPage';
 import RoaiScore from './roai/RoaiScore';
 import { setCorpTab } from './corpRouteStore';
-import { TheChange, ProcessContrast, OneCore, StudioSection, Bridge, AshitakaHome, EnergyHome, Connection, Core2035, Invitation } from './StorySections';
+import { TheChange, ProcessContrast, OneCore, StudioSection, NeriSection, Bridge, AshitakaHome, EnergyHome, Connection, Core2035, Invitation } from './StorySections';
 import AshitakaPage from './AshitakaPage';
 import EnergyPage from './EnergyPage';
 import { track } from './roai/track';
@@ -581,7 +581,8 @@ export default function CoreSite() {
         {/* 2026-09-04 オーナー指示: 動画のヒーローの「次のページ」は理念。理念→約束→人→ROAI の順へ。 */}
         {/* 2026-09-06 CORE WEB 2035: 9幕の物語。
             理念 → AIの時代 → AI Transformation（ROAI・順序・5つのReturn・診断）→ ONE CORE → Studio →
-            地域へ → ASHITAKA → ENERGY → つながり → 2035 → 証明 → 代表 → 会社概要 → 招待。
+            NERI（毎日を動かす層・2026-09-07 追加）→ 地域へ → ASHITAKA → ENERGY → つながり → 2035 →
+            証明 → 代表 → 会社概要 → 招待。
             ホームから外した章（ExecutiveQuestion / Differentiation / WhyCore / ServicesEditorial / ApproachSection /
             PeopleMosaic / ProofStrip / FinalCta）は AI変革タブ・会社タブ・/return-on-ai に残る。 */}
         <Manifesto onAnchor={handleAnchor} />
@@ -593,6 +594,7 @@ export default function CoreSite() {
         <ScoreTeaser onAnchor={handleAnchor} />
         <OneCore onAnchor={handleAnchor} />
         <StudioSection />
+        <NeriSection />
         <Bridge />
         <AshitakaHome onAnchor={handleAnchor} />
         <EnergyHome onAnchor={handleAnchor} />

@@ -4476,6 +4476,7 @@ header .lp-tab.is-on { color: #fff; border-bottom-color: #38BDF8; background: tr
 .rs-road-phase ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.35rem; }
 .rs-road-phase li { font-size: 0.78rem; color: rgba(226,232,240,0.78); line-height: 1.7; padding-left: 0.9rem; position: relative; }
 .rs-road-phase li::before { content: ""; position: absolute; left: 0; top: 0.7em; width: 4px; height: 4px; border-radius: 999px; background: #38BDF8; }
+.rs-neri-card { border: 1px solid rgba(125,211,252,0.35); border-radius: 16px; padding: 1.4rem 1.3rem; background: linear-gradient(180deg, rgba(56,189,248,0.08), rgba(56,189,248,0.02)); }
 .rs-next { border-bottom: none; }
 .rs-form { display: grid; gap: 0.9rem; }
 .rs-kind { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.6rem; }
@@ -4604,6 +4605,16 @@ header .lp-tab.is-on { color: #fff; border-bottom-color: #38BDF8; background: tr
 }
 .cs-work-status { font-size: 0.64rem; letter-spacing: 0.22em; color: #7DD3FC; font-weight: 700; }
 .cs-work-client { font-size: 0.92rem; font-weight: 700; color: #fff; }
+
+/* ── NERI（変わったあとの毎日を動かす層。写真を使わない章） ── */
+.cs-neri { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr); gap: clamp(2rem, 5vw, 4rem); align-items: start; margin-top: 3rem; }
+.cs-neri-points { list-style: none; margin: 0; padding: 0; display: grid; gap: 1rem; }
+.cs-neri-points li { position: relative; padding-left: 1.5rem; font-size: 1rem; line-height: 1.95; color: rgba(240,245,252,0.88); font-weight: 700; }
+.cs-neri-points li::before { content: ""; position: absolute; left: 0; top: 0.9em; width: 11px; height: 1px; background: #38BDF8; }
+.cs-neri-note { margin: 1.8rem 0 0; font-size: 0.92rem; line-height: 1.9; color: rgba(226,232,240,0.72); border-left: 2px solid rgba(56,189,248,0.6); padding-left: 1.1rem; max-width: 560px; }
+.cs-neri-card { border: 1px solid rgba(125,211,252,0.35); border-radius: 16px; padding: 1.6rem 1.5rem; background: linear-gradient(180deg, rgba(56,189,248,0.08), rgba(56,189,248,0.02)); }
+.cs-neri-price { margin: 0; font-size: clamp(1.1rem, 2vw, 1.3rem); font-weight: 800; color: #fff; line-height: 1.5; }
+.cs-neri-free { margin: 0.5rem 0 1.5rem; font-size: 0.86rem; line-height: 1.8; color: rgba(226,232,240,0.74); }
 
 /* ── 全面写真の章（BRIDGE / ASHITAKA / 本編ヒーロー） ── */
 .cs-bleed { position: relative; overflow: hidden; background: #070A10; min-height: clamp(520px, 78vh, 820px); display: flex; align-items: center; }
@@ -4831,7 +4842,7 @@ header .lp-tab.is-on { color: #fff; border-bottom-color: #38BDF8; background: tr
   .cs-timeline { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 @media (max-width: 860px) {
-  .cs-change-grid, .cs-two-notes, .cs-studio-head, .cs-energy-grid, .cs-energy-foot, .cs-connection, .cs-offer { grid-template-columns: minmax(0, 1fr); }
+  .cs-change-grid, .cs-two-notes, .cs-studio-head, .cs-neri, .cs-energy-grid, .cs-energy-foot, .cs-connection, .cs-offer { grid-template-columns: minmax(0, 1fr); }
   .cs-change-grid { gap: 1rem; margin-top: 2rem; }
   .cs-layer { grid-template-columns: 44px minmax(0, 1fr); }
   .cs-layer .cs-status { grid-column: 2; }

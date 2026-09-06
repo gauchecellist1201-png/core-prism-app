@@ -102,6 +102,18 @@ export interface RoaiResult {
   lead: { score: number; tier: 'HOT' | 'WARM' | 'NURTURE'; factors: string[] };
 }
 
+/**
+ * BRIEF に「90日を待たずに始められる場所」（CORE NERI）を出すか。
+ *
+ * prepare … データ整備と業務標準化が先。いま受託を勧める段階ではない
+ * focus  … 突出した機会が無い。大きな投資より 1 業務の Before / After
+ * build  … 受託（AI Transformation）が妥当。ここでは出さない。
+ *          相談を選ぶはずだった人を、自己解決へ逃がさないため。
+ */
+export function showsDailyStep(mode: RoaiResult['recommendation']['mode']): mode is 'prepare' | 'focus' {
+  return mode === 'prepare' || mode === 'focus';
+}
+
 // ── ユーティリティ ──────────────────────────────────────
 const clamp01 = (n: number) => Math.max(0, Math.min(1, n));
 const round = (n: number, d = 0) => { const m = 10 ** d; return Math.round(n * m) / m; };

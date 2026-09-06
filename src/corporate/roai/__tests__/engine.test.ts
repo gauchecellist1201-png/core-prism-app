@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeRoai, sanitizeAnswers, WEIGHTS, ASSUMPTIONS, formatYen, formatRangeYen, potentialOf } from '../engine';
+import { computeRoai, sanitizeAnswers, WEIGHTS, ASSUMPTIONS, formatYen, formatRangeYen, potentialOf, showsDailyStep } from '../engine';
 import { ALL_QUESTIONS, QUESTIONS, INDUSTRY_QUESTIONS, activeQuestions, type Answers } from '../schema';
 import { RETURNS } from '../model';
 
@@ -224,5 +224,20 @@ describe('formatting', () => {
     expect(formatYen(2_560_000_000)).toBe('¥26億');
     expect(formatRangeYen({ low: 0, high: 0 })).toBe('—');
     expect(formatRangeYen({ low: 10_000_000, high: 20_000_000 })).toBe('¥1,000万〜¥2,000万');
+  });
+});
+
+// ── 90日を待たずに始められる場所（CORE NERI）を出す条件 ──────────────
+// 2026-09-07 オーナー判断。BRIEF の NEXT ACTION は「メールを渡す」2択しかなく、
+// 渡さなかった人には何も残らなかった。ただし全員に自己解決の道を見せると、
+// 相談を選ぶはずだった人まで逃がすので、受託が妥当な結果には出さない。
+describe('showsDailyStep（BRIEF に NERI を出すか）', () => {
+  it('データ整備が先（prepare）と、小さく作って測る（focus）には出す', () => {
+    expect(showsDailyStep('prepare')).toBe(true);
+    expect(showsDailyStep('focus')).toBe(true);
+  });
+
+  it('受託が妥当な結果（build）には出さない。相談申込を自己解決へ逃がさない', () => {
+    expect(showsDailyStep('build')).toBe(false);
   });
 });
