@@ -20,7 +20,7 @@
 (function () {
   'use strict';
 
-  var GA_ID = ''; // ← ここに GA4 の測定ID（G-から始まる文字列）を入れると計測が始まる
+  var GA_ID = 'G-7GR12FWEY3'; // GA4 プロパティ「株式会社CORE」/ ストリーム「CORE全サイト（corp / Studio / NERI）」2026-09-06 作成
 
   var el = document.currentScript || document.querySelector('script[src$="/ga.js"]');
   var site = (el && el.getAttribute('data-ga-site')) || 'unknown';
@@ -62,4 +62,48 @@
     },
   };
   gtag('config', GA_ID, cfg);
+
+  // --------------------------------------------------------------------------
+  // 既存の計測ビーコンを GA4 にも写す。
+  //
+  // corp / CORE Studio / NERI LP は、どれも {site, event, label} という同じ形の
+  // JSON を /api/track/... へ sendBeacon で投げている（src/studio/track.ts・
+  // src/corporate/roai/track.ts・lp/index.html の toCore）。
+  // ここで sendBeacon を1枚かぶせて写すだけにしてあるので、
+  // 3サイトのアプリ側コードには一切触らずに、同じ出来事が GA4 にも積まれる。
+  //
+  // 守っていること:
+  //   ・元の sendBeacon は必ず先に呼ぶ（写しに失敗しても既存の計測を壊さない）
+  //   ・GA4 が自分で数えている名前（page_view など）は写さない＝二重計上しない
+  //   ・GA4 のイベント名の規則（英字始まり・英数字と _ のみ・40文字以内）へ寄せる
+  // --------------------------------------------------------------------------
+  var GA_RESERVED = { page_view: 1, session_start: 1, first_visit: 1, user_engagement: 1, scroll: 1, click: 1, form_start: 1, form_submit: 1, file_download: 1, video_start: 1 };
+
+  if (enabled && typeof navigator !== 'undefined' && navigator.sendBeacon) {
+    var origBeacon = navigator.sendBeacon.bind(navigator);
+    navigator.sendBeacon = function (url, data) {
+      var sent = origBeacon(url, data);          // 先に本来の送信
+      try {
+        if (String(url).indexOf('/api/track/') >= 0) readBody(data);
+      } catch (e) { /* 計測の写しで画面を壊さない */ }
+      return sent;
+    };
+  }
+
+  function readBody(data) {
+    if (typeof data === 'string') { mirror(data); return; }
+    if (data && typeof data.text === 'function') data.text().then(mirror, function () {});
+  }
+
+  function mirror(text) {
+    var o;
+    try { o = JSON.parse(text); } catch (e) { return; }
+    if (!o || !o.event) return;
+    var name = String(o.event).replace(/[^A-Za-z0-9_]/g, '_').slice(0, 40);
+    if (!/^[A-Za-z]/.test(name) || GA_RESERVED[name]) return;
+    window.coreGA(name, {
+      core_site: String(o.site || site).slice(0, 60),
+      core_label: String(o.label == null ? '' : o.label).slice(0, 100),
+    });
+  }
 })();
