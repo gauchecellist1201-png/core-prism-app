@@ -55,9 +55,14 @@
     core_site: site,
     // 1訪問者を core-ai.jp 全体で串刺しにする
     cookie_domain: /(^|\.)core-ai\.jp$/.test(host) ? '.core-ai.jp' : 'auto',
-    // 別ドメインをまたいでも同じセッションとして数える（NERI LP → 本体 など）
+    // 別ドメインをまたいでも同じセッションとして数える。
+    // ★core-ai.jp とそのサブドメイン（www / studio / nexus / neri）は上の cookie_domain で
+    //   既に同じ cookie を見ているので、ここに並べてはいけない。並べると GA4 のリンカーが
+    //   corp → NERI LP のような同じ cookie 域のリンクにまで `?_gl=1*...` を付け、
+    //   会社サイトから NERI を押した人の URL バーが 100 文字超の長い URL になる（2026-09-06 実測）。
+    //   ここに書くのは cookie を共有できない「本当に別のドメイン」だけ。
     linker: {
-      domains: ['core-ai.jp', 'www.core-ai.jp', 'studio.core-ai.jp', 'neri.core-ai.jp', 'core-nexus-kappa.vercel.app'],
+      domains: ['core-nexus-kappa.vercel.app'],
       accept_incoming: true,
     },
   };
