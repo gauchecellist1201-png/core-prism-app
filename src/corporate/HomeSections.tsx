@@ -58,10 +58,12 @@ const IMG = {
 } as const;
 
 // ============================================================
-//  HERO — ブランドフィルム（2026-09-04 オーナー指示）
+//  HERO — ブランドフィルム（2026-09-06 オーナー指示で短い軽量ループへ差し替え）
 //
-//  ・トップは縦型のブランド動画（public/corp-creed-portrait.mp4・54秒・音あり）。
-//    自動再生はブラウザの規則で無音のみ＝「音を出す」ボタンを添える。
+//  ・元の縦型ブランド動画（54秒・音あり・4.7MB）は初回描画を遅らせていた
+//    （実測 2026-09-06・Lighthouse mobile: FCP 11.9s / LCP 15.1s）。
+//    そこから6秒だけを切り出し、音を外して456KBまで圧縮したループに差し替える
+//    （public/corp-hero-loop.mp4）。軽いので遅延読み込みの仕掛けや音声ボタンは不要。
 //  ・いちばん大きい言葉は社是「いつの時代も、変わらない核を。」（H1）。
 //    「核とは、人。」はその答えとして一段小さく置く（前は逆で、答えの方が大きかった）。
 //  ・下にあった事実の帯（神戸／2026年／8／4）は「謎のタブ」に見えるので廃止。
@@ -69,72 +71,25 @@ const IMG = {
 //    スマホ: 縦型の動画がそのまま画面いっぱい＝言葉は下に重ねる（CSS .ch-hero--film）。
 //  ・省データ/動きを減らす設定の人には自動再生しない。画面外に出たら止める。
 // ============================================================
-/** スピーカーの絵だけの切り替え（言葉は付けない。押すたびに音の入切）。 */
-function SoundIcon({ muted }: { muted: boolean }) {
-  return (
-    <svg viewBox="0 0 24 24" width={20} height={20} fill="none" stroke="currentColor" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round" aria-hidden focusable="false">
-      <path d="M4 9.5h3.2L12 5.6v12.8L7.2 14.5H4z" fill="currentColor" stroke="currentColor" strokeWidth={1.4} />
-      {muted ? (
-        <>
-          <path d="M16.4 9.6l4 4.8" />
-          <path d="M20.4 9.6l-4 4.8" />
-        </>
-      ) : (
-        <>
-          <path d="M15.8 9.2a3.8 3.8 0 0 1 0 5.6" />
-          <path d="M18.4 6.9a7.2 7.2 0 0 1 0 10.2" />
-        </>
-      )}
-    </svg>
-  );
-}
-
 const FILM = {
-  src: '/corp-creed-portrait.mp4',
+  src: '/corp-hero-loop.mp4',
   poster: '/corp-creed-poster.webp',
 } as const;
 
 export function HomeHero({ onAnchor }: { onAnchor: AnchorHandler }) {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const [muted, setMuted] = useState(true);
   const [canPlay, setCanPlay] = useState(true);
-  // ブランドフィルムは 4.7MB ある。最初から src を付けると、回線をこの1本が占有して
-  // 文字が出るまで 12 秒かかっていた（実測 2026-09-06・Lighthouse mobile: FCP 11.9s / LCP 15.1s）。
-  // 最初の一画面はポスター画像（20KB・preload 済み）で描き、動画は読み込みが落ち着いてから取りに行く。
-  const [filmSrc, setFilmSrc] = useState<string>('');
 
   useEffect(() => {
     const reduce = typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const nav = navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string } };
     // 省データ・動きを減らす設定の人には、そもそも取りに行かない（ポスターのまま）。
-    if (reduce || nav.connection?.saveData) { setCanPlay(false); return; }
-    let cancelled = false;
-    const timers: number[] = [];
-    const attach = () => { if (!cancelled) { cancelled = true; setFilmSrc(FILM.src); } };
-    // 「読み込みが終わってから」では足りない。文字が出る前に 4.7MB の取得が始まると
-    // 回線を奪って初回描画が遅れる（実測: 同じコードでも FCP 4.3秒 と 11.6秒 に割れた）。
-    // 最初の描画（First Contentful Paint）を見届けてから、さらに一呼吸おいて取りに行く。
-    const later = () => { timers.push(window.setTimeout(attach, 1200)); };
-    let po: PerformanceObserver | null = null;
-    const painted = typeof performance !== 'undefined'
-      && performance.getEntriesByName?.('first-contentful-paint').length > 0;
-    if (painted) later();
-    else if (typeof PerformanceObserver === 'function') {
-      try {
-        po = new PerformanceObserver(list => {
-          if (list.getEntries().some(e => e.name === 'first-contentful-paint')) { po?.disconnect(); later(); }
-        });
-        po.observe({ type: 'paint', buffered: true });
-      } catch { later(); }
-      // 描画の合図が来ない環境でも必ず動くように、保険の時間を置く
-      timers.push(window.setTimeout(attach, 4000));
-    } else later();
-    return () => { cancelled = true; po?.disconnect(); timers.forEach(t => window.clearTimeout(t)); };
+    if (reduce || nav.connection?.saveData) setCanPlay(false);
   }, []);
 
   useEffect(() => {
     const v = videoRef.current;
-    if (!v || !filmSrc) return;
+    if (!v || !canPlay) return;
     // 画面外では止める（電池と回線の節約）。
     if (typeof IntersectionObserver !== 'function') { void v.play().catch(() => {}); return; }
     const io = new IntersectionObserver(([en]) => {
@@ -142,18 +97,7 @@ export function HomeHero({ onAnchor }: { onAnchor: AnchorHandler }) {
     }, { threshold: 0.15 });
     io.observe(v);
     return () => io.disconnect();
-  }, [filmSrc]);
-
-  const toggleSound = () => {
-    const v = videoRef.current;
-    if (!v) return;
-    // まだ動画を取りに行っていない段階で押されたら、ここで読み込みを始める。
-    if (!filmSrc) setFilmSrc(FILM.src);
-    const nextMuted = !muted;
-    v.muted = nextMuted;
-    setMuted(nextMuted);
-    if (!nextMuted) { setCanPlay(true); void v.play().catch(() => {}); }
-  };
+  }, [canPlay]);
 
   return (
     <section id="top" className="ch-hero ch-hero--film lp-safe">
@@ -180,27 +124,17 @@ export function HomeHero({ onAnchor }: { onAnchor: AnchorHandler }) {
           <video
             ref={videoRef}
             className="ch-film-video"
-            {...(filmSrc ? { src: filmSrc } : {})}
+            src={FILM.src}
             poster={FILM.poster}
             autoPlay={canPlay}
             muted
             loop
             playsInline
-            preload={filmSrc ? 'auto' : 'none'}
+            preload={canPlay ? 'auto' : 'none'}
             width={720}
             height={1280}
             aria-label="株式会社COREのブランドフィルム。いつの時代も、変わらない核を。"
           />
-          <button
-            type="button"
-            className="ch-film-sound"
-            onClick={toggleSound}
-            aria-pressed={!muted}
-            aria-label={muted ? '音を出す' : '音を消す'}
-            title={muted ? '音を出す' : '音を消す'}
-          >
-            <SoundIcon muted={muted} />
-          </button>
         </motion.figure>
       </div>
     </section>
