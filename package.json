@@ -6,13 +6,14 @@
   "scripts": {
     "dev": "vite",
     "sync-plan": "node scripts/syncBusinessPlan.mjs",
-    "prebuild": "node scripts/syncBusinessPlan.mjs",
+    "prebuild": "node scripts/syncBusinessPlan.mjs && node scripts/genRoutePages.mjs",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
     "smoke": "node scripts/smoke.mjs",
     "build:store-assets": "node extensions/build-assets.mjs",
-    "lighthouse": "node scripts/lighthouseAll.mjs"
+    "lighthouse": "node scripts/lighthouseAll.mjs",
+    "gen:routes": "node scripts/genRoutePages.mjs"
   },
   "dependencies": {
     "@rolldown/binding-linux-x64-gnu": "^1.0.1",

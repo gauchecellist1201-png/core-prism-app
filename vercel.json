@@ -182,6 +182,54 @@
   ],
   "rewrites": [
     {
+      "source": "/studio/contact/",
+      "destination": "/studio-contact.html"
+    },
+    {
+      "source": "/studio/contact",
+      "destination": "/studio-contact.html"
+    },
+    {
+      "source": "/studio/about/",
+      "destination": "/studio-about.html"
+    },
+    {
+      "source": "/studio/about",
+      "destination": "/studio-about.html"
+    },
+    {
+      "source": "/studio/works/",
+      "destination": "/studio-works.html"
+    },
+    {
+      "source": "/studio/works",
+      "destination": "/studio-works.html"
+    },
+    {
+      "source": "/studio/care/",
+      "destination": "/studio-care.html"
+    },
+    {
+      "source": "/studio/care",
+      "destination": "/studio-care.html"
+    },
+    {
+      "source": "/studio/dev/",
+      "destination": "/studio-dev.html"
+    },
+    {
+      "source": "/studio/dev",
+      "destination": "/studio-dev.html"
+    },
+    {
+      "source": "/studio/plans/",
+      "destination": "/studio-plans.html"
+    },
+    {
+      "source": "/studio/plans",
+      "destination": "/studio-plans.html"
+    },
+    {
       "source": "/pricing",
       "destination": "/index.html"
     },
@@ -327,19 +375,35 @@
     },
     {
       "source": "/roai-score",
-      "destination": "/corp.html"
+      "destination": "/roai-score.html"
     },
     {
       "source": "/roai-score/",
+      "destination": "/roai-score.html"
+    },
+    {
+      "source": "/ashitaka",
+      "destination": "/corp.html"
+    },
+    {
+      "source": "/ashitaka/",
+      "destination": "/corp.html"
+    },
+    {
+      "source": "/energy",
+      "destination": "/corp.html"
+    },
+    {
+      "source": "/energy/",
       "destination": "/corp.html"
     },
     {
       "source": "/return-on-ai",
-      "destination": "/corp.html"
+      "destination": "/return-on-ai.html"
     },
     {
       "source": "/return-on-ai/",
-      "destination": "/corp.html"
+      "destination": "/return-on-ai.html"
     },
     {
       "source": "/corp/sier",

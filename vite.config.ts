@@ -25,6 +25,14 @@ export default defineConfig({
         keynote: resolve(__dirname, 'keynote.html'),
         studio: resolve(__dirname, 'studio.html'),
         studioFilm: resolve(__dirname, 'studio-film.html'),
+        studioPlans: resolve(__dirname, 'studio-plans.html'),
+        studioDev: resolve(__dirname, 'studio-dev.html'),
+        studioCare: resolve(__dirname, 'studio-care.html'),
+        studioWorks: resolve(__dirname, 'studio-works.html'),
+        studioAbout: resolve(__dirname, 'studio-about.html'),
+        studioContact: resolve(__dirname, 'studio-contact.html'),
+        returnOnAi: resolve(__dirname, 'return-on-ai.html'),
+        roaiScore: resolve(__dirname, 'roai-score.html'),
       },
       output: {
         // ──────────────────────────────────────────────────────────────
