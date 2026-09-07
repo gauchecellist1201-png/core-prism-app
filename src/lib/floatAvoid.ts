@@ -209,6 +209,67 @@ export function liftToClear(
 }
 
 /**
+ * ★2026-09-05 根治: 浮きボタンが **もう1つの浮きボタンに乗られた時** だけ起きられない。
+ *
+ * 実測(Iris「動画おまかせ」): 右下の「アイリス と話す」FAB(80x80) は自分の避け計算で
+ * 上へ移動し、左下の切替オーブ(52x52)の上に来る。オーブ側は FAB を
+ * 「押せるもの」として数えているので、測り直しさえすれば費用0の場所へ逃げる
+ * (実際、**もう一度スクロールした瞬間に重なり 2,100px^2 → 0px^2 になる**)。
+ * つまり「逃げ場が無い」のではなく **起こされていない**。
+ * 原因は下の MutationObserver が childList / characterData しか見ておらず、
+ * **FAB が inline style で動くのは attributes の変化なので 1 件も届かない**こと。
+ *
+ * ただし `attributes: true` をそのまま足すと、このリポジトリが何度も踏んでいる
+ * 「読んでいる最中に飛び回る」に直結する。守りを 2 枚かけてある:
+ *
+ *  ①**拾う属性を絞る**: `style` / `class` の変化で、かつ **その要素が
+ *    `position: fixed`** の時だけ「浮きボタンが動いた」と見なす
+ *    (`isFloatMove`)。本文のアニメーションや React の className 付け替えでは起きない。
+ *  ②**回数で必ず止まる**: 2 秒に 3 回を超えて属性で起こされたら、
+ *    **その観測の間はもう属性では起こさない**(`allowAttrWake` が false を返し続ける)。
+ *    浮きボタン同士が起こし合う形になっても、**必ず有限回で止まる**
+ *    (止まった後は 2026-09-04 以前と同じ挙動＝安全側)。正しく使う分には
+ *    1〜2 回で収まるので、この上限に当たること自体が異常の合図。
+ */
+export const FLOAT_MOVE_ATTRS = ['style', 'class'];
+
+/** その属性変化を「浮きボタンが動いた」として拾うか。DOM に依存しない純粋な判定。 */
+export function isFloatMove(attr: string | null | undefined, position: string): boolean {
+  if (!attr || !FLOAT_MOVE_ATTRS.includes(attr)) return false;
+  return position === 'fixed';
+}
+
+/** 属性で起こしてよい回数(この窓の中で) */
+export const ATTR_WAKE_LIMIT = 3;
+export const ATTR_WAKE_WINDOW_MS = 2000;
+
+export type AttrWakeBudget = { hits: number[]; off: boolean };
+
+export function createAttrWakeBudget(): AttrWakeBudget {
+  return { hits: [], off: false };
+}
+
+/**
+ * 属性の変化で測り直してよいか。上限を超えたら **二度と true を返さない**
+ * (＝浮きボタン同士の起こし合いは必ず有限回で止まる)。
+ */
+export function allowAttrWake(
+  b: AttrWakeBudget,
+  now: number,
+  limit = ATTR_WAKE_LIMIT,
+  windowMs = ATTR_WAKE_WINDOW_MS,
+): boolean {
+  if (b.off) return false;
+  b.hits = b.hits.filter((t) => now - t < windowMs);
+  if (b.hits.length >= limit) { b.off = true; b.hits = []; return false; }
+  b.hits.push(now);
+  return true;
+}
+
+/** 1回の通知で getComputedStyle を撃つ上限(重い画面で固まらせない) */
+const ATTR_INSPECT_LIMIT = 30;
+
+/**
  * 「中身が入れ替わった」を拾う。タブ切替はスクロールもリサイズも起きないので、
  * MutationObserver が無いと古い画面に合わせた置き場所のまま居座る(実測)。
  * 浮きボタン自身の動きで再発火しないよう、除外した枝の変化は無視する。
@@ -220,17 +281,36 @@ export function observeContentChange(
 ): () => void {
   if (typeof MutationObserver === 'undefined') return () => { };
   let t: ReturnType<typeof setTimeout> | null = null;
+  const budget = createAttrWakeBudget();
   const mo = new MutationObserver((records) => {
     const ex = excludes().filter(Boolean) as Element[];
-    const relevant = records.some((rec) => {
+    const outside = (el: Element | null) => !!el && !ex.some((e) => e === el || e.contains(el));
+    let structural = false;
+    let floatMoved = false;
+    let inspected = 0;
+    for (const rec of records) {
       const target = rec.target as Node;
       const el = target.nodeType === 1 ? (target as Element) : target.parentElement;
-      return !!el && !ex.some((e) => e === el || e.contains(el));
-    });
-    if (!relevant) return;
+      if (!outside(el)) continue;
+      if (rec.type !== 'attributes') { structural = true; break; }
+      if (floatMoved || inspected >= ATTR_INSPECT_LIMIT) continue;
+      inspected++;
+      if (isFloatMove(rec.attributeName, getComputedStyle(el as Element).position)) floatMoved = true;
+    }
+    if (!structural) {
+      // 属性だけの変化＝浮きボタンが動いた時だけ、しかも有限回だけ起こす
+      if (!floatMoved) return;
+      if (!allowAttrWake(budget, Date.now())) return;
+    }
     if (t) clearTimeout(t);
     t = setTimeout(cb, delay);
   });
-  mo.observe(document.body, { childList: true, subtree: true, characterData: true });
+  mo.observe(document.body, {
+    childList: true,
+    subtree: true,
+    characterData: true,
+    attributes: true,
+    attributeFilter: FLOAT_MOVE_ATTRS,
+  });
   return () => { if (t) clearTimeout(t); mo.disconnect(); };
 }
