@@ -22,6 +22,7 @@ export const STUDIO_EVENTS = new Set<string>([
   'studio_tab_view',
   'studio_line_cta',
   'studio_neri_cta',
+  'studio_roai_cta',
   'studio_estimate_start',
   'studio_estimate_step',
   'studio_estimate_done',

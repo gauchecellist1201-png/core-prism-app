@@ -78,6 +78,7 @@ export const LEGACY_TO_CORE: Readonly<Record<string, CoreEvent>> = {
   studio_tab_view: 'page_view',
   studio_line_cta: 'contact_intent',
   studio_neri_cta: 'cta_click',
+  studio_roai_cta: 'secondary_cta_click',
   studio_estimate_start: 'estimate_start',
   studio_estimate_step: 'estimate_step',
   studio_estimate_done: 'estimate_done',

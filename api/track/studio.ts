@@ -32,6 +32,7 @@ export const STUDIO_EVENTS = [
   'studio_tab_view',
   'studio_line_cta',
   'studio_neri_cta',   // 制作から NERI へ渡した (label = home / care)
+  'studio_roai_cta',   // 制作から ROAI 診断へ渡した (label = home / care)
   // 概算ウィザード (どの質問で帰ったかを見るため step ごとに立てる)
   'studio_estimate_start',
   'studio_estimate_step',

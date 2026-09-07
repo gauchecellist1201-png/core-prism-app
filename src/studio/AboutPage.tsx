@@ -75,7 +75,7 @@ export default function AboutPage({ go }: { go: Go }) {
         en="Company"
         size="compact"
         title={<>いつの時代も、<br />変わらない核を。</>}
-        lead="株式会社COREは、神戸を拠点に、映像制作・Webサイト制作・システム開発を行う制作会社です。AIプロダクトを自社で開発・運営し、そこで検証を重ねた設計と技術を、貴社の案件に投入します。"
+        lead="株式会社COREは、神戸を拠点に、映像制作・Webサイト制作・システム開発を行う会社です。制作のヒアリングで、社長ご自身の手元に残っている事務や、人に頼れない仕事を一緒に見つけます。AIプロダクトを自社で開発・運営し、そこで検証を重ねた設計と技術を、貴社の案件に投入します。"
         amb="/corp/kobe-night.webp"
         facts={[
           { v: COMPANY_INFO.founded, l: '設立' },

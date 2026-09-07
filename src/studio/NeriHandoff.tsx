@@ -16,7 +16,7 @@
 //   ・CSS は自前で持つ。ホームは PageStyle (sp-*) を読み込まないので、
 //     下層ページのクラスを借りると、ホームでだけ箇条書きが素の黒丸になる。
 // ============================================================
-import { NERI_FACTS, neriLpUrl } from '../lib/coreLinks';
+import { NERI_FACTS, ROAI_SCORE, neriLpUrl } from '../lib/coreLinks';
 import { C, D } from './theme';
 import { Band, H2, IconCheck, IconArrow } from './ui';
 import { track } from './track';
@@ -85,7 +85,7 @@ export default function NeriHandoff({ where }: { where: 'home' | 'care' }) {
           <p style={{ fontSize: 12.5, lineHeight: 1.9, color: D.mute, margin: '4px 0 0' }}>
             {NERI_FACTS.free}。まず 1 回、話しかけてみてください。
           </p>
-          <div style={{ marginTop: 22 }}>
+          <div style={{ marginTop: 22, display: 'flex', flexWrap: 'wrap', gap: 10 }}>
             <a
               className="st-btn st-neri-btn"
               href={neriLpUrl(`studio-${where}`)}
@@ -95,7 +95,20 @@ export default function NeriHandoff({ where }: { where: 'home' | 'care' }) {
             >
               NERI を見る <IconArrow color={C.goldText} />
             </a>
+            <a
+              className="st-btn"
+              href={ROAI_SCORE}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => track('studio_roai_cta', { where })}
+              style={{ background: 'transparent', color: D.ink, border: `1px solid ${D.gold}` }}
+            >
+              約3分で、どこから AI 化すべきか診る
+            </a>
           </div>
+          <p style={{ fontSize: 12.5, lineHeight: 1.9, color: D.mute, margin: '10px 0 0' }}>
+            映像の次に手を付ける場所が分からないときは、先に診断を。連絡先は要りません。
+          </p>
         </div>
         <div className="st-neri-art">
           <Waveform />
