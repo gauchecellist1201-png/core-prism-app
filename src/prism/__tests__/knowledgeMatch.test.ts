@@ -5,8 +5,8 @@
 // いちばん高くなるのに出してはいけない**（下の「長い事業計画」）。
 import { describe, it, expect } from 'vitest';
 import {
-  findSimilarKnowledge, tokenize, scoreItem,
-  SIMILAR_MIN_COVERAGE, SIMILAR_MIN_KEYS,
+  findSimilarKnowledge, tokenize, scoreItem, relevanceOf, rankRelatedKnowledge,
+  SIMILAR_MIN_COVERAGE, SIMILAR_MIN_KEYS, RELATED_MIN_COVERAGE,
 } from '../knowledgeMatch';
 import type { KnowledgeItem, PersonaId } from '../../types/identity';
 
@@ -138,5 +138,80 @@ describe('物差しは1つ', () => {
     // 並べかえの結果が切り出し前と同じであることを、代表的な質問で固定する
     const keys = tokenize('広告費');
     expect(scoreItem(ITEMS[3], keys)).toBeGreaterThan(scoreItem(ITEMS[0], keys));
+  });
+});
+
+// ============================================================
+// 開いた1件の「関係する3件」（BACKLOG 2026-09-07）
+//
+// ここも「出る」より **出ない** を厚く固定する。3件出す場所なので、
+// 外れが出た時の見え方は「近いメモ」の3倍になる。
+// ============================================================
+describe('rankRelatedKnowledge — 開いた資料の隣', () => {
+  it('関係の近い順に並ぶ（自分自身は入らない）', () => {
+    const cur = ITEMS[3]; // 広告費の見直し
+    const hits = rankRelatedKnowledge(ITEMS, cur.title + '。' + cur.content, { excludeId: cur.id });
+    expect(hits.map(h => h.item.id)).not.toContain('d');
+    for (let i = 1; i < hits.length; i++) {
+      expect(hits[i - 1].score).toBeGreaterThanOrEqual(hits[i].score);
+    }
+  });
+
+  it('★鍵が1つも立たない資料で、無関係なものを「関係あるもの」として並べない', () => {
+    // 旧 selectRelevantKnowledge は鍵ゼロの時に先頭 N 件をそのまま返していた。
+    // 「ー」だけの資料を開くと、何の関係も無い3件が隣に並ぶ（実測で確認した壊れ方）。
+    expect(rankRelatedKnowledge(ITEMS, 'ー')).toEqual([]);
+    expect(rankRelatedKnowledge(ITEMS, '')).toEqual([]);
+    expect(rankRelatedKnowledge(ITEMS, '　 　')).toEqual([]);
+  });
+
+  it('長い資料が、本文の一致だけで隣に居座らない', () => {
+    // LONG_PLAN は 2 文字の鍵ならほぼ何にでも当たる＝ score は最高になりうる。
+    // 見出しの重なりの門があるので、無関係な資料の隣には出ない。
+    const cur = ITEMS[4]; // ゴーシュ 発表会の段取り
+    const hits = rankRelatedKnowledge(ITEMS, cur.title + '。' + cur.content, { excludeId: cur.id });
+    expect(hits.map(h => h.item.id)).not.toContain('c');
+  });
+
+  it('見出しの無いものは隣に出さない（押しても何も分からない行を作らない）', () => {
+    const items = [...ITEMS, k('x', '', '広告費の見直しについて。媒体を絞る。')];
+    const hits = rankRelatedKnowledge(items, '広告費の見直し。先月の広告費が想定より20%多かった。媒体を絞る。');
+    expect(hits.map(h => h.item.id)).not.toContain('x');
+  });
+
+  it('渡した配列を書き換えない（副作用ゼロ）', () => {
+    const before = ITEMS.map(i => i.id).join(',');
+    rankRelatedKnowledge(ITEMS, '請求書の締切は月末。遅れると翌月扱いになる。');
+    expect(ITEMS.map(i => i.id).join(',')).toBe(before);
+  });
+
+  it('「近いメモ」と同じ物差しを通る（基準を2つに増やしていない）', () => {
+    // relevanceOf が 1 つしかないことを、両方の入口から同じ値が出ることで固定する。
+    const keys = tokenize('広告費の見直し。媒体を絞る。');
+    const direct = relevanceOf(ITEMS[3], keys);
+    const viaRank = rankRelatedKnowledge(ITEMS, '広告費の見直し。媒体を絞る。')
+      .find(h => h.item.id === 'd');
+    expect(viaRank).toBeTruthy();
+    expect(viaRank!.score).toBe(direct.score);
+    expect(viaRank!.coverage).toBe(direct.coverage);
+  });
+
+  // ── 逆テスト: 門を外すと本当に壊れることを確かめる ──────────
+  it('逆テスト: 門を 0 にすると、無関係な資料まで隣に並ぶ', () => {
+    const cur = ITEMS[4]; // 発表会
+    const q = cur.title + '。' + cur.content;
+    const strict = rankRelatedKnowledge(ITEMS, q, { excludeId: cur.id });
+    const loose = rankRelatedKnowledge(ITEMS, q, { excludeId: cur.id, minCoverage: 0 });
+    expect(loose.length).toBeGreaterThan(strict.length);
+  });
+
+  it('逆テスト: 最低の鍵数を 0 にすると、「ー」だけで無関係が並ぶ', () => {
+    expect(rankRelatedKnowledge(ITEMS, 'ー', { minKeys: 0, minCoverage: 0 }).length)
+      .toBeGreaterThan(0);
+  });
+
+  it('しきい値は「近いメモ」より緩い（問い合わせ文が資料まるごとで、当てにいける鍵が多いため）', () => {
+    expect(RELATED_MIN_COVERAGE).toBeLessThan(SIMILAR_MIN_COVERAGE);
+    expect(RELATED_MIN_COVERAGE).toBeGreaterThan(0.107); // 実測した雑音の山より上
   });
 });

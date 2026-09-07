@@ -104,6 +104,23 @@ function coverageOf(text: string, item: KnowledgeItem, keys: string[]): number {
 }
 
 /**
+ * 1件の知識が、打った/開いた文字にどれだけ近いか。**物差しはここ1つだけ**。
+ *
+ * `findSimilarKnowledge`（書いている最中の「近いメモ」）と
+ * `rankRelatedKnowledge`（開いた資料の隣の3件）が**同じ関数を通る**ことに意味がある。
+ * 別々の基準を持つと「書いている時は出るのに、開いた時は出ない」が起きて、
+ * どちらも信用されなくなる（このファイルの冒頭に書いた切り出しの理由そのもの）。
+ */
+export function relevanceOf(item: KnowledgeItem, keys: string[]): { score: number; coverage: number } {
+  // ①見出しがそのまま出てくる か ②メモの冒頭がそのまま出てくる、のどちらか。
+  // ①だけだと「広告費の見直し」のように見出しの後半が違う重複を落とす。
+  // ②だけだと「請求書の締切は月末」のように本文に続きがある重複を落とす。
+  const head = (item.title + '。' + (item.content || '').slice(0, SIMILAR_HEAD_CHARS)).trim();
+  const coverage = Math.max(coverageOf(item.title, item, keys), coverageOf(head, item, keys));
+  return { score: scoreItem(item, keys), coverage };
+}
+
+/**
  * 打っている文字に「近いメモ」が既にあるか。**上位1件だけ**返す。
  * AI 呼び出しゼロ・保存ゼロ・副作用ゼロ。当てはまらなければ null（無理に1件出さない）。
  */
@@ -121,16 +138,62 @@ export function findSimilarKnowledge(
   for (const item of items) {
     if (opts.excludeId && item.id === opts.excludeId) continue;
     if (!item.title) continue;
-    // ①見出しがそのまま出てくる か ②メモの冒頭がそのまま出てくる、のどちらか。
-    // ①だけだと「広告費の見直し」のように見出しの後半が違う重複を落とす。
-    // ②だけだと「請求書の締切は月末」のように本文に続きがある重複を落とす。
-    const head = (item.title + '。' + (item.content || '').slice(0, SIMILAR_HEAD_CHARS)).trim();
-    const coverage = Math.max(coverageOf(item.title, item, keys), coverageOf(head, item, keys));
+    const { score, coverage } = relevanceOf(item, keys);
     if (coverage < minCoverage) continue;
-    const score = scoreItem(item, keys);
     if (!best || score > best.score || (score === best.score && coverage > best.coverage)) {
       best = { item, score, coverage };
     }
   }
   return best;
+}
+
+// ─── 1件ひらいた時の「関係する3件」──────────────────────
+//
+// ★2026-09-07 追加（BACKLOG「知識を1件ひらいた時に、関係する3件を下に出す」）。
+// 隣の3件はもともと `selectRelevantKnowledge`（useClaude.ts）で選んでいたが、
+// あれは**本文を一切見ず・2gramだけ・score>0なら何でも通す**別の物差しだった。
+// 同じ Prism の中に基準が2つあると、「書いている時は出るのに、開くと出ない」
+// （またはその逆）が起きる。ここへ寄せて **物差しを1つに戻す**。
+//
+// しきい値を「近いメモ」(0.34)と分けている理由:
+//   あちらの問い合わせ文は**人が打った短い文**、こちらは**資料まるごと**。
+//   coverage は「候補の見出しの鍵のうち何割が問い合わせ文に出てくるか」で、
+//   割る側は候補なので問い合わせ文が長くても薄まらない——が、**当てにいける
+//   鍵の数はこちらの方が多い**ので、同じ 0.34 では本物を落とす。
+//   実測（6〜8件の資料で全ペアの coverage を出した）:
+//     本物の関連 … 0.538 / 0.538 / 0.375 / 0.368 / 0.273 / 0.273
+//     ただの雑音 … 0.107 / 0.103 / 0.038 / 0.036 / 0.031 以下
+//   雑音の山（0.107 以下）と本物の下限（0.273）の間を取って 0.15 とした。
+//   0.34 のままだと「請求書の締切 → 請求書の送り先メモ」(0.273) を落とす。
+export const RELATED_MIN_COVERAGE = 0.15;
+
+/**
+ * 開いている資料の隣に出す候補を、**関連度の高い順に全部**返す。
+ * 切るのは呼んだ側の枠の都合（何件出すか・古い枠を空けるか）。
+ *
+ * AI 呼び出しゼロ・保存ゼロ・副作用ゼロ（渡した配列を書き換えない）。
+ * 当てはまるものが無ければ空配列（**無理に3件埋めない**）。
+ */
+export function rankRelatedKnowledge(
+  items: KnowledgeItem[],
+  text: string,
+  opts: { minCoverage?: number; minKeys?: number; excludeId?: string } = {},
+): SimilarHit[] {
+  const minCoverage = opts.minCoverage ?? RELATED_MIN_COVERAGE;
+  const minKeys = opts.minKeys ?? SIMILAR_MIN_KEYS;
+  const keys = tokenize(text);
+  // ★鍵が立たない資料（「ー」だけ 等）で、無関係な資料を「関係あるもの」として
+  //   並べない。旧 `selectRelevantKnowledge` は鍵ゼロの時に先頭 N 件を
+  //   そのまま返していた＝**全くの無関係が3件並ぶ**（実測で確認済み）。
+  if (keys.length < minKeys) return [];
+
+  const hits: SimilarHit[] = [];
+  for (const item of items) {
+    if (opts.excludeId && item.id === opts.excludeId) continue;
+    if (!item.title) continue;
+    const { score, coverage } = relevanceOf(item, keys);
+    if (coverage < minCoverage) continue;
+    hits.push({ item, score, coverage });
+  }
+  return hits.sort((a, b) => (b.score - a.score) || (b.coverage - a.coverage));
 }

@@ -94,6 +94,57 @@ describe('relatedKnowledge — 訊かなくても隣に出る', () => {
     expect(r.oldSlotId).toBe('old1');
     expect(new Set(r.items.map(i => i.id)).size).toBe(r.items.length);
   });
+
+  // ── 物差しをクイック・キャプチャと揃えた（2026-09-07）──────────
+  it('★鍵が1つも立たない資料を開いた時に、無関係なものが3件並ばない', () => {
+    // 旧 selectRelevantKnowledge は鍵ゼロの時に先頭 N 件をそのまま返していた。
+    // 「ー」だけの資料には見出しも本文もあるので query.length の門はすり抜ける。
+    const cur = item({ id: 'a', title: 'ー', content: 'ー' });
+    const others = [
+      item({ id: 'b', title: '徳島の農園との契約書' }),
+      item({ id: 'c', title: '広告費の見直し' }),
+      item({ id: 'd', title: '発表会の段取り' }),
+    ];
+    const r = relatedKnowledge(cur, [cur, ...others], NOW);
+    expect(r.items).toEqual([]);
+    expect(r.moreCount).toBe(0);
+  });
+
+  it('見出しが少ししか重ならなくても、本文で重なっていれば隣に出る', () => {
+    // 旧の物差しは本文を一切見なかったので、この組み合わせを取りこぼしていた。
+    const cur = item({ id: 'a', title: '発表会の段取り', content: '会場は9時開場。リハーサルは前日。' });
+    const other = item({ id: 'b', title: '発表会の会場下見', content: '会場の9時開場を確認。リハーサルの時間も押さえた。' });
+    const noise = item({ id: 'c', title: '猫の写真の整理', content: 'iPhoneの写真をアルバムに分ける。' });
+    const r = relatedKnowledge(cur, [cur, other, noise], NOW);
+    expect(r.items.map(i => i.id)).toEqual(['b']);
+  });
+
+  it('★見出しがファイル名/汎用語でも、中身が同じ話なら隣に出る', () => {
+    // 旧の物差しは本文を1文字も見なかったので、PDF 取込（見出し=ファイル名）と
+    // 「打ち合わせメモ」のような汎用の見出しは、同じ話でも永久に結び付かなかった。
+    const pdf = item({
+      id: 'a', title: '2026-08-12_scan001.pdf',
+      content: '徳島の農園との契約書。収穫期の買取価格と検品の基準を定める。',
+    });
+    const memo = item({
+      id: 'b', title: '打ち合わせメモ',
+      content: '徳島の農園との契約書について。買取価格と検品の基準を詰めた。',
+    });
+    const noise = item({ id: 'c', title: '猫の写真の整理', content: 'iPhoneの写真をアルバムに分ける。' });
+    expect(relatedKnowledge(pdf, [pdf, memo, noise], NOW).items.map(i => i.id)).toEqual(['b']);
+    expect(relatedKnowledge(memo, [pdf, memo, noise], NOW).items.map(i => i.id)).toEqual(['a']);
+    expect(relatedKnowledge(noise, [pdf, memo, noise], NOW).items).toEqual([]);
+  });
+
+  it('本文が長いだけの資料が、無関係な資料の隣に居座らない', () => {
+    const cur = item({ id: 'a', title: '猫の写真の整理', content: 'iPhoneの写真をアルバムに分ける。' });
+    const long = item({
+      id: 'b', title: '2027年度事業計画',
+      content: 'あ'.repeat(50) + '売上目標や採用計画、サービス展開について記載する。'.repeat(200),
+    });
+    const r = relatedKnowledge(cur, [cur, long], NOW);
+    expect(r.items).toEqual([]);
+  });
 });
 
 describe('agoLabel — 数字より「時間が経った感じ」', () => {

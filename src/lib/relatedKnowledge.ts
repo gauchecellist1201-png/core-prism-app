@@ -1,11 +1,16 @@
 import type { KnowledgeItem } from '../types/identity';
-import { selectRelevantKnowledge } from '../hooks/useClaude';
+import { rankRelatedKnowledge } from '../prism/knowledgeMatch';
 
 // 開いている資料の「隣」に、関係のあるものを勝手に置くための選び方。
 //
 // 設計の約束（BACKLOG「いま見ているものの隣に、関係あるものを勝手に出す」）:
-//   ・新しい道具を作らない。既存の selectRelevantKnowledge に
+//   ・新しい道具を作らない。既存の関連度の物差しに
 //     「開いている資料そのもの」を問い合わせ文として渡すだけ。
+//   ・★2026-09-07: その物差しを `selectRelevantKnowledge`(useClaude) から
+//     `rankRelatedKnowledge`(prism/knowledgeMatch) へ寄せた。Prism の中に
+//     関連度の基準が2つある状態（クイック・キャプチャの「近いメモ」だけが
+//     本文を見て、こちらは見出しと要約しか見ない）を解消するため。
+//     ついでに、鍵が1つも立たない資料で**無関係な3件が並ぶ**穴も塞がる。
 //   ・AI を呼ばない。だから待ち時間 0ms・追加料金 0 円・電波が悪くても出る。
 //   ・0 件のときは枠ごと出さない（空の器を作らない）。
 //   ・黙って切らない。入りきらなかったぶんは「ほかに◯件」と正直に出す。
@@ -91,9 +96,9 @@ export function relatedKnowledge(
   const candidates = all.filter(i => i.id !== current.id && i.personaId === current.personaId);
   if (candidates.length === 0) return empty;
 
-  // selectRelevantKnowledge は score>0 のものだけを、高い順に返す。
+  // rankRelatedKnowledge は「見出しの重なり」の門を通ったものだけを高い順に返す。
   // ここでは全件ぶん受け取って、切るのは自分の枠の都合として明示的に行う。
-  const ranked = selectRelevantKnowledge(query, candidates, candidates.length);
+  const ranked = rankRelatedKnowledge(candidates, query, { excludeId: current.id }).map(h => h.item);
   if (ranked.length === 0) return empty;
 
   const picked = ranked.slice(0, limit);
