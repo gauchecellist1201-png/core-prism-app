@@ -1,12 +1,12 @@
 # 料金 — CORE Studio（株式会社CORE）
 
-最終更新: 2026-09-06 ／ https://studio.core-ai.jp/studio ／ info@core-ai.jp
+最終更新: 2026-09-07 ／ https://studio.core-ai.jp/studio ／ info@core-ai.jp
 すべて日本円（JPY）。お見積り時点で金額を確定し、以後の追加費用は発生しません。
 相談・見積り提示は無料／NDA締結に対応／請求書払いに対応／初回返信は1営業日以内。
 
 ## 映像制作 (Film) — https://studio.core-ai.jp/studio/film
 撮影費・出演費・ロケ費・機材費 0円。初期費用 0円。初稿まで約1週間。
-納品物の権利は発注者へ譲渡。広告への二次利用込み・修正無制限（STANDARD以上）。
+納品物の権利は発注者へ譲渡。広告への二次利用込み・修正1回まで（STANDARD以上）。
 
 | メニュー | 尺・構成 | 料金 |
 |---|---|---|
