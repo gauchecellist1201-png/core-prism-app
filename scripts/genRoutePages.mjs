@@ -28,7 +28,7 @@ const STUDIO = 'https://studio.core-ai.jp';
 const ORG = `${CORP}/#org`;
 
 const FONTS_CORP = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;700;800;900&display=swap';
-const FONTS_STUDIO = 'https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700;800;900&family=EB+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Noto+Serif+JP:wght@400;500;600;700;900&family=Noto+Sans+JP:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap';
+const FONTS_STUDIO = 'https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700;800;900&family=EB+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Noto+Serif+JP:wght@400..900&family=Noto+Sans+JP:wght@300..700&family=Inter:wght@300;400;500;600;700&display=swap';
 
 const THEMES = {
   corp:       { bg: '#050505', appTitle: 'CORE',        site: 'CORE',        entry: '/src/corpMain.tsx', fonts: FONTS_CORP,   dark: true,  gaSite: 'corp' },
