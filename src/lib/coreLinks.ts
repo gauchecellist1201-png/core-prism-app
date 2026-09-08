@@ -17,7 +17,7 @@
 /** NERI のランディングページ（正本ホスト）。 */
 export const NERI_LP = 'https://nexus.core-ai.jp/lp/';
 
-/** ROAI SCORE 診断（約3分・連絡先不要）。Studio → 診断 → NERI の真ん中の段。 */
+/** ROAI SCORE 診断（約2分・連絡先不要）。Studio → 診断 → NERI の真ん中の段。 */
 export const ROAI_SCORE = 'https://www.core-ai.jp/roai-score';
 
 /** NERI の実物（登録不要で話しかけられる本体）。ホストは据え置き。 */

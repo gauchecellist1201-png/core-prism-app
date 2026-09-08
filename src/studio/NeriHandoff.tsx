@@ -103,7 +103,7 @@ export default function NeriHandoff({ where }: { where: 'home' | 'care' }) {
               onClick={() => track('studio_roai_cta', { where })}
               style={{ background: 'transparent', color: D.ink, border: `1px solid ${D.gold}` }}
             >
-              約3分で、どこから AI 化すべきか診る
+              約2分で、どこから AI 化すべきか診る
             </a>
           </div>
           <p style={{ fontSize: 12.5, lineHeight: 1.9, color: D.mute, margin: '10px 0 0' }}>
