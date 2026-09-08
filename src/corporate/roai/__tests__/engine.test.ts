@@ -6,29 +6,32 @@ import { RETURNS } from '../model';
 // ============================================================
 // CORE ROAI SCORE は「AI がなんとなく 73 点」ではなく、同じ回答なら同じ数字を返し、
 // すべての金額に根拠が付く。ここではその性質を守る。
+//
+// 2026-09-08: 23問+業界別 → 13問+業界別 へ圧縮。複数の旧設問を1問へ統合したため、
+// HEAVY/LIGHT の回答も新しい設問IDに合わせている。
 // ============================================================
 
 /** 全部「いちばん改善余地が大きい」側で答えた会社（35 人・年商 2 億） */
 const HEAVY: Answers = {
-  industry: 'realestate', employees: 'e3', revenue: 'r3', biz_type: 'both', sales_share: 's3', backoffice_share: 'o2', inquiries: 'q3',
-  sales_nonselling: 'n4', proposal_hours: 'p4', response_time: 't4', dormant: 'd3', crm: 'c3',
-  data_entry: 'h4', documents: 'w4', email: 'm4', outsourcing: 'x3', standardized: 'z3',
-  decision_data: 'k4', approval: 'a4', time_to_market: 'l4',
-  loss_impact: 'i3', security_posture: 'g3', key_person: 'y3',
-  data_assets: 'v2', service_ai: 'u1', customer_agent: 'f1',
-  data_location: 'dl3', commitment: 'cm2', literacy: 'li3', budget: 'bg2',
+  industry: 'realestate', employees: 'e3', revenue: 'r3', org_mix: 'om3',
+  sales_admin: 'sa4', followup: 'fu4',
+  manual_hours: 'mh4', outsourcing: 'x3',
+  decision_speed: 'ds4',
+  risk_exposure: 're3',
+  new_value: 'nv2',
+  ai_readiness: 'air3', budget: 'bg2',
   ind_re_response: 'rr4',
 };
 
 /** 全部「整っている」側で答えた会社 */
 const LIGHT: Answers = {
-  industry: 'it', employees: 'e2', revenue: 'r2', biz_type: 'b2b', sales_share: 's1', backoffice_share: 'o1', inquiries: 'q1',
-  sales_nonselling: 'n1', proposal_hours: 'p1', response_time: 't1', dormant: 'd1', crm: 'c1',
-  data_entry: 'h1', documents: 'w1', email: 'm1', outsourcing: 'x1', standardized: 'z1',
-  decision_data: 'k1', approval: 'a1', time_to_market: 'l1',
-  loss_impact: 'i1', security_posture: 'g1', key_person: 'y1',
-  data_assets: 'v3', service_ai: 'u3', customer_agent: 'f3',
-  data_location: 'dl1', commitment: 'cm1', literacy: 'li1', budget: 'bg4',
+  industry: 'it', employees: 'e2', revenue: 'r2', org_mix: 'om1',
+  sales_admin: 'sa1', followup: 'fu1',
+  manual_hours: 'mh1', outsourcing: 'x1',
+  decision_speed: 'ds1',
+  risk_exposure: 're1',
+  new_value: 'nv3',
+  ai_readiness: 'air1', budget: 'bg4',
 };
 
 describe('schema integrity', () => {
@@ -57,9 +60,9 @@ describe('schema integrity', () => {
       for (const o of q.options) expect(typeof o.ready, q.id).toBe('number');
     }
   });
-  it('question count stays in the 3–5 minute band (20–32)', () => {
-    expect(QUESTIONS.length).toBeGreaterThanOrEqual(20);
-    expect(QUESTIONS.length).toBeLessThanOrEqual(32);
+  it('question count stays in the 1–2 minute band (10–16), fewer but denser than before', () => {
+    expect(QUESTIONS.length).toBeGreaterThanOrEqual(10);
+    expect(QUESTIONS.length).toBeLessThanOrEqual(16);
   });
   it('industry questions appear only for their industry, after their category', () => {
     const re = activeQuestions({ industry: 'realestate' });
@@ -75,6 +78,16 @@ describe('schema integrity', () => {
   it('score weights sum to 1', () => {
     const { opportunity, magnitude, readiness } = WEIGHTS.score;
     expect(opportunity + magnitude + readiness).toBeCloseTo(1, 10);
+  });
+  it('two-value questions (num + num2) carry both fields on every option', () => {
+    const twoValue = ['org_mix', 'risk_exposure'];
+    for (const id of twoValue) {
+      const q = ALL_QUESTIONS.find(x => x.id === id)!;
+      for (const o of q.options) {
+        expect(typeof o.num, `${id}/${o.value}`).toBe('number');
+        expect(typeof o.num2, `${id}/${o.value}`).toBe('number');
+      }
+    }
   });
 });
 
@@ -129,22 +142,25 @@ describe('computeRoai — economics', () => {
     const v = r.value;
     expect(v.total.mid).toBeCloseTo(v.productivity.mid + v.costReduction.mid + v.revenue.mid + v.lossAvoidance.mid, 6);
   });
-  it('hours saved follows the documented formula', () => {
+  it('hours saved follows the documented formula (manual_hours split via manualSplit)', () => {
     const r = computeRoai(HEAVY);
-    const emp = 35, sales = Math.round(35 * 0.5), bo = Math.round(35 * 0.25), desk = Math.min(emp, sales + bo);
+    const emp = 35, sales = Math.round(35 * 0.15), bo = Math.round(35 * 0.5), desk = Math.min(emp, sales + bo);
     const A = ASSUMPTIONS;
+    const manual = 18; // mh4
+    const deHours = manual * A.manualSplit.dataEntry;
+    const docHours = manual * A.manualSplit.documents;
+    const emHours = manual * A.manualSplit.email;
     const expected =
-      8 * bo * A.weeksPerYear * A.automation.dataEntry +
-      8 * desk * A.weeksPerYear * A.automation.documents +
-      12 * desk * A.weeksPerYear * A.automation.email +
-      0.6 * 40 * sales * A.weeksPerYear * A.automation.salesNonSelling +
-      16 * A.proposalsPerSalesPerMonth * 12 * sales * A.automation.proposal;
+      deHours * bo * A.weeksPerYear * A.automation.dataEntry +
+      docHours * desk * A.weeksPerYear * A.automation.documents +
+      emHours * desk * A.weeksPerYear * A.automation.email +
+      0.6 * 40 * sales * A.weeksPerYear * A.automation.salesNonSelling;
     expect(r.value.hoursSaved.mid).toBe(Math.round(expected));
     expect(r.value.productivity.mid).toBeCloseTo(Math.round(expected) * A.hourlyCost, 6);
   });
   it('loss avoidance = impact × probability × reduction', () => {
     const r = computeRoai(HEAVY);
-    expect(r.value.lossAvoidance.mid).toBeCloseTo(20_000_000 * 0.15 * ASSUMPTIONS.lossReduction, 6);
+    expect(r.value.lossAvoidance.mid).toBeCloseTo(100_000_000 * 0.15 * ASSUMPTIONS.lossReduction, 6);
   });
   it('revenue opportunity never exceeds the sum of uplift caps', () => {
     const r = computeRoai(HEAVY);
@@ -166,7 +182,7 @@ describe('computeRoai — economics', () => {
     for (const v of Object.values(r.value)) for (const b of v.basis) expect(kinds.has(b.kind)).toBe(true);
     for (const b of r.capacity.basis) expect(kinds.has(b.kind)).toBe(true);
     // 未回答は「仮定」として明示される
-    const partial = computeRoai({ data_entry: 'h4' });
+    const partial = computeRoai({ manual_hours: 'mh4' });
     expect(partial.value.hoursSaved.basis.some(b => b.kind === 'assumption' && b.value.includes('既定値'))).toBe(true);
   });
 });
@@ -179,7 +195,7 @@ describe('computeRoai — recommendation & lead', () => {
     expect(r.roadmap[0].items.join(' ')).toContain('データの置き場');
   });
   it('ready company with a strong top priority → build mode', () => {
-    const a: Answers = { ...HEAVY, data_location: 'dl1', commitment: 'cm1', literacy: 'li1', standardized: 'z1', crm: 'c1', security_posture: 'g1', decision_data: 'k1', data_assets: 'v1' };
+    const a: Answers = { ...HEAVY, ai_readiness: 'air1', outsourcing: 'x1', followup: 'fu1', risk_exposure: 're1', decision_speed: 'ds1', new_value: 'nv1' };
     const r = computeRoai(a);
     expect(r.readiness).toBeGreaterThanOrEqual(WEIGHTS.prepareReadinessBelow);
     expect(r.recommendation.mode).toBe('build');
@@ -193,10 +209,10 @@ describe('computeRoai — recommendation & lead', () => {
     expect(r.roadmap.length).toBe(3);
     for (const p of r.roadmap) expect(p.items.length).toBeGreaterThanOrEqual(3);
   });
-  it('lead tier is HOT for large value + budget + commitment, NURTURE for tiny', () => {
-    const hot = computeRoai({ ...HEAVY, budget: 'bg3', commitment: 'cm1' });
+  it('lead tier is HOT for large value + budget + readiness, NURTURE for tiny', () => {
+    const hot = computeRoai({ ...HEAVY, budget: 'bg3', ai_readiness: 'air1' });
     expect(hot.lead.tier).toBe('HOT');
-    const tiny = computeRoai({ employees: 'e1', revenue: 'r1', budget: 'bg1', commitment: 'cm3' });
+    const tiny = computeRoai({ employees: 'e1', revenue: 'r1', budget: 'bg1', ai_readiness: 'air3' });
     expect(tiny.lead.tier).toBe('NURTURE');
   });
   it('potential bands', () => {
@@ -209,8 +225,8 @@ describe('computeRoai — recommendation & lead', () => {
 
 describe('sanitizeAnswers', () => {
   it('drops unknown ids, unknown values, non-strings', () => {
-    const out = sanitizeAnswers({ industry: 'it', employees: 'zzz', nope: 'x', revenue: 3, data_entry: 'h2' });
-    expect(out).toEqual({ industry: 'it', data_entry: 'h2' });
+    const out = sanitizeAnswers({ industry: 'it', employees: 'zzz', nope: 'x', revenue: 3, manual_hours: 'mh2' });
+    expect(out).toEqual({ industry: 'it', manual_hours: 'mh2' });
     expect(sanitizeAnswers(null)).toEqual({});
     expect(sanitizeAnswers('str')).toEqual({});
   });

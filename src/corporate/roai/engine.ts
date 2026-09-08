@@ -15,7 +15,7 @@ import {
   type Answers, type Industry, type Question,
 } from './schema';
 
-export const ENGINE_VERSION = '2026.09.03-1';
+export const ENGINE_VERSION = '2026.09.08-1';
 
 // ── 重み（コードから容易に変更できる場所） ─────────────────
 export const WEIGHTS = {
@@ -36,13 +36,19 @@ export const ASSUMPTIONS = {
   hourlyCost: 3_500,
   weeksPerYear: 48,
   /** その作業のうち AI・自動化へ移せる割合（保守的に置く） */
-  automation: { dataEntry: 0.5, documents: 0.35, email: 0.25, salesNonSelling: 0.4, proposal: 0.5 },
-  /** 営業 1 人が月に作る提案・見積の本数 */
-  proposalsPerSalesPerMonth: 4,
+  automation: { dataEntry: 0.5, documents: 0.35, email: 0.25, salesNonSelling: 0.4 },
+  /**
+   * `manual_hours`（1問）で聞いた事務作業の合計時間を、内訳3種へ配分する比率（合計1.0）。
+   * 個別に聞かなくなった分、業種横断の実態に近い配分をここに集約する。
+   */
+  manualSplit: { dataEntry: 0.3, documents: 0.3, email: 0.4 },
   /** 定型外注のうち置き換えられる割合 */
   outsourcingReplaceable: 0.3,
-  /** 売上改善の上限（年商比）。各要因の上限を足し合わせた最大 */
-  uplift: { response: 0.02, dormant: 0.015, crm: 0.01, nonSelling: 0.015, proposal: 0.005, industry: 0.01 },
+  /**
+   * 売上改善の上限（年商比）。各要因の上限を足し合わせた最大。
+   * followup は「返答速度・休眠顧客フォロー・CRM活用」をまとめた1問の効果、salesAdmin は営業の非商談時間の回復効果。
+   */
+  uplift: { followup: 0.045, salesAdmin: 0.02, industry: 0.01 },
   /** 売上改善の下限は上限の何割か */
   upliftLowRatio: 0.4,
   /** AI による損失回避の削減率（期待損失のうち減らせる割合） */
@@ -151,6 +157,14 @@ function num(answers: Answers, id: string, fallback: number): { v: number; b: Ba
   }
   return { v: fallback, b: { kind: 'assumption', label: QUESTION_BY_ID[id]?.text ?? id, value: `未回答のため既定値 ${fallback}` } };
 }
+/** num2（1問で2つ目の数値を持つ設問。例: org_mix の事務比率、risk_exposure の発生確率）。 */
+function num2(answers: Answers, id: string, fallback: number): { v: number; b: Basis } {
+  const o = pick(answers, id);
+  if (o && typeof o.num2 === 'number') {
+    return { v: o.num2, b: { kind: 'input', label: QUESTION_BY_ID[id].text, value: o.label } };
+  }
+  return { v: fallback, b: { kind: 'assumption', label: QUESTION_BY_ID[id]?.text ?? id, value: `未回答のため既定値 ${fallback}` } };
+}
 function scoreOf(answers: Answers, id: string): number | null {
   const o = pick(answers, id);
   return o && typeof o.score === 'number' ? o.score : null;
@@ -206,8 +220,8 @@ export function computeRoai(answers: Answers): RoaiResult {
   // profile
   const emp = num(answers, 'employees', ASSUMPTIONS.defaults.employees);
   const rev = num(answers, 'revenue', ASSUMPTIONS.defaults.revenue);
-  const salesShare = num(answers, 'sales_share', ASSUMPTIONS.defaults.salesShare);
-  const boShare = num(answers, 'backoffice_share', ASSUMPTIONS.defaults.backofficeShare);
+  const salesShare = num(answers, 'org_mix', ASSUMPTIONS.defaults.salesShare);
+  const boShare = num2(answers, 'org_mix', ASSUMPTIONS.defaults.backofficeShare);
   const employees = emp.v;
   const salesPeople = Math.max(1, Math.round(employees * salesShare.v));
   const boPeople = Math.max(1, Math.round(employees * boShare.v));
@@ -220,25 +234,25 @@ export function computeRoai(answers: Answers): RoaiResult {
   const readiness = readinessScore(qs, answers);
 
   // ── SAVE: hours saved ──
-  const de = num(answers, 'data_entry', 0);
-  const doc = num(answers, 'documents', 0);
-  const em = num(answers, 'email', 0);
-  const nonSell = num(answers, 'sales_nonselling', 0);
-  const prop = num(answers, 'proposal_hours', 0);
-  const hDataEntry = de.v * boPeople * A.weeksPerYear * A.automation.dataEntry;
-  const hDocs = doc.v * deskPeople * A.weeksPerYear * A.automation.documents;
-  const hEmail = em.v * deskPeople * A.weeksPerYear * A.automation.email;
+  // manual_hours（1問）で聞いた合計を、内訳3種へ manualSplit の比率で配分してから、それぞれの自動化率をかける。
+  const manual = num(answers, 'manual_hours', 0);
+  const nonSell = num(answers, 'sales_admin', 0);
+  const deHours = manual.v * A.manualSplit.dataEntry;
+  const docHours = manual.v * A.manualSplit.documents;
+  const emHours = manual.v * A.manualSplit.email;
+  const hDataEntry = deHours * boPeople * A.weeksPerYear * A.automation.dataEntry;
+  const hDocs = docHours * deskPeople * A.weeksPerYear * A.automation.documents;
+  const hEmail = emHours * deskPeople * A.weeksPerYear * A.automation.email;
   const hNonSell = nonSell.v * 40 * salesPeople * A.weeksPerYear * A.automation.salesNonSelling;
-  const hProposal = prop.v * A.proposalsPerSalesPerMonth * 12 * salesPeople * A.automation.proposal;
-  const hoursMid = hDataEntry + hDocs + hEmail + hNonSell + hProposal;
+  const hoursMid = hDataEntry + hDocs + hEmail + hNonSell;
   const hoursSaved: Range = {
     low: round(hoursMid * 0.6), mid: round(hoursMid), high: round(hoursMid * 1.15),
     basis: [
-      de.b, doc.b, em.b, nonSell.b, prop.b, emp.b, salesShare.b, boShare.b,
-      { kind: 'assumption', label: '自動化できる割合', value: `入力 ${A.automation.dataEntry * 100}% / 文書 ${A.automation.documents * 100}% / メール ${A.automation.email * 100}% / 営業の非商談 ${A.automation.salesNonSelling * 100}% / 提案 ${A.automation.proposal * 100}%` },
+      manual.b, nonSell.b, emp.b, salesShare.b, boShare.b,
+      { kind: 'assumption', label: '事務作業の内訳配分', value: `入力 ${A.manualSplit.dataEntry * 100}% / 文書 ${A.manualSplit.documents * 100}% / メール ${A.manualSplit.email * 100}%（1問で聞いた合計時間をこの比率で分ける）` },
+      { kind: 'assumption', label: '自動化できる割合', value: `入力 ${A.automation.dataEntry * 100}% / 文書 ${A.automation.documents * 100}% / メール ${A.automation.email * 100}% / 営業の非商談 ${A.automation.salesNonSelling * 100}%` },
       { kind: 'assumption', label: '年間の稼働週', value: `${A.weeksPerYear} 週` },
       { kind: 'formula', label: '文書・メールの対象人数', value: `営業 ${salesPeople} 人 ＋ 事務 ${boPeople} 人 ＝ ${deskPeople} 人（全 ${employees} 人のうち）` },
-      { kind: 'assumption', label: '営業 1 人の提案本数', value: `月 ${A.proposalsPerSalesPerMonth} 本` },
       { kind: 'formula', label: '式', value: '（週あたり時間 × 対象人数 × 稼働週 × 自動化割合）の合計。幅は ×0.6〜×1.15' },
     ],
   };
@@ -260,11 +274,8 @@ export function computeRoai(answers: Answers): RoaiResult {
 
   // ── GROW: revenue opportunity ──
   const upliftParts: { label: string; v: number }[] = [
-    { label: '初回返答の速さ', v: (scoreOf(answers, 'response_time') ?? 0) * A.uplift.response },
-    { label: '休眠顧客の再提案', v: (scoreOf(answers, 'dormant') ?? 0) * A.uplift.dormant },
-    { label: '顧客データの活用', v: (scoreOf(answers, 'crm') ?? 0) * A.uplift.crm },
-    { label: '営業の商談時間の回復', v: (scoreOf(answers, 'sales_nonselling') ?? 0) * A.uplift.nonSelling },
-    { label: '提案の速さ', v: (scoreOf(answers, 'proposal_hours') ?? 0) * A.uplift.proposal },
+    { label: '初回返答・休眠顧客フォロー・CRM活用', v: (scoreOf(answers, 'followup') ?? 0) * A.uplift.followup },
+    { label: '営業の商談時間の回復', v: (scoreOf(answers, 'sales_admin') ?? 0) * A.uplift.salesAdmin },
     { label: '業界固有の反響対応', v: (scoreOf(answers, 'ind_re_response') ?? 0) * A.uplift.industry },
   ];
   const upliftHigh = upliftParts.reduce((s, p) => s + p.v, 0);
@@ -278,8 +289,8 @@ export function computeRoai(answers: Answers): RoaiResult {
   };
 
   // ── PROTECT: loss avoidance ──
-  const impact = num(answers, 'loss_impact', 0);
-  const prob = num(answers, 'security_posture', 0);
+  const impact = num(answers, 'risk_exposure', 0);
+  const prob = num2(answers, 'risk_exposure', 0);
   const expectedLoss = impact.v * prob.v;
   const lossMid = expectedLoss * A.lossReduction;
   const lossAvoidance: Range = {
@@ -399,9 +410,9 @@ export function computeRoai(answers: Answers): RoaiResult {
   const bv = answers.budget;
   if (bv === 'bg3' || bv === 'bg4') { ls += 25; factors.push('予算 500万円以上'); }
   else if (bv === 'bg2') { ls += 15; factors.push('予算 100万円以上'); }
-  const cm = answers.commitment;
-  if (cm === 'cm1') { ls += 20; factors.push('今期予算を決めて進めたい'); }
-  else if (cm === 'cm2') { ls += 10; factors.push('効果が見えれば投資'); }
+  const air = answers.ai_readiness;
+  if (air === 'air1') { ls += 20; factors.push('データ・投資姿勢・AI利用がすべて整っている'); }
+  else if (air === 'air2') { ls += 10; factors.push('一部は整っている'); }
   if (readiness >= 50) { ls += 10; factors.push('Readiness 50 以上'); }
   const tier: RoaiResult['lead']['tier'] = ls >= 60 ? 'HOT' : ls >= 35 ? 'WARM' : 'NURTURE';
 

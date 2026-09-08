@@ -36,7 +36,7 @@ export default function CorpStickyCta() {
          まだ製品を選んでいない人は診断へ、選び終えた人はその製品へ。 */
       title={pick ? 'あなたには、これ' : '次にAI投資すべき場所は'}
       /* 決断の直前なので、不安を消す1点だけを置く。 */
-      sub={pick ? '税込・いつでも解約できます' : '約3分・無料・連絡先不要'}
+      sub={pick ? '税込・いつでも解約できます' : '約2分・無料・連絡先不要'}
       cta={pick ? `${pick.name} を見る →` : 'ROAIを無料診断する'}
       href={pick ? pick.url : '/roai-score'}
       onClick={pick ? undefined : () => { rememberSource('sticky'); track('corp_cta_click', 'sticky'); }}

@@ -187,7 +187,7 @@ export function ScoreTeaser({ onAnchor }: { onAnchor: AnchorHandler }) {
           <Kick>CORE ROAI SCORE</Kick>
           <h2 id="score-h" style={{ ...sectionH2, margin: 0 }}>あなたの会社の、<br />次にAI投資すべき場所はどこか。</h2>
           <p style={{ ...sectionLead, margin: '1.2rem 0 1.6rem', maxWidth: 520 }}>
-            約3分・選択式の診断で、どこへAI投資すると最も大きな経営Returnが生まれる可能性があるかを可視化します。
+            約2分・選択式の診断で、どこへAI投資すると最も大きな経営Returnが生まれる可能性があるかを可視化します。
             数字はすべて入力と公開された仮定から決定論的に計算し、算定根拠を開いて確かめられます。
           </p>
           <ul className="ro-outputs" style={{ fontFamily: FONT_JA }}>

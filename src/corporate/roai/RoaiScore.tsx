@@ -77,7 +77,7 @@ function StartScreen({ onStart, onResume, answered }: { onStart: () => void; onR
         あなたの会社の、<br />次にAI投資すべき場所はどこか。
       </h1>
       <p style={{ fontFamily: FONT_JA, fontSize: '1rem', lineHeight: 1.95, color: TEXT_BODY, margin: '1.2rem 0 1.6rem' }}>
-        約3分・選択式の診断で、次を可視化します。すべての数字は入力と公開された仮定から計算し、根拠を開いて確かめられます。
+        約2分・選択式の診断で、次を可視化します。すべての数字は入力と公開された仮定から計算し、根拠を開いて確かめられます。
       </p>
       <ul className="ro-outputs" style={{ fontFamily: FONT_JA }}>
         {OUTPUTS.map(o => <li key={o}>{o}</li>)}

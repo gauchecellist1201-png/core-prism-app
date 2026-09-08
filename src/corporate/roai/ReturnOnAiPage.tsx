@@ -182,7 +182,7 @@ export default function ReturnOnAiPage({ onAnchor }: { onAnchor: AnchorHandler }
         <div style={{ position: 'relative', zIndex: 2, maxWidth: 760, margin: '0 auto' }}>
           <p style={{ fontFamily: FONT_EN, fontSize: '0.72rem', letterSpacing: '0.3em', color: ACCENT_LIGHT, fontWeight: 600, marginBottom: '1rem' }}>MEASURE YOUR RETURN ON AI</p>
           <h2 id="roai-cta-h" style={{ ...sectionH2, fontSize: 'clamp(2rem, 4.4vw, 3.2rem)' }}>AI投資の前に、<br />Returnを測る。</h2>
-          <p style={{ ...sectionLead, margin: '0 auto 2rem' }}>約3分で、あなたの会社のAI投資優先順位と潜在的な経済価値を診断します。</p>
+          <p style={{ ...sectionLead, margin: '0 auto 2rem' }}>約2分で、あなたの会社のAI投資優先順位と潜在的な経済価値を診断します。</p>
           <div className="ch-cta-row" style={{ justifyContent: 'center' }}>
             <ScoreCta onAnchor={onAnchor} where="roai-final" label="CORE ROAI SCOREを受ける" />
             <a href="#contact" onClick={e => onAnchor(e, '#contact')} style={ctaGhost}>ROAI戦略相談を申し込む</a>

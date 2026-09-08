@@ -5,7 +5,7 @@ import { validateLead } from '../roai/lead';
 const GOOD = {
   kind: 'consult',
   contact: { email: 'CEO@Example.co.jp', company: '株式会社テスト', name: '山田', phone: '090', message: 'x' },
-  answers: { industry: 'it', employees: 'e3', revenue: 'r3', data_entry: 'h3', documents: 'w2', email: 'm2' },
+  answers: { industry: 'it', employees: 'e3', revenue: 'r3', org_mix: 'om2', manual_hours: 'mh3', outsourcing: 'x2' },
   source: 'home-roai-band',
 };
 

@@ -33,7 +33,7 @@ function mockFetch() {
 const GOOD = {
   kind: 'consult',
   contact: { email: 'ceo@example.co.jp', company: 'テスト社', name: '山田', phone: '', message: 'まず営業から' },
-  answers: { industry: 'it', employees: 'e3', revenue: 'r3', data_entry: 'h3', documents: 'w2', email: 'm2', budget: 'bg3', commitment: 'cm1' },
+  answers: { industry: 'it', employees: 'e3', revenue: 'r3', org_mix: 'om2', manual_hours: 'mh3', outsourcing: 'x2', budget: 'bg3', ai_readiness: 'air1' },
   source: 'home-hero',
 };
 function req(body: unknown, headers: Record<string, string> = {}) {
