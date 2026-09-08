@@ -191,7 +191,7 @@ export const PAGES = [
 
           <section>
             <h2>AI投資の前に、Returnを測る</h2>
-            <p>約3分で、あなたの会社のAI投資優先順位と潜在的な経済価値を診断します。無料・連絡先の入力は不要です。</p>
+            <p>約2分で、あなたの会社のAI投資優先順位と潜在的な経済価値を診断します。無料・連絡先の入力は不要です。</p>
             <p><a href="/roai-score">CORE ROAI SCORE を受ける</a>　／　ご相談：<a href="mailto:info@core-ai.jp">info@core-ai.jp</a></p>
             <p>CORE ROAI SCORE・CORE ROAI MODEL は株式会社COREの独自名称です。</p>
           </section>`,
@@ -200,19 +200,19 @@ export const PAGES = [
   },
   {
     file: 'roai-score.html', theme: 'corp', url: `${CORP}/roai-score`,
-    title: 'CORE ROAI SCORE — 約3分・無料のAI投資優先順位診断 | 株式会社CORE',
-    description: '約3分・選択式で、あなたの会社の次にAI投資すべき場所、削減できる時間、経済価値の概算、売上・コスト・リスクの改善余地、AI Readiness、投資余力の目安を可視化する無料診断。連絡先の入力は不要。数字は入力と公開された仮定から決定論的に計算し、算定根拠を画面上で確かめられます。',
+    title: 'CORE ROAI SCORE — 約2分・無料のAI投資優先順位診断 | 株式会社CORE',
+    description: '約2分・選択式で、あなたの会社の次にAI投資すべき場所、削減できる時間、経済価値の概算、売上・コスト・リスクの改善余地、AI Readiness、投資余力の目安を可視化する無料診断。連絡先の入力は不要。数字は入力と公開された仮定から決定論的に計算し、算定根拠を画面上で確かめられます。',
     keywords: 'AI診断 無料,AI投資 優先順位,DX診断,AI Readiness,ROAI診断,AI導入 診断,無料 診断 AI,株式会社CORE',
     og: `${CORP}/og-core-v7.png`,
     ld: [
       { '@type': 'WebApplication', '@id': `${CORP}/roai-score#app`, name: 'CORE ROAI SCORE',
         url: `${CORP}/roai-score`, applicationCategory: 'BusinessApplication', operatingSystem: 'Web', inLanguage: 'ja',
         offers: { '@type': 'Offer', price: '0', priceCurrency: 'JPY' }, provider: { '@id': ORG },
-        description: '約3分で、AI投資の優先領域・削減可能時間・経済価値の概算・AI Readiness・投資余力の目安を可視化する無料診断。連絡先の入力は不要。' },
+        description: '約2分で、AI投資の優先領域・削減可能時間・経済価値の概算・AI Readiness・投資余力の目安を可視化する無料診断。連絡先の入力は不要。' },
       crumbs(`${CORP}/roai-score`, [['株式会社CORE', `${CORP}/corp`], ['CORE ROAI SCORE', `${CORP}/roai-score`]]),
       faq(`${CORP}/roai-score`, [
         ['CORE ROAI SCORE は無料ですか。', '無料です。連絡先の入力も不要で、メールアドレスや会社名を登録せずに最後まで受けられます。'],
-        ['どれくらい時間がかかりますか。', '約3分です。選択式で答えていく形式です。'],
+        ['どれくらい時間がかかりますか。', '約2分です。選択式で答えていく形式です。'],
         ['何が分かりますか。', 'AI投資の優先領域、削減できる時間、経済価値の概算、売上改善余地、コスト削減余地、リスク削減余地、AI Readiness、投資余力の目安の8点です。'],
         ['出てくる数字はどうやって計算していますか。', '入力値と公開された仮定から決定論的に計算しています。推測をブラックボックスで出さず、算定根拠を画面上で開いて確かめられます。'],
         ['診断のあとに営業されますか。', '連絡先を入力しない形式なので、こちらから連絡することはできません。ご相談されたい場合のみ info@core-ai.jp までご連絡ください。'],
@@ -221,7 +221,7 @@ export const PAGES = [
     body: `
           <p class="k">CORE ROAI SCORE</p>
           <h1>あなたの会社の、次にAI投資すべき場所はどこか。</h1>
-          <p class="lead">約3分・選択式の診断で、どこへAI投資すると最も大きな経営Returnが生まれる可能性があるかを可視化します。<strong>料金は無料、連絡先の入力も不要</strong>です。</p>
+          <p class="lead">約2分・選択式の診断で、どこへAI投資すると最も大きな経営Returnが生まれる可能性があるかを可視化します。<strong>料金は無料、連絡先の入力も不要</strong>です。</p>
 
           <section>
             <h2>分かること（8項目）</h2>
@@ -712,7 +712,7 @@ PAGES.push(
   },
   {
     file: 'studio-works.html', theme: 'studio', url: `${STUDIO}/studio/works`,
-    title: '制作実績 — 映像・ウェブ・システム 8件（すべて公開中） | CORE Studio',
+    title: '制作実績 — 映像・ウェブ・システム 14件（すべて公開中） | CORE Studio',
     description: 'CORE Studio が制作し、実際に公開されている実績の一覧。映像はLaguna Beauté（商品広告）、株式会社CORE（ブランドフィルム）、ライブイベント告知、株式会社グローバルジョイントコミットメント、JRC 日本記録協会。ウェブ・システムはヘッドスパ「天国」、株式会社クロスオーバー、GAUCHEチェロ音楽教室、朝日館、RAD HOOKAH、ANIMA、SOMA、モデル個人サイト。',
     keywords: '制作実績,ホームページ制作 事例,動画制作 事例,ウェブ制作 実績,システム開発 実績,CORE Studio,神戸',
     og: `${STUDIO}/og-studio-v4.png`,
