@@ -10,6 +10,8 @@ import { IRIS_FONTS, accentFaceBg, accentFaceInk } from './irisStyle';
 import { usePostQueue, buildCaptionText, suggestNextSlot, type ScheduledPost } from './usePostQueue';
 import { shouldAskOutcome, overdueAskCount, OVERDUE_ASK_TEXT } from './overduePrompt';
 import { loadTrend, recordSnapshot, saveTrend, summarizeTrend, trendSentence, localDayKey, type OverdueTrend } from './overdueTrend';
+import { loadPostedGrid, plannedDateLabel, type GridTile } from './coverGrid';
+import { buildProfileGrid } from './profileGridOrder';
 import IrisIntro from './IrisIntro';
 import { confirmAction } from '../lib/confirmDialog';
 import EmptyInvite from './EmptyInvite';
@@ -32,6 +34,9 @@ const WEEKDAYS = ['日', '月', '火', '水', '木', '金', '土'];
 // ローカル時刻での YYYY-MM-DD キーは overdueTrend.ts が正本 (2つ持つとカレンダーと記録がずれる)
 /** 月を n ヶ月ずらした「その月の1日」を返す */
 const shiftMonth = (d: Date, n: number) => new Date(d.getFullYear(), d.getMonth() + n, 1);
+
+// 並びプレビューに出すマスの総数（3列なので 4 行ぶん）
+const GRID_LIMIT = 12;
 
 export default function IrisPostQueueView({ bg, queue }: Props) {
   const sorted = useMemo(() => queue.upcoming(), [queue]);
@@ -87,6 +92,23 @@ export default function IrisPostQueueView({ bg, queue }: Props) {
     }
     return cells;
   }, [calCursor]);
+
+  // ── 並びプレビュー（グリッド表示）の材料 ──
+  // 「公開前に仕上がりが見える」は、自分の投稿済みの上に予約が乗って初めて意味を持つ。
+  // 投稿済みの実物は coverGrid が正本（2か所で別々に読むと、表紙側の並びとここがズレる）。
+  const [postedTiles, setPostedTiles] = useState<GridTile[]>([]);
+  useEffect(() => {
+    const load = () => setPostedTiles(loadPostedGrid(GRID_LIMIT));
+    load();
+    // 別タブで Instagram 連携の取り込みが走ることがある（同じタブぶんは queue.posts の変化で拾う）
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === 'core_iris_posthistory_v1' || e.key === 'iris_post_queue_v1') load();
+    };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, [queue.posts]);
+  const gridPlan = useMemo(() => buildProfileGrid(queue.posts, postedTiles, GRID_LIMIT), [queue.posts, postedTiles]);
+  const byId = useMemo(() => new Map(queue.posts.map(p => [p.id, p])), [queue.posts]);
 
   const copyCaption = (p: ScheduledPost) => {
     navigator.clipboard?.writeText(buildCaptionText(p))
@@ -330,38 +352,81 @@ export default function IrisPostQueueView({ bg, queue }: Props) {
           hint="時刻が近づくとこの画面でお知らせします。「Instagram で開く」を押すと本文が自動でコピーされるので、貼り付けてご自身で投稿してください（自動送信ではありません・予約はこの端末内のみに保存されます）"
         />
       ) : view === 'grid' ? (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
-          {sorted.map(p => {
-            const when = new Date(p.scheduledAt);
-            const copied = copiedId === p.id;
-            return (
-              <button
-                key={p.id}
-                onClick={() => copyCaption(p)}
-                title="タップでキャプションをコピー"
-                style={{ position: 'relative', aspectRatio: '3 / 4', background: '#000', borderRadius: 8, overflow: 'hidden', border: 'none', padding: 0, cursor: 'pointer', display: 'block', transition: 'opacity 0.15s, transform 0.15s' }}
-              >
-                {p.thumbDataUrl ? (
-                  <img src={p.thumbDataUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        <div style={{ display: 'grid', gap: 8 }}>
+          {/*
+            ★プロフィールの並びをそのまま出す。
+              ・仕切り線を入れない: 予約が 4 件の時に線を挟むと、5 件目が「4 件目の右」ではなく
+                次の行の左端へ落ちる＝**実際の並びと列がずれる**。並びを見るための画面で
+                列がずれたら、見た意味が無くなる。予約と投稿済みは日付バッジで見分ける。
+              ・比率は 4:5（Instagram のプロフィールの切り取り）。正方形にすると
+                「切れない絵」を見せることになり、出したあとで上下が切れて驚く。
+          */}
+          {gridPlan.cells.length > 0 && (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
+              {gridPlan.cells.map(cell => {
+                const p = cell.postId ? byId.get(cell.postId) : undefined;
+                const copied = !!p && copiedId === p.id;
+                const planned = cell.kind === 'planned';
+                const inner = (
+                  <>
+                    <img src={cell.src} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    {planned && (
+                      <span style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '4px 5px', fontSize: '0.6rem', fontWeight: 700, color: '#fff', background: 'linear-gradient(transparent, rgba(0,0,0,0.78))', lineHeight: 1.3, textAlign: 'left' }}>
+                        {plannedDateLabel(cell.at)} 予約
+                      </span>
+                    )}
+                    {planned && p?.mediaKind === 'video' && (
+                      <span style={{ position: 'absolute', top: 4, right: 4, display: 'flex' }}><VideoIcon size={12} color="#fff" /></span>
+                    )}
+                    {copied && (
+                      <span style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, background: 'rgba(0,0,0,0.55)', color: '#fff', fontSize: '0.7rem', fontWeight: 700 }}>
+                        <Check size={14} color="#fff" /> コピー済
+                      </span>
+                    )}
+                  </>
+                );
+                const box = {
+                  position: 'relative' as const, aspectRatio: '4 / 5', background: '#000',
+                  borderRadius: 8, overflow: 'hidden', display: 'block', padding: 0,
+                };
+                // 投稿済みは「過去」なので押せない（押せそうに見せて何も起きない、を作らない）
+                return planned && p ? (
+                  <button
+                    key={cell.key}
+                    onClick={() => copyCaption(p)}
+                    title="タップでキャプションをコピー"
+                    style={{ ...box, border: `2px solid ${bg.accent}`, cursor: 'pointer', transition: 'opacity 0.15s, transform 0.15s' }}
+                  >{inner}</button>
                 ) : (
-                  <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <VideoIcon size={22} color="rgba(255,255,255,0.4)" />
-                  </div>
-                )}
-                <span style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '4px 5px', fontSize: '0.6rem', fontWeight: 600, color: '#fff', background: 'linear-gradient(transparent, rgba(0,0,0,0.78))', lineHeight: 1.3, textAlign: 'left' }}>
-                  {when.toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric' })} {when.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })}
-                </span>
-                {p.mediaKind === 'video' && (
-                  <span style={{ position: 'absolute', top: 4, right: 4, display: 'flex' }}><VideoIcon size={12} color="#fff" /></span>
-                )}
-                {copied && (
-                  <span style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, background: 'rgba(0,0,0,0.55)', color: '#fff', fontSize: '0.7rem', fontWeight: 700 }}>
-                    <Check size={14} color="#fff" /> コピー済
-                  </span>
-                )}
-              </button>
-            );
-          })}
+                  <div key={cell.key} style={{ ...box, border: `1px solid ${bg.cardBorder}` }} title="投稿済み">{inner}</div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* 何が並んでいて、何を並べなかったかを必ず言う（黙って落とさない） */}
+          <div style={{ display: 'grid', gap: 3, fontSize: '0.72rem', color: bg.inkSoft, lineHeight: 1.5 }}>
+            {gridPlan.cells.length === 0 && (
+              <span>並びに出せるものがまだありません。画像つきの予約を作ると、ここにプロフィールの見え方が出ます。</span>
+            )}
+            {gridPlan.plannedShown > 0 && (
+              <span>
+                枠が付いた <strong style={{ color: bg.ink }}>{gridPlan.plannedShown}枚</strong> がこれから出る予約です（日付つき・新しい予約ほど左上）。
+                {gridPlan.postedShown > 0
+                  ? <> 残りの {gridPlan.postedShown}枚 は投稿済みです。</>
+                  : <> 投稿済みの実物がまだ無いので、下に並ぶものはありません。</>}
+              </span>
+            )}
+            {gridPlan.plannedShown === 0 && gridPlan.postedShown > 0 && (
+              <span>いまは投稿済み {gridPlan.postedShown}枚 だけです。画像つきの予約を作ると、この上に乗った状態で見えます。</span>
+            )}
+            {gridPlan.plannedWithoutImage > 0 && (
+              <span>画像がまだ無い予約 {gridPlan.plannedWithoutImage}件 は、並びに出していません（空のマスを埋めないため）。</span>
+            )}
+            {gridPlan.draftsHidden > 0 && (
+              <span>下書き {gridPlan.draftsHidden}件 は、まだ出す約束をしていないので並びに入れていません。予約にすると、この並びに乗ります。</span>
+            )}
+          </div>
         </div>
       ) : view === 'calendar' ? (
         <div style={{ display: 'grid', gap: 12 }}>
