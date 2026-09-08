@@ -3,23 +3,18 @@
 // 旧: チップで1プランずつ切り替えて 760px のカード1枚を出す構成。
 //     4つを見比べられず、実物が1枚も無く、制作会社のページに見えなかった。
 // 新: 公開中のサイト4件を3Dに重ねたヒーロー → 4プランを横に並べた価格の段
-//     (各段に規模の近い実例) → 迷ったら → 工程の時間軸 → FAQ → 相談。
+//     (実際にお受けした金額帯の段だけに実例) → 迷ったら → 工程の時間軸 → FAQ → 相談。
 // 文言・価格は plans.ts が正本。ここにはレイアウトだけを書く。
 // ============================================================
-import { PRODUCTION_PLANS, PROCESS, WORKS, CONTACT, thumbOf, type ProductionPlan, type Work } from './plans';
+import { PRODUCTION_PLANS, PLAN_EXAMPLE_OF, PROCESS, WORKS, CONTACT, thumbOf, type ProductionPlan, type Work } from './plans';
 import { C } from './theme';
 import { Band, H2, Note, IconCheck, IconArrow, LineCta } from './ui';
 import { PageStyle, PageHero, Faq, ClosingCta } from './PageHero';
 import type { Go } from './tabs';
 
-// プランごとに「規模の近い実例」を1件添える (価格の実績ではなく、規模感の目安として見せる)。
-// ここに無い id を書いても落ちない (見つからなければ実例枠を出さない)。
-const EXAMPLE_OF: Record<ProductionPlan['id'], string> = {
-  spark: 'tengoku',       // 1ページ完結のブランドサイト
-  core: 'crossover',      // 7ページ構成のコーポレートサイト
-  pro: 'asahikan',        // 直販予約を備えた旅館サイト
-  signature: 'radhookah', // ブランドの世界観ごと作ったEC
-};
+// プランごとの「規模の近い実例」は plans.ts の PLAN_EXAMPLE_OF が正本。
+// その金額帯で実際にお受けした案件しか書けない (2026-09-08 オーナー指示)。
+// 実例の無い段は、実例枠ごと出さない。
 const workOf = (id: string): Work | undefined => WORKS.find(w => w.id === id);
 
 // 「迷ったら」— 各プランの lead から、判断の入口になる1行を出す
@@ -69,7 +64,8 @@ export default function PlansPage({ go }: { go: Go }) {
         <H2 en="Plans" sub="規模と目的で4段に分けています。いずれも、構成設計・原稿・デザイン・実装・公開作業までを含みます。">4つのプラン</H2>
         <div className="sp-ladder">
           {PRODUCTION_PLANS.map(p => {
-            const ex = workOf(EXAMPLE_OF[p.id]);
+            const exId = PLAN_EXAMPLE_OF[p.id];
+            const ex = exId ? workOf(exId) : undefined;
             return (
               <div key={p.id} id={`plan-${p.id}`} className="sp-col" data-featured={!!p.featured}>
                 {p.featured && <span className="sp-col-tag">RECOMMENDED</span>}

@@ -42,3 +42,26 @@ jobs:
             sleep 90
           fi
           npm run smoke
+
+  # 単体テスト (vitest)。
+  # 2026-09-08 追加: 「作ったことのない金額の実例」を出していた事故を検査で塞いだが、
+  # この検査は誰かが手で vitest を叩いたときにしか走っていなかった。
+  # 置いただけの検査は走らないので、CI で毎回回す。
+  unit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Test
+        run: npm test

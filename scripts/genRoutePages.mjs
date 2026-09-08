@@ -577,7 +577,8 @@ PAGES.push(
                 <tr><td><strong>Signature</strong></td><td>¥100万〜</td><td>20ページ〜+独自機能／2ヶ月〜</td><td>ブランド戦略の策定支援／サイト+LP群+SNS設計の統合／独自機能の開発（AI活用を含む）／撮影・コピーのディレクション／公開後6ヶ月の専任サポート</td></tr>
               </tbody>
             </table>
-            <p>規模の近い実例：Spark＝ヘッドスパ「天国」／Core＝株式会社クロスオーバー／Pro＝朝日館／Signature＝RAD HOOKAH</p>
+            <!-- 実例は、その金額帯で実際にお受けした案件だけを書く (2026-09-08 オーナー指示)。¥30万超の受注はまだ無いため Pro / Signature は載せない。 -->
+            <p>規模の近い実例：Spark＝ヘッドスパ「天国」／Core＝株式会社クロスオーバー</p>
           </section>
 
           <section>
