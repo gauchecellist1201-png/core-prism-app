@@ -405,6 +405,8 @@ export interface OauthMediaItem {
   comments: number;
   reach?: number;
   saved?: number;
+  /** リール(動画)の平均視聴時間 (秒)。取れなかった投稿には入らない。 */
+  avgWatchSeconds?: number;
 }
 
 /**
@@ -424,6 +426,15 @@ export async function fetchOauthMedia(): Promise<OauthMediaItem[]> {
 export function isOauthConnected(): boolean {
   if (typeof document === 'undefined') return false;
   return document.cookie.includes('ig_connected=1');
+}
+
+/** 値が入っている鍵だけを残す (undefined で既存の実数を上書きしないため) */
+export function definedOnly<T extends Record<string, number | undefined>>(o: T): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const [k, v] of Object.entries(o)) {
+    if (typeof v === 'number' && Number.isFinite(v)) out[k] = v;
+  }
+  return out;
 }
 
 /**
@@ -449,7 +460,18 @@ export async function syncOauthMediaToHistory(): Promise<number> {
     const er = followers > 0
       ? Math.round(((m.likes + m.comments) / followers) * 1000) / 10
       : undefined;
-    const metrics = { reach: m.reach, saves: m.saved, likes: m.likes, comments: m.comments, engagementRate: er };
+    // ★ undefined を混ぜない。
+    //   `{...existing.metrics, ...metrics}` に undefined の鍵が入ると、
+    //   前回取れていた実数を「取れなかった今回」で **消してしまう**
+    //   (Instagram の insights は投稿ごと・日ごとに落ちる)。
+    const metrics = definedOnly({
+      reach: m.reach,
+      saves: m.saved,
+      likes: m.likes,
+      comments: m.comments,
+      engagementRate: er,
+      avgWatchSec: m.avgWatchSeconds,
+    });
     const existing = byUrl.get(m.permalink);
     if (existing) {
       existing.metrics = { ...(existing.metrics || {}), ...metrics };

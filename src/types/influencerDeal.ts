@@ -28,6 +28,8 @@ export interface PlatformMetrics {
   shares?: number;
   views?: number;          // 動画用
   watchTimeSec?: number;   // YouTube用
+  /** 1 回の再生あたりの平均視聴時間 (秒)。Instagram 連携で実測できた時だけ入る。 */
+  avgWatchSec?: number;
   clicks?: number;         // リンクトラッキング
 }
 

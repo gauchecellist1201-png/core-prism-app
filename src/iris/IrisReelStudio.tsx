@@ -26,6 +26,7 @@ import {
   type StoredClipMeta, type SaveFailReason,
 } from './reelStore';
 import IrisAssetShelf, { makeThumbDataUrl } from './IrisAssetShelf';
+import { avgWatchSeconds, watchTimeLine } from './watchTimeStats';
 import type { LibraryItem } from './reelStore';
 import {
   COLOR_GRADES, applyGradeOverlay, getGrade,
@@ -2374,6 +2375,17 @@ JSON のみで返答。`;
     return { watch, save, share, algo, viral };
   }, [clips, captions, totalDuration, bgmFile]);
 
+  // ─── 予想の答え合わせ用の「実測」 ─────────────────
+  // 上の algoScore は全部が予想。Instagram 連携で実際に取れた平均視聴時間が
+  // 3 本以上あるときだけ、予想を **上書きせずに横へ並べる**。
+  // 取れていなければ null = 行ごと描かない (0 秒も「—」も出さない)。
+  const realWatchLine = useMemo(() => {
+    if (typeof window === 'undefined') return null;
+    let posts: unknown = [];
+    try { posts = JSON.parse(localStorage.getItem('core_iris_posthistory_v1') || '[]'); } catch { return null; }
+    return watchTimeLine(avgWatchSeconds(posts));
+  }, []);
+
   // 保存テンプレ適用 — 構造化された空クリップ枠 + ヒント字幕 + CTA を仕込む
   const applySaveFormat = (f: SaveFormat) => {
     setActiveFormat(f.id);
@@ -3545,6 +3557,17 @@ JSON のみで返答。`;
                 </div>
               ))}
             </div>
+            {/* 実測（Instagram 連携で取れた時だけ）。予想の数字は書き換えない。 */}
+            {realWatchLine && (
+              <p style={{
+                marginTop: '0.6rem', paddingTop: '0.5rem',
+                borderTop: `1px solid ${bg.accent}30`,
+                fontSize: '0.74rem', color: bg.ink, fontWeight: 600,
+              }}>
+                {realWatchLine}
+                <span style={{ color: bg.inkSoft, fontWeight: 400 }}> · 上のスコアは予想です</span>
+              </p>
+            )}
           </div>
 
           {/* Trend Pulse — 今月最も伸びてるフォーマット */}
