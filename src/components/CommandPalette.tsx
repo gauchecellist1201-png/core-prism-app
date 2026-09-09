@@ -33,6 +33,9 @@ import { notifyInApp } from '../lib/inAppNotify';
 import { seedDemoData, setDemoActive, clearDemoData, isDemoActive } from '../lib/onboarding';
 import { listSuggestions, setStatus as setSuggestionStatus, type SuggestionEntry } from '../lib/aiSuggestionLog';
 import PersonaGlyph, { isRoleCode } from './PersonaGlyph';
+// 長押しで話す (2026-09-09)。打つのが速い短い指示ではなく、長い依頼のための口。
+import PressToTalkMic, { type VoiceHoldStatus } from './PressToTalkMic';
+import { mergeVoiceIntoQuery } from '../lib/voiceHold';
 // ⌘K の検索結果も、ホームのタイル・からっぽ画面とまったく同じ台帳から絵と色を引く。
 // (これが無い間、同じ「スライドを作る」がタイルでは紫の投影機・⌘K では 🎨 に見えていた)
 import { resolveFeatureIcon } from '../lib/featureIcons';
@@ -406,6 +409,8 @@ export default function CommandPalette({
    * (＝押しても変わっていないように見える)。
    */
   const [suggestionTick, setSuggestionTick] = useState(0);
+  /** 長押しマイクの様子 (聞いている最中の途中経過 / 一言)。保存しない・実行しない。 */
+  const [voiceStatus, setVoiceStatus] = useState<VoiceHoldStatus>(null);
   // MMMMMM (2026-06-04): changelog.json から 直近 新機能 5 件
   const [changelogFeats, setChangelogFeats] = useState<Array<{ hash: string; date: string; message: string }>>([]);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -469,6 +474,7 @@ export default function CommandPalette({
       setActiveTab('all');
       setExpandedCats(new Set());
       setRecent(loadRecent());
+      setVoiceStatus(null);
       setTimeout(() => inputRef.current?.focus(), 50);
     }
   }, [open]);
@@ -1377,7 +1383,9 @@ export default function CommandPalette({
                     : 'やりたいこと、機能、AI への依頼を入力…'
                 }
                 className="flex-1 bg-transparent text-fg outline-none placeholder:text-fg-subtle"
-                style={{ fontSize: '17px' /* iOS 自動ズーム回避 (16px+) */ }}
+                // minWidth:0 が無いと input の既定の最小幅 (size=20 相当) で行が縮まらず、
+                // 375px でマイク 44px を足した瞬間に ESC まで押し出される。
+                style={{ fontSize: '17px' /* iOS 自動ズーム回避 (16px+) */, minWidth: 0 }}
                 autoComplete="off"
                 autoCorrect="off"
                 spellCheck={false}
@@ -1397,8 +1405,48 @@ export default function CommandPalette({
                   <AtSign size={17} />
                 </button>
               )}
-              <span className="cp-pill flex-shrink-0" style={{ fontSize: '0.65rem' }}>ESC</span>
+              <PressToTalkMic
+                onStatus={setVoiceStatus}
+                // 聞き取った文は入力欄へ入れるだけ。先頭の候補を勝手に実行しない
+                // (聞き違いがそのまま別の画面を開くのが、いちばん取り返しのつかない壊れ方)。
+                onInsert={text => {
+                  setQuery(q => mergeVoiceIntoQuery(q, text));
+                  setSelectedIdx(0);
+                  inputRef.current?.focus();
+                }}
+              />
+              {/* ESC の札はスマホでは畳む。物理キーが無い端末では役に立たないのに
+                  46px を占め、マイクを足した 375px では入力欄がその分だけ狭くなる
+                  (スマホは背景を触れば閉じる)。640px 以上では今までどおり出す。 */}
+              <span className="hidden sm:inline-flex flex-shrink-0">
+                <span className="cp-pill" style={{ fontSize: '0.65rem' }}>ESC</span>
+              </span>
             </div>
+
+            {/* 長押しマイクの様子 —— どの結末でも必ず 1 行出す (押したのに無反応、を作らない) */}
+            {voiceStatus && (
+              <div
+                className="px-5 py-2 flex items-center gap-2"
+                style={{ borderBottom: '1px solid var(--border)', background: 'var(--surface-3)' }}
+              >
+                {voiceStatus.kind === 'listening' ? (
+                  <>
+                    <span
+                      aria-hidden
+                      className="flex-shrink-0 rounded-full"
+                      style={{ width: 8, height: 8, background: '#EF4444' }}
+                    />
+                    <span className="cp-meta" style={{ minWidth: 0, flex: 1 }}>
+                      {voiceStatus.interim
+                        ? voiceStatus.interim
+                        : '聞いています… 離すと文字になります'}
+                    </span>
+                  </>
+                ) : (
+                  <span className="cp-meta" style={{ minWidth: 0, flex: 1 }}>{voiceStatus.message}</span>
+                )}
+              </div>
+            )}
 
             {/* 指した対象 — 「AI がこれだけを見る」を目に見える形にする */}
             {mention && (
