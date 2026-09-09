@@ -10,7 +10,7 @@ import { motion } from 'framer-motion';
 import { Mic } from 'lucide-react';
 import { useVoiceInput } from '../hooks/useVoiceInput';
 import {
-  holdReducer, decideHeard, shouldForceStop, shouldKeepListening, micMessage,
+  holdReducer, decideHeard, shouldForceStop, shouldKeepListening, settleKind, micMessage,
   HOLD_MIN_MS, type HoldPhase,
 } from '../lib/voiceHold';
 
@@ -88,13 +88,19 @@ export default function PressToTalkMic({ onInsert, onStatus }: Props) {
       relistenRef.current = 0;
       emit({ kind: 'listening', interim: '' });
       voice.start();
-    } else if (outcome === 'commit') {
+    } else if (outcome === 'commit' || outcome === 'discard') {
       clearHoldTimer();
+      if (outcome === 'discard') discardRef.current = true;
+      // ★開いていたかどうかは stop() の前に見る (stop() が状態を動かす前の姿)
+      const settle = settleKind(outcome, voice.state === 'listening');
       voice.stop();
-    } else if (outcome === 'discard') {
-      clearHoldTimer();
-      discardRef.current = true;
-      voice.stop();
+      if (settle) {
+        // 決着をつける相手 (onend) がいないので、その場で片づける。
+        // 塞がないと「聞いています…」が指を離したあとも貼り付く。
+        finalsRef.current = [];
+        interimRef.current = '';
+        notice(micMessage(settle));
+      }
     } else if (outcome === 'tooShort') {
       clearHoldTimer();
       notice(micMessage('tooShort'));

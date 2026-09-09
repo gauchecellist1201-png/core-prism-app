@@ -136,13 +136,14 @@ export function shouldForceStop(phase: HoldPhase, recognizerListening: boolean):
  * (空文字を返す道を 1 本も作らないこと自体が、ここの仕事)
  */
 export function micMessage(
-  kind: 'tooShort' | 'nothingHeard' | 'discarded' | 'error',
+  kind: 'tooShort' | 'nothingHeard' | 'discarded' | 'notStarted' | 'error',
   errorCode?: string | null,
 ): string {
   switch (kind) {
     case 'tooShort':     return 'マイクは長押しです。押したまま話して、離すと文字になります';
     case 'nothingHeard': return '聞き取れませんでした。もう一度、押したまま話してください';
     case 'discarded':    return '取り消しました';
+    case 'notStarted':   return 'マイクが開きませんでした。ブラウザのマイクの許可を確認してください';
     case 'error':
       if (errorCode === 'not-allowed' || errorCode === 'service-not-allowed')
         return 'マイクの使用が許可されていません。ブラウザの設定から許可してください';
@@ -172,4 +173,25 @@ export function shouldKeepListening(
   max: number = MAX_RELISTEN,
 ): boolean {
   return phase === 'recording' && !endedWithError && relistens < max;
+}
+
+/**
+ * ★離した時に、マイクがまだ一度も開いていなかった場合の後始末。
+ *
+ * 実際に起きた事故 (2026-09-09 本番実測): マイクが許可されていない端末では
+ * `start()` を呼んでも `onstart` が来ないため「聞いている」から抜ける瞬間が無く、
+ * 決着をつける仕掛けが**一度も動かない**。結果、指を離したあとも
+ * **「聞いています…」が出たまま貼り付く**（何も聞いていないのに、聞いている顔をする）。
+ *
+ * なので「聞いていた相手がいない」時は、その場で決着をつける。
+ * 逆に本当に聞いていた時は null を返す —— そちらは onend で決着させないと、
+ * stop() のあとに届く最後のひとことが落ちる。
+ */
+export function settleKind(
+  outcome: HoldOutcome,
+  recognizerListening: boolean,
+): 'notStarted' | 'discarded' | null {
+  if (outcome !== 'commit' && outcome !== 'discard') return null;
+  if (recognizerListening) return null;
+  return outcome === 'discard' ? 'discarded' : 'notStarted';
 }

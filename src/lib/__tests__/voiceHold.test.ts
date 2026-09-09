@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   holdReducer, normalizeTranscript, mergeVoiceIntoQuery,
-  decideHeard, shouldForceStop, micMessage, shouldKeepListening, MAX_RELISTEN,
+  decideHeard, shouldForceStop, micMessage, shouldKeepListening, MAX_RELISTEN, settleKind,
   HOLD_MIN_MS, type HoldPhase, type HoldEvent,
 } from '../voiceHold';
 
@@ -201,7 +201,7 @@ describe('shouldForceStop — 押していないのに開いたマイクは閉�
 
 describe('micMessage — どの結末でも必ず一言出る', () => {
   it('★空の一言を返す道が 1 本も無い', () => {
-    const kinds = ['tooShort', 'nothingHeard', 'discarded', 'error'] as const;
+    const kinds = ['tooShort', 'nothingHeard', 'discarded', 'notStarted', 'error'] as const;
     for (const k of kinds) expect(micMessage(k).length).toBeGreaterThan(0);
     for (const code of ['not-allowed', 'service-not-allowed', 'audio-capture', 'network', 'unknown', null, undefined])
       expect(micMessage('error', code).length).toBeGreaterThan(0);
@@ -229,5 +229,25 @@ describe('shouldKeepListening — 押している間は、勝手に閉じても�
   it('★上限を超えたら開き直さない', () => {
     expect(shouldKeepListening('recording', false, MAX_RELISTEN)).toBe(false);
     expect(shouldKeepListening('recording', false, MAX_RELISTEN + 5)).toBe(false);
+  });
+});
+
+describe('settleKind — 聞いていた相手がいない時は、その場で片づける', () => {
+  it('★開いていなければ、離した時に片づける（「聞いています…」が貼り付くのを防ぐ）', () => {
+    expect(settleKind('commit', false)).toBe('notStarted');
+    expect(settleKind('discard', false)).toBe('discarded');
+  });
+  it('★本当に聞いていた時は、その場で片づけない（onend まで待つ）', () => {
+    // ここで片づけると、stop() のあとに届く最後のひとことが落ちる
+    expect(settleKind('commit', true)).toBeNull();
+    expect(settleKind('discard', true)).toBeNull();
+  });
+  it('離す以外の結末では何もしない', () => {
+    expect(settleKind('start', false)).toBeNull();
+    expect(settleKind('tooShort', false)).toBeNull();
+    expect(settleKind('none', false)).toBeNull();
+  });
+  it('開かなかった時の一言は、直し方まで言う', () => {
+    expect(micMessage('notStarted')).toContain('許可');
   });
 });
