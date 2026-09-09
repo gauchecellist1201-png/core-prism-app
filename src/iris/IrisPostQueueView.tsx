@@ -3,13 +3,17 @@
 // リール書き出し済 / 案件下書きから生成された予約を1画面で管理
 // 「Instagram で開く」 → キャプションを自動コピー → IG アプリへ
 // ============================================================
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type TouchEvent as ReactTouchEvent } from 'react';
 import { Calendar, ExternalLink, Trash2, Copy, Check, Clock, AlertCircle, Image as ImageIcon, Video as VideoIcon, CalendarClock, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { IrisBackgroundDef } from './irisStyle';
 import { IRIS_FONTS, accentFaceBg, accentFaceInk } from './irisStyle';
 import { usePostQueue, buildCaptionText, suggestNextSlot, type ScheduledPost } from './usePostQueue';
 import { shouldAskOutcome, overdueAskCount, OVERDUE_ASK_TEXT } from './overduePrompt';
 import { loadTrend, recordSnapshot, saveTrend, summarizeTrend, trendSentence, localDayKey, type OverdueTrend } from './overdueTrend';
+import {
+  WEEKDAY_JA, anchorOnZoomChange, navLabel, pinchDistance, pinchStep, shiftByZoom,
+  parseDayKey, weekCells, zoomIn, zoomLabel, zoomOut, type CalZoom,
+} from './calendarZoom';
 import { loadPostedGrid, plannedDateLabel, type GridTile } from './coverGrid';
 import { buildProfileGrid } from './profileGridOrder';
 import IrisIntro from './IrisIntro';
@@ -30,10 +34,9 @@ const STATUS_META: Record<ScheduledPost['status'], { label: string; color: strin
 };
 
 // ── カレンダー用ヘルパー（すべてローカル時刻基準。ISO を slice すると +9h ずれるので new Date で扱う） ──
-const WEEKDAYS = ['日', '月', '火', '水', '木', '金', '土'];
+// 曜日の並びは calendarZoom.ts が正本 (2つ持つと見出しとグリッドがずれる)
+const WEEKDAYS = WEEKDAY_JA;
 // ローカル時刻での YYYY-MM-DD キーは overdueTrend.ts が正本 (2つ持つとカレンダーと記録がずれる)
-/** 月を n ヶ月ずらした「その月の1日」を返す */
-const shiftMonth = (d: Date, n: number) => new Date(d.getFullYear(), d.getMonth() + n, 1);
 
 // 並びプレビューに出すマスの総数（3列なので 4 行ぶん）
 const GRID_LIMIT = 12;
@@ -48,6 +51,63 @@ export default function IrisPostQueueView({ bg, queue }: Props) {
   const [calCursor, setCalCursor] = useState<Date>(() => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), 1); });
   const [selectedDay, setSelectedDay] = useState<string>(() => localDayKey(new Date()));
   const todayKey = localDayKey(new Date());
+  // カレンダーの時間軸ズーム（月 = 全体 / 週 / 日 = 精密）。既定は今までどおり月。
+  // 2本指ピンチでも動くが、ジェスチャは見えないので 月/週/日 のボタンも必ず出す
+  // （指が届かない人・ピンチが効かない端末でも、同じ場所へ行ける）。
+  const [calZoom, setCalZoom] = useState<CalZoom>('month');
+  const pinchBase = useRef(0);
+  // 2本指の案内は、指で触れる端末にだけ出す（マウスしか無い画面に「2本指で」と書かない）
+  const canPinch = useMemo(() => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return false;
+    try { return window.matchMedia('(pointer: coarse)').matches; } catch { return false; }
+  }, []);
+
+  const changeZoom = useCallback((next: CalZoom) => {
+    if (next === calZoom) return;
+    const anchor = anchorOnZoomChange(next, calCursor, selectedDay, new Date());
+    setCalCursor(anchor);
+    // 日まで降りたら「その日」を選んだことにする（下の一覧が空のまま残らない）
+    if (next === 'day') setSelectedDay(localDayKey(anchor));
+    setCalZoom(next);
+  }, [calZoom, calCursor, selectedDay]);
+
+  // 2本指ピンチ: ひらく = 細かく (月→週→日) / とじる = 全体 (日→週→月)。
+  // preventDefault はしない（touchAction: 'pan-y' 側で止める。React の touch は passive で
+  // 呼んでも効かないことがあり、効かない呼び出しを頼りにすると縦スクロールだけ死ぬ）。
+  const onCalTouchStart = useCallback((e: ReactTouchEvent) => {
+    if (e.touches.length !== 2) { pinchBase.current = 0; return; }
+    const [a, b] = [e.touches[0], e.touches[1]];
+    pinchBase.current = pinchDistance(a.clientX, a.clientY, b.clientX, b.clientY);
+  }, []);
+
+  const onCalTouchMove = useCallback((e: ReactTouchEvent) => {
+    if (e.touches.length !== 2 || pinchBase.current <= 0) return;
+    const [a, b] = [e.touches[0], e.touches[1]];
+    const now = pinchDistance(a.clientX, a.clientY, b.clientX, b.clientY);
+    const step = pinchStep(pinchBase.current, now);
+    if (step === 0) return;
+    pinchBase.current = now;   // 1回のジェスチャで一気に2段飛ばさない
+    changeZoom(step > 0 ? zoomIn(calZoom) : zoomOut(calZoom));
+  }, [calZoom, changeZoom]);
+
+  const onCalTouchEnd = useCallback(() => { pinchBase.current = 0; }, []);
+
+  // ◀ ▶ は段のぶんだけ動く。日の段では「見ている日」＝下に出す日なので一緒に動かす
+  // （動かさないと、日付だけ進んで中身が前の日のまま残る）。
+  const navCalendar = useCallback((dir: -1 | 1) => {
+    const next = shiftByZoom(calCursor, calZoom, dir);
+    setCalCursor(next);
+    if (calZoom === 'day') setSelectedDay(localDayKey(next));
+  }, [calCursor, calZoom]);
+
+  /** 週の1日をタップ → その日の段へ降りる（段と見ている日を同時に決める） */
+  const openDay = useCallback((key: string) => {
+    const d = parseDayKey(key);
+    if (!d) return;
+    setCalCursor(d);
+    setSelectedDay(key);
+    setCalZoom('day');
+  }, []);
 
   // ── 「1日以上ほったらかしの予約」を数え続ける ──
   // 2026-08-29 の2件 (空状態の嘘を消す / 過ぎた予約に二択) はどちらも判定が
@@ -429,19 +489,44 @@ export default function IrisPostQueueView({ bg, queue }: Props) {
           </div>
         </div>
       ) : view === 'calendar' ? (
-        <div style={{ display: 'grid', gap: 12 }}>
-          {/* 月ナビ */}
+        <div
+          style={{ display: 'grid', gap: 12, touchAction: 'pan-y' }}
+          onTouchStart={onCalTouchStart}
+          onTouchMove={onCalTouchMove}
+          onTouchEnd={onCalTouchEnd}
+          onTouchCancel={onCalTouchEnd}
+        >
+          {/* 期間ナビ（動く量は、いま見ている段のぶん） */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <button onClick={() => setCalCursor(shiftMonth(calCursor, -1))} aria-label="前の月" style={navBtnStyle}>
+            <button onClick={() => navCalendar(-1)} aria-label={navLabel(calZoom, -1)} style={navBtnStyle}>
               <ChevronLeft size={18} />
             </button>
             <div style={{ fontFamily: IRIS_FONTS.display, fontSize: '1.1rem', fontWeight: 700, color: bg.ink }}>
-              {calCursor.getFullYear()}年 {calCursor.getMonth() + 1}月
+              {zoomLabel(calCursor, calZoom)}
             </div>
-            <button onClick={() => setCalCursor(shiftMonth(calCursor, 1))} aria-label="次の月" style={navBtnStyle}>
+            <button onClick={() => navCalendar(1)} aria-label={navLabel(calZoom, 1)} style={navBtnStyle}>
               <ChevronRight size={18} />
             </button>
           </div>
+
+          {/* 時間軸ズーム（2本指ピンチと同じ切替。ジェスチャは見えないので押せる形も必ず置く） */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: 4 }}>
+              {(['month', 'week', 'day'] as const).map(z => (
+                <button key={z} onClick={() => changeZoom(z)} aria-pressed={calZoom === z} style={{
+                  minHeight: 36, padding: '6px 14px', borderRadius: 999, fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer',
+                  border: `1px solid ${calZoom === z ? bg.accent : bg.cardBorder}`,
+                  background: calZoom === z ? bg.accentSolid : 'transparent',
+                  color: calZoom === z ? '#fff' : bg.inkSoft,
+                }}>{z === 'month' ? '月' : z === 'week' ? '週' : '日'}</button>
+              ))}
+            </div>
+            {/* 指で触れる端末にだけ言う。マウスしか無い画面で「2本指で」と書くと、
+                そこにない操作を案内することになる */}
+            {canPinch && <span style={{ fontSize: '0.68rem', color: bg.inkSoft }}>2本指でひらく / とじる でも変わります</span>}
+          </div>
+
+          {calZoom === 'month' && (<>
           {/* 曜日ヘッダ */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4 }}>
             {WEEKDAYS.map((w, i) => (
@@ -479,8 +564,50 @@ export default function IrisPostQueueView({ bg, queue }: Props) {
               );
             })}
           </div>
-          {/* 選択日の予約 */}
-          {selectedDay ? (() => {
+          </>)}
+
+          {/* 週の段：7日ぶんを縦に並べ、その日に何が入っているかを名前で見せる。
+              月のマスは点しか置けない（375px で1マス約49px）ので、
+              「何が入っているか」は週まで降りないと分からなかった。 */}
+          {calZoom === 'week' && (
+            <div style={{ display: 'grid', gap: 6 }}>
+              {weekCells(calCursor).map(d => {
+                const k = localDayKey(d);
+                const dayPosts = postsByDay[k] || [];
+                const isToday = k === todayKey;
+                const dow = d.getDay();
+                return (
+                  <button key={k} onClick={() => openDay(k)} aria-label={`${d.getMonth() + 1}月${d.getDate()}日の予約を開く`} style={{
+                    display: 'grid', gridTemplateColumns: '54px 1fr', gap: 10, alignItems: 'start', textAlign: 'left',
+                    minHeight: 52, padding: '8px 10px', borderRadius: 12, cursor: 'pointer',
+                    border: isToday ? `1px solid ${bg.accent}80` : `1px solid ${bg.cardBorder}`,
+                    background: dayPosts.length ? `${bg.accent}0A` : bg.card,
+                  }}>
+                    <span style={{ display: 'grid', gap: 1, justifyItems: 'center' }}>
+                      <span style={{ fontSize: '0.62rem', fontWeight: 700, color: dow === 0 ? '#DC2626' : dow === 6 ? '#2563EB' : bg.inkSoft }}>{WEEKDAYS[dow]}</span>
+                      <span style={{ fontSize: '1rem', fontWeight: isToday ? 800 : 600, color: bg.ink }}>{d.getDate()}</span>
+                    </span>
+                    <span style={{ display: 'grid', gap: 4, minWidth: 0 }}>
+                      {dayPosts.length === 0 ? (
+                        <span style={{ fontSize: '0.74rem', color: bg.inkSoft }}>予約なし</span>
+                      ) : dayPosts.map(p => (
+                        <span key={p.id} style={{ display: 'flex', gap: 6, alignItems: 'center', minWidth: 0 }}>
+                          <span style={{ width: 6, height: 6, borderRadius: 999, background: STATUS_META[p.status].color, flexShrink: 0 }} />
+                          <span style={{ fontSize: '0.7rem', fontWeight: 700, color: bg.inkSoft, flexShrink: 0 }}>
+                            {new Date(p.scheduledAt).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                          <span style={{ fontSize: '0.74rem', color: bg.ink, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.caption}</span>
+                        </span>
+                      ))}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {/* 選択日の予約（月＝タップした日 / 日＝いま見ている日。週はその場に出ているので出さない） */}
+          {calZoom === 'week' ? null : selectedDay ? (() => {
             const dayPosts = postsByDay[selectedDay] || [];
             const [yy, mm, dd] = selectedDay.split('-').map(Number);
             const labelD = new Date(yy, mm - 1, dd);
