@@ -24,9 +24,9 @@ export const STATUS_LABEL: Record<LayerStatus, string> = {
 };
 
 export const HERO = {
-  kicker: 'AI Transformation Company — Kobe, Japan',
+  kicker: 'AI Company OS Company — Kobe, Japan',
   /** 社是の直下に置く「何の会社か」の一行。10秒で社是と両方が残るように。 */
-  line: 'AI前提で、企業・地域・社会の仕組みを再設計する。',
+  line: 'AI前提で、会社そのものを再設計する。御社専用のAI Company OSを。',
   primary: 'ROAIを無料診断する',
   secondary: '未来の仕組みを、一緒につくる',
 } as const;

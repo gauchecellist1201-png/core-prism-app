@@ -1,12 +1,17 @@
 # 料金・提供形態 — 株式会社CORE
 
-最終更新: 2026-09-06 ／ https://www.core-ai.jp/corp ／ info@core-ai.jp
+最終更新: 2026-09-10 ／ https://www.core-ai.jp/corp ／ info@core-ai.jp
 
 ## AI Transformation（コンサルティング・開発）
 - 初回相談: **無料**
 - CORE ROAI SCORE（AI投資の優先順位診断）: **無料**・約3分・連絡先の入力不要
   - https://www.core-ai.jp/roai-score
 - 個別のご支援は、対象業務・範囲・期間により個別見積り。お見積り提示までは無料です。
+
+## 企業専用のCORE Company OS
+Company Scan / Department OS / Starter / Pro / Enterprise / CORE OS Update。
+新規サービスの納品範囲・期間・税抜価格目安・概算計算は https://www.core-ai.jp/corp#company-os-pricing を参照してください。
+無料ROAI SCOREは自己診断、有料Company Scanは経営者面談・業務確認・Baseline・設計図・90日計画の納品です。既存製品契約の料金変更ではありません。
 
 ## 自社AIプロダクトの価格
 | プロダクト | 内容 | 価格 |

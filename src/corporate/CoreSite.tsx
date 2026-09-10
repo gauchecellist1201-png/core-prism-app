@@ -6,7 +6,7 @@
 // 2026-08-21 オーナー指示で事業の見せ方を全面再定義:
 //   OLD  AIを使って開発する会社
 //   NEW  企業の本質的な課題を見つけ、AI・ソフトウェア・業務設計によって
-//        事業そのものを変革する会社 ＝ AI Transformation Company
+//        事業そのものを変革する会社 ＝ AI Company OS Company
 //   ブランド（金×黒・明朝・静かな余白・「核」の思想）は一切壊さない。
 //   自社プロダクト8つは、開発・運用の実体を示すものとして〈製品〉タブへ移した。
 // ============================================================
@@ -52,6 +52,7 @@ import { TheChange, ProcessContrast, OneCore, StudioSection, NeriSection, Bridge
 import AshitakaPage from './AshitakaPage';
 import EnergyPage from './EnergyPage';
 import { track } from './roai/track';
+import { CompanyOsIntro, CompanyOsProof, CompanyOsCommercial } from './companyOs/CompanyOsSections';
 import { neriLpUrl } from '../lib/coreLinks';
 
 const COMPANY = {
@@ -141,7 +142,7 @@ function tabFromPath(): CoreTabKey | null {
 
 /** タブごとの title / description / canonical（SEO・AI検索向け） */
 const TAB_META: Record<CoreTabKey, { title: string; desc: string; path: string }> = {
-  home: { title: '株式会社CORE | いつの時代も、変わらない核を。— AI Transformation Company', desc: 'いつの時代も、変わらない核を。AI前提で、企業・地域・社会の仕組みを再設計する神戸のAI Transformation Company。AI投資を経営成果（Return on AI）へ。企業から地域へ、地域からエネルギーへ。', path: '/corp' },
+  home: { title: '株式会社CORE | いつの時代も、変わらない核を。— AI Company OS Company', desc: 'いつの時代も、変わらない核を。AI前提で、企業・地域・社会の仕組みを再設計する神戸のAI Company OS Company。AI投資を経営成果（Return on AI）へ。企業から地域へ、地域からエネルギーへ。', path: '/corp' },
   roai: { title: 'Return on AI とは | 株式会社CORE', desc: 'AI投資は目的ではない。AIが何を返したかを、売上・コスト・時間・リスク・新しい価値で測る。CORE ROAI MODEL・ROAIの計算・損失回避・投資余力の逆算・Transformation Loop。', path: '/return-on-ai' },
   score: { title: 'CORE ROAI SCORE — 約2分のAI投資優先順位診断 | 株式会社CORE', desc: '約2分で、あなたの会社の次にAI投資すべき場所・削減できる時間・経済価値の概算・AI Readiness・投資余力の目安を可視化。連絡先不要、算定根拠つき。', path: '/roai-score' },
   os: { title: 'AI COMPANY OS | 株式会社CORE', desc: '経営・営業・顧客対応・バックオフィスを、人とAIエージェントが協働する一つのOperating Systemとして再設計する。', path: '/corp#os' },
@@ -187,6 +188,7 @@ const TAB_CHIP: Partial<Record<CoreTabKey, CoreTabKey>> = { roai: 'services', sc
 
 /** 章 id → その章が載っているタブ。既存の #リンクを生かすための対応表。 */
 const SECTION_TAB: Record<string, CoreTabKey> = {
+  'company-os-definition': 'home', 'company-os-pricing': 'home', 'company-os-action': 'home',
   // 変革 — この会社が何をするのか
   top: 'home', philosophy: 'home', whatwedo: 'home', difference: 'home', assessment: 'home',
   why: 'home', proof: 'home', overview: 'home', cta: 'home', values: 'home',
@@ -586,14 +588,15 @@ export default function CoreSite() {
             ホームから外した章（ExecutiveQuestion / Differentiation / WhyCore / ServicesEditorial / ApproachSection /
             PeopleMosaic / ProofStrip / FinalCta）は AI変革タブ・会社タブ・/return-on-ai に残る。 */}
         <Manifesto onAnchor={handleAnchor} />
+        <CompanyOsIntro />
+        <RoaiModelSection onAnchor={handleAnchor} compact />
+        <CompanyOsProof />
+        <StudioSection />
+        <CompanyOsCommercial />
         <Values />
         <TheChange />
-        <RoaiBand onAnchor={handleAnchor} />
         <ProcessContrast />
-        <RoaiModelSection onAnchor={handleAnchor} compact />
-        <ScoreTeaser onAnchor={handleAnchor} />
         <OneCore onAnchor={handleAnchor} />
-        <StudioSection />
         <NeriSection />
         <Bridge />
         <AshitakaHome onAnchor={handleAnchor} />

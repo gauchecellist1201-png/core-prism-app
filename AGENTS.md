@@ -21,3 +21,7 @@ Read existing `CLAUDE.md` if present, `README.md`, relevant design files, packag
 - Inspect `prebuild` as well as `build`: generated plan/route files may be involved. Existing scripts include `build`, `lint`, `smoke`; there is no generic npm test script at the audit snapshot.
 - `.github/workflows/smoke.yml` and smoke tooling can target production. Inspect targets and side effects before running; documentation edits require diff/link checks, not production probes.
 - Preserve current data-source distinctions, pricing sources, server authorization and tracking contracts; consult task-relevant source and knowledge records before changes.
+
+## CORE Company OS context
+
+For CORE positioning, site, sales, proposals and product design, actually read `AI_CONTEXT.md` and `10_事業/CORE-Company-OS/00_MASTER.md` from the authenticated private core-knowledge repository. Verify latest decision status and product sources; do not duplicate private strategy here. Company OS integrates existing assets; design or estimates are not verified production outcomes.

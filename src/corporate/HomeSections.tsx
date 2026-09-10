@@ -106,7 +106,7 @@ export function HomeHero({ onAnchor }: { onAnchor: AnchorHandler }) {
       <div className="ch-hero-shade" aria-hidden />
       <div className="ch-wrap ch-hero-inner ch-hero-grid">
         <motion.div className="ch-hero-copy" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}>
-          <Kick>AI Transformation Company — Kobe, Japan</Kick>
+          <Kick>AI Company OS Company — Kobe, Japan</Kick>
           {/* 言葉の正本は creedData / companyInfo.philosophy */}
           <h1 className="ch-h1 ch-h1--creed" style={{ fontFamily: FONT_JA, color: '#FFFFFF' }}>
             いつの時代も、

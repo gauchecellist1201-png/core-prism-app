@@ -1,12 +1,18 @@
 # 株式会社CORE (CORE Inc.)
 
-> 兵庫県神戸市に本社を置く AI Transformation Company。AIを「導入する」ところで終わらせず、
+> 兵庫県神戸市に本社を置く AI Company OS Company。AIを「導入する」ところで終わらせず、
 > AI前提で会社そのもの（戦略・業務・組織・システム）を設計し直し、AI投資を経営成果に変えることを事業にしている。
 > その成果を測る自社の経営指標が **Return on AI（ROAI）**。
 
-最終更新: 2026-09-06（CORE WEB 2035） ／ 公式サイト: https://www.core-ai.jp/corp ／ 連絡先: info@core-ai.jp
+最終更新: 2026-09-10（Company OS統合） ／ 公式サイト: https://www.core-ai.jp/corp ／ 連絡先: info@core-ai.jp
 
-## 一行の定義
+## CORE Company OS
+
+COREは、企業の核を理解し、AI前提で会社を再設計し、その企業専用のAI Company OSを設計・実装・運用する会社です。経営成果→課題→再設計→Company OSの順で説明します。
+Company Scan、Department OS、Starter、Pro、Enterprise、CORE OS Updateで提供範囲を定めます。価格と納品物は https://www.core-ai.jp/corp#company-os-pricing を参照。新規サービスは税抜目安・個別見積りです。
+Studioは制作と顧客接点、NERIは操作窓口、Knowledgeは会社記憶。既存OSを統合する上位概念であり、すべてが全社接続済みという意味ではありません。ROAIは検証した経済価値と同期間の総投資を比較し、未測定と試算を区別します。
+
+## 長期の方向
 
 **AI前提で、企業・地域・社会の仕組みを再設計する。** 企業の変革（AI Transformation / Return on AI）から始め、
 文化を入口にした地域の変革（ASHITAKA PROJECT ＝ 入口／REGIONAL OS ＝ 街と村のDX）、AI×エネルギー×地域（CORE Energy）へと、社会を支える仕組みのより深い層へ進むことを長期の方向とする。
@@ -116,7 +122,7 @@ CORE の順序: 経営目標 → ベースライン測定 → KPI設定 → ROAI
 ## よくある質問
 
 **Q. 株式会社COREは何をする会社ですか。**
-A. 企業をAI前提で再設計する AI Transformation Company です。AIツールを納品して終わりにせず、経営目標から逆算して業務・組織・システムを設計し直し、AI投資が返した成果（Return on AI）を計測するところまでを担当します。
+A. 企業をAI前提で再設計する AI Company OS Company です。AIツールを納品して終わりにせず、経営目標から逆算して業務・組織・システムを設計し直し、AI投資が返した成果（Return on AI）を計測するところまでを担当します。
 
 **Q. Return on AI（ROAI）とは何ですか。**
 A. AIへの投資額ではなく、AIが返した経営成果で投資を評価する指標です。売上（GROW）、コスト削減（SAVE）、速度（ACCELERATE）、損失回避（PROTECT）、新しい価値（CREATE）の5つのReturnで測ります。
