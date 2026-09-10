@@ -4,6 +4,9 @@ Allow: /
 # 講演会後の限定ランディングは検索除外
 Disallow: /keynote
 
+# 公式LINE登録者向けの特典PDF（営業資料 兼 特典ブック）。検索には載せない
+Disallow: /studio/playbook/
+
 # オーナー / 管理者専用ページは検索除外
 Disallow: /master
 Disallow: /master/

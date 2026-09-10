@@ -12,6 +12,9 @@ Disallow: /billing/
 Disallow: /stripe-status
 Disallow: /ai-stats
 Disallow: /keynote
+
+# 公式LINE登録者向けの特典PDF（営業資料 兼 特典ブック）。検索には載せない
+Disallow: /studio/playbook/
 Disallow: /*?share=
 Disallow: /*?capture=
 
