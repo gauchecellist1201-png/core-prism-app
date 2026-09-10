@@ -733,6 +733,40 @@ export default function IdentityDashboard({
           />
         )}
         </Suspense>
+
+        {/* 旧チャット専用ホームを保存済みの端末でも、検索だけは早期 return の外へ
+            消えないようにする。機能を選んだら通常画面へ戻し、既存モーダルを描く。 */}
+        <CommandPalette
+          open={showCmdK}
+          onClose={() => setShowCmdK(false)}
+          personas={allPersonas}
+          knowledge={knowledgeItems}
+          activePersonaId={persona.id}
+          onSwitchPersona={onSwitch}
+          onOpenModal={(modal) => {
+            setMobileGeminiMode(false);
+            handleCmdKOpen(modal);
+          }}
+        />
+
+        <button
+          onClick={() => setShowCmdK(true)}
+          className="prism-legacy-cmdk-entry md:hidden fixed left-4 z-30 flex items-center gap-2 rounded-full px-4 font-semibold"
+          style={{
+            bottom: 'calc(env(safe-area-inset-bottom, 0px) + 80px)',
+            minHeight: 48,
+            fontSize: '0.85rem',
+            background: 'rgba(20, 20, 30, 0.82)',
+            backdropFilter: 'blur(20px)',
+            color: 'rgba(255,255,255,0.92)',
+            border: '1px solid rgba(255,255,255,0.18)',
+            boxShadow: '0 10px 30px rgba(0,0,0,0.38)',
+          }}
+          aria-label="検索・操作メニューを開く"
+        >
+          <Search size={16} strokeWidth={2.2} />
+          <span>探す・操作する</span>
+        </button>
       </>
     );
   }

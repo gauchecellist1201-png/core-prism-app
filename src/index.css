@@ -2981,6 +2981,10 @@ time {
   button[aria-label="ひらめきを知識に放り込む"] {
     display: none !important;
   }
+  /* 旧チャット専用ホームには ☰ サイドバーが無い。保存済み端末の検索入口だけ戻す。 */
+  button.prism-legacy-cmdk-entry {
+    display: flex !important;
+  }
   /* 右下の「＋」(成果物/統合脳/役員日報) は消していない。
      消すと、この3つに届くのが「コマンドバーで名前を打つ」だけになり、
      いまの2タップより遠くなる (2026-08-13 実測して見送り)。
