@@ -53,9 +53,25 @@
         font-size: 1.5rem; font-weight: 900; line-height: 1.4;
         margin: 0 0 1rem;
       }
+      #inviter-heading {
+        overflow-wrap: anywhere;
+        word-break: break-word;
+      }
       .sub {
         font-size: 0.92rem; color: rgba(255,255,255,0.7);
         line-height: 1.7; margin: 0 0 1.4rem;
+      }
+      .message {
+        margin: -0.35rem 0 1.4rem;
+        padding: 0.8rem 1rem;
+        border-left: 3px solid #FBBF24;
+        border-radius: 0 12px 12px 0;
+        background: rgba(251,191,36,0.08);
+        color: rgba(255,255,255,0.9);
+        font-size: 0.88rem; line-height: 1.65;
+        text-align: left;
+        overflow-wrap: anywhere;
+        word-break: break-word;
       }
       .cta {
         display: inline-block;
@@ -75,11 +91,12 @@
   <body>
     <main class="card">
       <p class="eyebrow">CORE PRISM × INVITATION</p>
-      <h1>友達から招待されました<br/>+7 日 無料延長つき</h1>
+      <h1><span id="inviter-heading">友達から招待されました</span><br/>+7 日 無料延長つき</h1>
       <p class="sub">
         通常 3 日 → 合計 <strong>10 日間</strong> 無料でお試しできます。<br/>
         AI が事業を回す、すべての事業家の OS。
       </p>
+      <p id="invite-message" class="message" hidden></p>
       <a id="cta" class="cta" href="/">登録して受け取る →</a>
       <p class="small">クレジットカード不要 · いつでも解約可</p>
     </main>
@@ -93,6 +110,19 @@
           var ref = url.searchParams.get('ref');
           var from = url.searchParams.get('from');
           var msg = url.searchParams.get('msg');
+          // URL の文字を HTML として挿入しない。制御文字を除き、紹介カード側と同じ長さに揃える。
+          var clean = function (value, max) {
+            return Array.from((value || '').replace(/[\u0000-\u001f\u007f]/g, ' ').replace(/\s+/g, ' ').trim()).slice(0, max).join('');
+          };
+          from = clean(from, 24);
+          msg = clean(msg, 60);
+          var heading = document.getElementById('inviter-heading');
+          if (heading && from) heading.textContent = from + ' さんから招待されました';
+          var message = document.getElementById('invite-message');
+          if (message && msg) {
+            message.textContent = '「' + msg + '」';
+            message.hidden = false;
+          }
           var qs = [];
           if (ref) qs.push('ref=' + encodeURIComponent(ref));
           if (from) qs.push('from=' + encodeURIComponent(from));
