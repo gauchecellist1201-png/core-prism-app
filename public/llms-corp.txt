@@ -4,12 +4,12 @@
 > AI前提で会社そのもの（戦略・業務・組織・システム）を設計し直し、AI投資を経営成果に変えることを事業にしている。
 > その成果を測る自社の経営指標が **Return on AI（ROAI）**。
 
-最終更新: 2026-09-10（Company OS統合） ／ 公式サイト: https://www.core-ai.jp/corp ／ 連絡先: info@core-ai.jp
+最終更新: 2026-09-11（商品パッケージ整理） ／ 公式サイト: https://www.core-ai.jp/corp ／ 連絡先: info@core-ai.jp
 
 ## CORE Company OS
 
 COREは、企業の核を理解し、AI前提で会社を再設計し、その企業専用のAI Company OSを設計・実装・運用する会社です。経営成果→課題→再設計→Company OSの順で説明します。
-Company Scan、Department OS、Starter、Pro、Enterprise、CORE OS Updateで提供範囲を定めます。価格と納品物は https://www.core-ai.jp/corp#company-os-pricing を参照。新規サービスは税抜目安・個別見積りです。
+顧客向けの入口はCORE Studio（制作）、CORE Growth（集客改善）、CORE Company OS（業務統合）の3つ。Company Scanは導入診断、CORE OS Updateは継続支援です。価格と納品物は https://www.core-ai.jp/corp#company-os-pricing を参照。新規サービスは税抜目安・個別見積りです。
 Studioは制作と顧客接点、NERIは操作窓口、Knowledgeは会社記憶。既存OSを統合する上位概念であり、すべてが全社接続済みという意味ではありません。ROAIは検証した経済価値と同期間の総投資を比較し、未測定と試算を区別します。
 
 ## 長期の方向

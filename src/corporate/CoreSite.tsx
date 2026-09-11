@@ -32,19 +32,19 @@ import {
 import { useIsMobile } from './useIsMobile';
 import {
   PhilosophyCore, CompanyOsSection,
-  UseCasesSection, ServiceLayersSection, BusinessDevSection,
-  IndustryOsSection, PartnerSection, AiNativeSection, TechnologySection,
-  CoreNumbersSection, InvestmentSection,
-  EngagementSection, SecuritySection, FaqSection,
+  UseCasesSection,
+  IndustryOsSection, PartnerSection, TechnologySection,
+  CoreNumbersSection,
+  SecuritySection, FaqSection,
 } from './TransformSections';
 import { ContactSection } from './CorpContactForm';
 import {
-  HomeHero, ProofStrip, WhyCore, ServicesEditorial, ProductsProof,
-  ApproachSection, FounderMessage, CompanyOverview, FinalCta,
+  HomeHero, ProofStrip, ProductsProof,
+  FounderMessage, CompanyOverview,
 } from './HomeSections';
 import { Manifesto, Values, PeopleMosaic, CreedBand } from './HomeManifesto';
 import { COMPANY_INFO } from '../data/companyInfo';
-import { RoaiBand, ExecutiveQuestion, Differentiation, RoaiModelSection, ScoreTeaser } from './roai/HomeRoaiSections';
+import { RoaiModelSection } from './roai/HomeRoaiSections';
 import ReturnOnAiPage from './roai/ReturnOnAiPage';
 import RoaiScore from './roai/RoaiScore';
 import { setCorpTab } from './corpRouteStore';
@@ -97,9 +97,16 @@ const PLATFORM_PLANS: Array<{
 //  ここではヘッダーの実測高を引くので、常に見出しの真上に着地する。
 //  17,908px を smooth で流すと数秒かかるため、ジャンプは即時にする。
 // ============================================================
+function revealAnchor(el: Element | null) {
+  for (let parent = el; parent; parent = parent.parentElement) {
+    if (parent instanceof HTMLDetailsElement) parent.open = true;
+  }
+  return el;
+}
+
 function jumpToHash(e: ReactMouseEvent<HTMLAnchorElement>, href: string) {
   if (!href.startsWith('#')) return;
-  const el = document.getElementById(href.slice(1));
+  const el = revealAnchor(document.getElementById(href.slice(1)));
   if (!el) return;
   e.preventDefault();
   const header = document.querySelector('header');
@@ -325,7 +332,7 @@ export default function CoreSite() {
       writeUrl(next, hash);
       // 章指定つきの場合は、描画が入れ替わってから位置を合わせる
       requestAnimationFrame(() => {
-        const el = document.getElementById(hash.replace('#', ''));
+        const el = revealAnchor(document.getElementById(hash.replace('#', '')));
         if (!el) { window.scrollTo({ top: 0, behavior: 'auto' }); return; }
         const header = document.querySelector('header');
         const offset = (header?.getBoundingClientRect().height ?? 64) + 8;
@@ -395,7 +402,7 @@ export default function CoreSite() {
       setTab(tabFromHash());
       const id = window.location.hash.replace('#', '');
       requestAnimationFrame(() => {
-        const el = id ? document.getElementById(id) : null;
+        const el = id ? revealAnchor(document.getElementById(id)) : null;
         if (!el) { window.scrollTo({ top: 0, behavior: 'instant' }); return; }
         const header = document.querySelector('header');
         const offset = (header?.getBoundingClientRect().height ?? 64) + 8;
@@ -404,6 +411,7 @@ export default function CoreSite() {
     };
     window.addEventListener('hashchange', onHash);
     window.addEventListener('popstate', onHash);
+    if (window.location.hash) onHash();
     return () => { window.removeEventListener('hashchange', onHash); window.removeEventListener('popstate', onHash); };
   }, []);
 
@@ -589,10 +597,11 @@ export default function CoreSite() {
             PeopleMosaic / ProofStrip / FinalCta）は AI変革タブ・会社タブ・/return-on-ai に残る。 */}
         <Manifesto onAnchor={handleAnchor} />
         <CompanyOsIntro />
+        <CompanyOsCommercial />
         <RoaiModelSection onAnchor={handleAnchor} compact />
         <CompanyOsProof />
+        <details className="company-os-legacy"><summary>COREの思想・製品・地域への取り組みを詳しく見る</summary>
         <StudioSection />
-        <CompanyOsCommercial />
         <Values />
         <TheChange />
         <ProcessContrast />
@@ -604,6 +613,7 @@ export default function CoreSite() {
         <Connection />
         <Core2035 />
         <ProductsProof onAnchor={handleAnchor} />
+        </details>
         <FounderMessage onAnchor={handleAnchor} />
         <CompanyOverview onAnchor={handleAnchor} />
         <Invitation onAnchor={handleAnchor} />
@@ -639,25 +649,11 @@ export default function CoreSite() {
       {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
       {tab === 'services' && (
       <>
-        {/* 2026-09-06: ホームから移した章。AI変革タブは「ROAI → 順序の違い → なぜCORE → 何をするか → 進め方」で始まる。 */}
-        <RoaiBand onAnchor={handleAnchor} />
-        <ExecutiveQuestion onAnchor={handleAnchor} />
-        <Differentiation />
-        <WhyCore />
-        <ServicesEditorial onAnchor={handleAnchor} />
-        <ApproachSection />
-        <ScoreTeaser onAnchor={handleAnchor} />
-        <ServiceLayersSection />
-        {/* 「何ができるか」の直後に「どう進むか・やめられるか」を置く（稟議に持ち込める形にする） */}
-        <EngagementSection onAnchor={handleAnchor} />
-        <AiNativeSection />
+        <CompanyOsCommercial />
         <TechnologySection />
-        {/* 技術の話の直後に「その情報はどこへ行くのか」を置く */}
         <SecuritySection />
-        <BusinessDevSection />
         <PartnerSection onAnchor={handleAnchor} />
-        <InvestmentSection onAnchor={handleAnchor} />
-        <FinalCta onAnchor={handleAnchor} />
+
       </>
       )}
 

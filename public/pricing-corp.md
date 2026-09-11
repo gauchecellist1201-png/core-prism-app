@@ -1,6 +1,6 @@
 # 料金・提供形態 — 株式会社CORE
 
-最終更新: 2026-09-10 ／ https://www.core-ai.jp/corp ／ info@core-ai.jp
+最終更新: 2026-09-11 ／ https://www.core-ai.jp/corp ／ info@core-ai.jp
 
 ## AI Transformation（コンサルティング・開発）
 - 初回相談: **無料**
@@ -8,10 +8,13 @@
   - https://www.core-ai.jp/roai-score
 - 個別のご支援は、対象業務・範囲・期間により個別見積り。お見積り提示までは無料です。
 
-## 企業専用のCORE Company OS
-Company Scan / Department OS / Starter / Pro / Enterprise / CORE OS Update。
-新規サービスの納品範囲・期間・税抜価格目安・概算計算は https://www.core-ai.jp/corp#company-os-pricing を参照してください。
-無料ROAI SCOREは自己診断、有料Company Scanは経営者面談・業務確認・Baseline・設計図・90日計画の納品です。既存製品契約の料金変更ではありません。
+## 目的から選ぶ3つのパッケージ
+- CORE Studio：映像・Web。映像標準128,000円税込（2026-10-31発注まで、11-1以降192,000円税込への既存改定予告）。30秒1本、企画/台本/制作/修正1回。Webは別見積。
+- CORE Growth：月300,000円税別、初期0、初回3か月総額900,000円税別。1ブランド/1SNS、動画2本・投稿文4案・問い合わせ導線/計測・月次改善。広告実費/配信代行/撮影/新規LPは別。
+- CORE Company OS：1業務・既存システム2つまで、初期1,200,000円税別。会社記憶/承認/テスト/教育/移管。構築6〜8週＋安定化30日。利用者10名目安。AI/クラウド実費別。
+- Company Scan：200,000円税別、1部門の候補2業務、2週間、設計図と見積。実装なし。同一法人/同範囲/60日以内の構築に充当し、追加1,000,000円が標準。
+- CORE OS Update：安定化後、月100,000円税別。1業務・月6時間まで、初回3か月。新規開発/24時間SLA/外部実費別。初期120万円＋運用9か月の例は210万円税別＋実費。
+正式な金額・範囲は見積で合意。既存製品契約の自動変更ではありません。詳細：https://www.core-ai.jp/corp#company-os-pricing
 
 ## 自社AIプロダクトの価格
 | プロダクト | 内容 | 価格 |

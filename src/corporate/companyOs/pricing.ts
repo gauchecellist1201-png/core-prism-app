@@ -1,3 +1,4 @@
+/** @deprecated v1 exploratory estimator. Not used by the v2 public offers. See catalog.ts for current scopes. */
 /** Scope-based estimate in JPY, excluding tax. Coefficients are design assumptions. */
 export interface PriceScope { employees: number; departments: number; agents: number; apis: number; sources: number; security: 'standard' | 'sso' | 'dedicated'; complexity: 'standard' | 'exceptions' | 'core' }
 const security = { standard: 1, sso: 1.25, dedicated: 1.6 };
