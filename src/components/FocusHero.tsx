@@ -176,8 +176,8 @@ export default function FocusHero({
                     padding: '10px 18px', borderRadius: 10,
                     ...onAccentGradient(um.color),
                     border: 'none', fontSize: 13.5, fontWeight: 800,
-                    cursor: executingAction ? 'wait' : 'pointer', boxShadow: `0 8px 20px ${um.color}44`,
-                    opacity: executingAction ? 0.7 : 1,
+                    cursor: executingAction ? 'wait' : 'pointer',
+                    boxShadow: executingAction ? 'none' : `0 8px 20px ${um.color}44`,
                   }}
                 >
                   ▶ {firstAction.length > 22 ? firstAction.slice(0, 22) + '…' : firstAction}
@@ -218,7 +218,6 @@ export default function FocusHero({
                           background: 'var(--surface-3)', border: '1px solid var(--border-2)',
                           color: 'var(--fg)', fontSize: 12.5, cursor: executingAction ? 'wait' : 'pointer',
                           display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8,
-                          opacity: executingAction ? 0.5 : 1,
                         }}
                       >
                         <span>{a}</span>

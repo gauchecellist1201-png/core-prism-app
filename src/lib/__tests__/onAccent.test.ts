@@ -121,6 +121,11 @@ describe('onAccentGradient', () => {
     expect(background).not.toContain('cc)');
     expect(background).not.toMatch(/#34D399[0-9a-f]{2}/i);
   });
+
+  it('FocusHero の実行中ボタンは、文字ごと薄くしてコントラストを落とさない', () => {
+    const source = readFileSync(join(__dirname, '../../components/FocusHero.tsx'), 'utf8');
+    expect(source).not.toMatch(/opacity:\s*executingAction/);
+  });
 });
 
 describe('darkSafeFace', () => {
