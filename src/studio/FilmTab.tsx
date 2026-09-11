@@ -14,7 +14,7 @@ import {
   TRIAL_OFFER, CAMPAIGN, isCampaignLive, offPercent,
   PRICING_MODES, PRICING_LEAD, planMatrix, type PricingMode, type FilmPlan,
   FILM_PROCESS, PROCESS_STATEMENT, START_STEPS, REVISION, TERMS, AI_TERMS,
-  FILM_FAQ, FILM_CTA, INQUIRY_FIELDS, FILM_MENU, MENU_LEAD,
+  FILM_FAQ, FILM_CTA, FILM_GIFT, INQUIRY_FIELDS, FILM_MENU, MENU_LEAD,
   menuPriceParts, menuSpecLabel, menuTarget,
 } from './film';
 // ---- 計測 ----
@@ -1891,6 +1891,21 @@ function FinalCta() {
             {FILM_CTA.reassure.map(t => (
               <span key={t} className="fm-reassure-item"><IconCheck color={D.gold} />{t}</span>
             ))}
+          </div>
+        </Reveal>
+
+        {/* 公式LINEの特典 — 営業資料 兼 特典ブック (2026-09-10)。
+            LINEに進む理由を1つ足す。何が届くかを先に書き、業種の一覧で「自分の分がある」と分からせる。
+            PDFへの直リンクはここに置かない (登録した人だけに渡す約束を、ページ側で破らない)。 */}
+        <Reveal delay={40}>
+          <div className="fm-gift" style={{ marginTop: 30, border: `1px solid ${D.goldLine}`, borderRadius: 14, padding: '22px 20px', background: D.raise }}>
+            <div className="st-label" style={{ color: D.gold, marginBottom: 8 }}>{FILM_GIFT.label}</div>
+            <p className="st-serif" style={{ fontSize: 'clamp(16px, 4.4vw, 19px)', fontWeight: 700, lineHeight: 1.6, color: D.ink, margin: 0 }}>{FILM_GIFT.title}</p>
+            <p style={{ fontSize: 13.5, lineHeight: 1.95, color: D.body, margin: '10px 0 0' }}>{FILM_GIFT.body}</p>
+            <p style={{ fontSize: 12.5, lineHeight: 1.9, color: D.mute, margin: '10px 0 0' }}>{FILM_GIFT.how}</p>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 14 }}>
+              {FILM_GIFT.editions.map(e => <span key={e} className="fm-tag">{e}編</span>)}
+            </div>
           </div>
         </Reveal>
 
