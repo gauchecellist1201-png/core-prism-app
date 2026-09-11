@@ -9,6 +9,10 @@ import { isXConfigured, isXConnected, startXAuth, postTweet } from '../lib/xPost
 import { fetchThreadsStatus, startThreadsConnect, postThreadsChain, readThreadsCallbackResult, translateThreadsError } from '../lib/threadsConnect';
 import { BrandIcon } from './BrandIcons';
 import ThinkingIndicator from './ThinkingIndicator';
+import { whiteSafeFace, whiteSafeGradient } from '../lib/accentFace';
+
+const VIRAL_FACE = whiteSafeGradient(['#A78BFA', '#E879F9'], 90);
+const DISABLED_FACE = whiteSafeFace('#6B7280');
 
 export default function ViralStudioCard() {
   const [theme, setTheme] = useState('');
@@ -104,8 +108,9 @@ export default function ViralStudioCard() {
           placeholder="テーマ（例: 経営者の時短術 / カフェ集客 / AI活用）"
           style={{ flex: 1, minWidth: 180, padding: '10px 12px', borderRadius: 9, border: '1px solid var(--border, rgba(0,0,0,0.12))', background: 'var(--surface)', color: 'var(--fg)', fontSize: 16 }} />
         <button onClick={run} disabled={loading || !theme.trim()} style={{
-          padding: '10px 16px', borderRadius: 9, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 800, minHeight: 44,
-          background: 'linear-gradient(90deg,#A78BFA,#E879F9)', color: '#fff', opacity: (loading || !theme.trim()) ? 0.55 : 1,
+          padding: '10px 16px', borderRadius: 9, border: 'none', fontSize: 13, fontWeight: 800, minHeight: 44,
+          background: !theme.trim() ? DISABLED_FACE : VIRAL_FACE, color: '#fff',
+          cursor: (loading || !theme.trim()) ? 'not-allowed' : 'pointer',
           display: 'inline-flex', alignItems: 'center', gap: 6,
         }}>
           {loading ? <><Loader2 size={15} className="spin" /> 生成中…</> : <><TrendingUp size={15} /> リサーチして生成</>}

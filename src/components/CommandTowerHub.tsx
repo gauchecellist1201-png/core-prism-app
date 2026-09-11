@@ -16,6 +16,10 @@ import {
   CHANNEL_META, loadSignals, channelStats, runLoop,
   type LoopChannel, type LoopSignal, type LoopStep,
 } from '../lib/loop';
+import { whiteSafeGradient } from '../lib/accentFace';
+
+const LOOP_RUNNING_FACE = whiteSafeGradient(['#6366F1', '#A78BFA'], 90);
+const LOOP_READY_FACE = whiteSafeGradient(['#E1306C', '#A78BFA', '#06C755'], 90);
 
 const LOGOS: Record<LoopChannel, (p: { size?: number }) => ReactElement> = {
   prism: (p) => <PrismLogo size={p.size} withWordmark={false} />,
@@ -319,8 +323,8 @@ export default function CommandTowerHub() {
         style={{
           width: '100%', marginTop: 8, padding: '12px 14px', borderRadius: 12, border: 'none',
           background: running
-            ? 'linear-gradient(90deg,#6366F1,#A78BFA)'
-            : 'linear-gradient(90deg,#E1306C,#A78BFA,#06C755)',
+            ? LOOP_RUNNING_FACE
+            : LOOP_READY_FACE,
           color: '#fff', fontSize: 14, fontWeight: 900, letterSpacing: '0.01em',
           cursor: running ? 'wait' : 'pointer', minHeight: 48,
           boxShadow: '0 6px 18px rgba(167,139,250,0.4)',

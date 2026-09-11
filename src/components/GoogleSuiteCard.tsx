@@ -14,6 +14,7 @@ import {
   isDocsConnected, connectDocs, listDocs, readDocText, parseDriveId, disconnectDocs,
   type DriveDoc,
 } from '../lib/gdocs';
+import { whiteSafeFace } from '../lib/accentFace';
 
 type Ingest = (title: string, content: string) => unknown;
 
@@ -55,7 +56,7 @@ function Sub({ brand, title }: { brand: 'gcalendar' | 'gdocs'; title: string }) 
 }
 
 const btnPrimary = (color = '#4285F4'): React.CSSProperties => ({
-  padding: '9px 14px', borderRadius: 9, border: 'none', background: color, color: '#fff',
+  padding: '9px 14px', borderRadius: 9, border: 'none', background: whiteSafeFace(color), color: '#fff',
   fontSize: 12.5, fontWeight: 800, cursor: 'pointer', minHeight: 40,
 });
 const cardBox: React.CSSProperties = {

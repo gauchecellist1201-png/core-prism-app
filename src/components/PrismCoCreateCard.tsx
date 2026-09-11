@@ -10,8 +10,11 @@ import { useState } from 'react';
 import { Sparkles, Send, Check, Link2, Loader2 } from 'lucide-react';
 import { loadBillingUser } from '../lib/billing';
 import { fetchWithTimeout } from '../lib/fetchWithTimeout';
+import { whiteSafeFace, whiteSafeGradient } from '../lib/accentFace';
 
 const GUILD_FEEDBACK_URL = 'https://guild-hazel.vercel.app/api/feedback';
+const GUILD_SUBMIT_FACE = whiteSafeGradient(['#A78BFA', '#7C5CFF']);
+const DISABLED_FACE = whiteSafeFace('#6B7280');
 
 export default function PrismCoCreateCard() {
   const [title, setTitle] = useState('');
@@ -133,8 +136,11 @@ export default function PrismCoCreateCard() {
           type="button"
           onClick={submit}
           disabled={sending || !bodyText.trim()}
-          className="flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl px-6 py-3.5 text-sm font-semibold text-white transition active:scale-[0.98] disabled:opacity-60"
-          style={{ background: 'linear-gradient(135deg, #A78BFA, #7C5CFF)' }}
+          className="flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl px-6 py-3.5 text-sm font-semibold text-white transition active:scale-[0.98]"
+          style={{
+            background: !bodyText.trim() ? DISABLED_FACE : GUILD_SUBMIT_FACE,
+            cursor: sending || !bodyText.trim() ? 'not-allowed' : 'pointer',
+          }}
         >
           {sending ? (
             <>

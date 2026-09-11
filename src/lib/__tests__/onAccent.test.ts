@@ -9,7 +9,10 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
-import { onAccent, onAccentInk, onAccentGradient, darkSafeFace, contrast } from '../accentFace';
+import {
+  onAccent, onAccentInk, onAccentGradient, darkSafeFace,
+  whiteSafeFace, whiteSafeGradient, contrast,
+} from '../accentFace';
 
 const AA = 4.5;
 
@@ -129,5 +132,52 @@ describe('darkSafeFace', () => {
     expect(contrast(fixed, '#0a0a0f')).toBeGreaterThanOrEqual(AA);
     // 金は元から 11.8 通っているので触らない＝ブランドの格を落とさない
     expect(darkSafeFace('#FBBF24')).toBe('#FBBF24');
+  });
+});
+
+describe('whiteSafeFace / whiteSafeGradient', () => {
+  it('BACKLOGで見つかった白文字×ブランド色の4面をAA以上にする', () => {
+    const colors = ['#06C755', '#E879F9', '#A78BFA', '#4285F4', '#E1306C', '#7C5CFF'];
+    for (const color of colors) {
+      expect(contrast(whiteSafeFace(color), '#FFFFFF')).toBeGreaterThanOrEqual(4.5);
+    }
+  });
+
+  it('複数色の面でも全停止色が白文字AA以上になる', () => {
+    const gradients = [
+      whiteSafeGradient(['#E1306C', '#A78BFA', '#06C755'], 90),
+      whiteSafeGradient(['#A78BFA', '#E879F9'], 90),
+      whiteSafeGradient(['#A78BFA', '#7C5CFF']),
+    ];
+    for (const gradient of gradients) {
+      const stops = gradient.match(/#[0-9a-fA-F]{6}/g) ?? [];
+      expect(stops.length).toBeGreaterThanOrEqual(2);
+      for (const stop of stops) {
+        expect(contrast(stop, '#FFFFFF')).toBeGreaterThanOrEqual(4.5);
+      }
+    }
+  });
+
+  it('対象4コンポーネントが安全な面を使い続ける', () => {
+    const root = join(__dirname, '../..');
+    const sources = {
+      loop: readFileSync(join(root, 'components/CommandTowerHub.tsx'), 'utf8'),
+      viral: readFileSync(join(root, 'components/ViralStudioCard.tsx'), 'utf8'),
+      guild: readFileSync(join(root, 'components/PrismCoCreateCard.tsx'), 'utf8'),
+      google: readFileSync(join(root, 'components/GoogleSuiteCard.tsx'), 'utf8'),
+    };
+    expect(sources.loop).toMatch(/LOOP_READY_FACE\s*=\s*whiteSafeGradient/);
+    expect(sources.loop).toMatch(/background:\s*running[\s\S]*LOOP_READY_FACE/);
+    expect(sources.viral).toMatch(/VIRAL_FACE\s*=\s*whiteSafeGradient/);
+    expect(sources.viral).toMatch(/background:\s*!theme\.trim\(\)\s*\?\s*DISABLED_FACE\s*:\s*VIRAL_FACE/);
+    expect(sources.guild).toMatch(/GUILD_SUBMIT_FACE\s*=\s*whiteSafeGradient/);
+    expect(sources.guild).toMatch(/background:\s*!bodyText\.trim\(\)\s*\?\s*DISABLED_FACE\s*:\s*GUILD_SUBMIT_FACE/);
+    expect(sources.google).toMatch(/background:\s*whiteSafeFace\(color\)/);
+  });
+
+  it('空入力の無効ボタンは、ブランド面と違う見た目のまま白文字AAを満たす', () => {
+    const disabled = whiteSafeFace('#6B7280');
+    expect(disabled).not.toBe(whiteSafeFace('#A78BFA'));
+    expect(contrast(disabled, '#FFFFFF')).toBeGreaterThanOrEqual(4.5);
   });
 });
