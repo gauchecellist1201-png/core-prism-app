@@ -6,7 +6,7 @@
 // 2026-08-21 オーナー指示で事業の見せ方を全面再定義:
 //   OLD  AIを使って開発する会社
 //   NEW  企業の本質的な課題を見つけ、AI・ソフトウェア・業務設計によって
-//        事業そのものを変革する会社 ＝ AI Transformation Company
+//        事業そのものを変革する会社 ＝ AI Company OS Company
 //   ブランド（金×黒・明朝・静かな余白・「核」の思想）は一切壊さない。
 //   自社プロダクト8つは、開発・運用の実体を示すものとして〈製品〉タブへ移した。
 // ============================================================
@@ -32,19 +32,19 @@ import {
 import { useIsMobile } from './useIsMobile';
 import {
   PhilosophyCore, CompanyOsSection,
-  UseCasesSection, ServiceLayersSection, BusinessDevSection,
-  IndustryOsSection, PartnerSection, AiNativeSection, TechnologySection,
-  CoreNumbersSection, InvestmentSection,
-  EngagementSection, SecuritySection, FaqSection,
+  UseCasesSection,
+  IndustryOsSection, PartnerSection, TechnologySection,
+  CoreNumbersSection,
+  SecuritySection, FaqSection,
 } from './TransformSections';
 import { ContactSection } from './CorpContactForm';
 import {
-  HomeHero, ProofStrip, WhyCore, ServicesEditorial, ProductsProof,
-  ApproachSection, FounderMessage, CompanyOverview, FinalCta,
+  HomeHero, ProofStrip, ProductsProof,
+  FounderMessage, CompanyOverview,
 } from './HomeSections';
 import { Manifesto, Values, PeopleMosaic, CreedBand } from './HomeManifesto';
 import { COMPANY_INFO } from '../data/companyInfo';
-import { RoaiBand, ExecutiveQuestion, Differentiation, RoaiModelSection, ScoreTeaser } from './roai/HomeRoaiSections';
+import { RoaiModelSection } from './roai/HomeRoaiSections';
 import ReturnOnAiPage from './roai/ReturnOnAiPage';
 import RoaiScore from './roai/RoaiScore';
 import { setCorpTab } from './corpRouteStore';
@@ -52,6 +52,7 @@ import { TheChange, ProcessContrast, OneCore, StudioSection, NeriSection, Bridge
 import AshitakaPage from './AshitakaPage';
 import EnergyPage from './EnergyPage';
 import { track } from './roai/track';
+import { CompanyOsIntro, CompanyOsProof, CompanyOsCommercial } from './companyOs/CompanyOsSections';
 import { neriLpUrl } from '../lib/coreLinks';
 
 const COMPANY = {
@@ -96,9 +97,16 @@ const PLATFORM_PLANS: Array<{
 //  ここではヘッダーの実測高を引くので、常に見出しの真上に着地する。
 //  17,908px を smooth で流すと数秒かかるため、ジャンプは即時にする。
 // ============================================================
+function revealAnchor(el: Element | null) {
+  for (let parent = el; parent; parent = parent.parentElement) {
+    if (parent instanceof HTMLDetailsElement) parent.open = true;
+  }
+  return el;
+}
+
 function jumpToHash(e: ReactMouseEvent<HTMLAnchorElement>, href: string) {
   if (!href.startsWith('#')) return;
-  const el = document.getElementById(href.slice(1));
+  const el = revealAnchor(document.getElementById(href.slice(1)));
   if (!el) return;
   e.preventDefault();
   const header = document.querySelector('header');
@@ -141,7 +149,7 @@ function tabFromPath(): CoreTabKey | null {
 
 /** タブごとの title / description / canonical（SEO・AI検索向け） */
 const TAB_META: Record<CoreTabKey, { title: string; desc: string; path: string }> = {
-  home: { title: '株式会社CORE | いつの時代も、変わらない核を。— AI Transformation Company', desc: 'いつの時代も、変わらない核を。AI前提で、企業・地域・社会の仕組みを再設計する神戸のAI Transformation Company。AI投資を経営成果（Return on AI）へ。企業から地域へ、地域からエネルギーへ。', path: '/corp' },
+  home: { title: '株式会社CORE | いつの時代も、変わらない核を。— AI Company OS Company', desc: 'いつの時代も、変わらない核を。AI前提で、企業・地域・社会の仕組みを再設計する神戸のAI Company OS Company。AI投資を経営成果（Return on AI）へ。企業から地域へ、地域からエネルギーへ。', path: '/corp' },
   roai: { title: 'Return on AI とは | 株式会社CORE', desc: 'AI投資は目的ではない。AIが何を返したかを、売上・コスト・時間・リスク・新しい価値で測る。CORE ROAI MODEL・ROAIの計算・損失回避・投資余力の逆算・Transformation Loop。', path: '/return-on-ai' },
   score: { title: 'CORE ROAI SCORE — 約2分のAI投資優先順位診断 | 株式会社CORE', desc: '約2分で、あなたの会社の次にAI投資すべき場所・削減できる時間・経済価値の概算・AI Readiness・投資余力の目安を可視化。連絡先不要、算定根拠つき。', path: '/roai-score' },
   os: { title: 'AI COMPANY OS | 株式会社CORE', desc: '経営・営業・顧客対応・バックオフィスを、人とAIエージェントが協働する一つのOperating Systemとして再設計する。', path: '/corp#os' },
@@ -187,6 +195,7 @@ const TAB_CHIP: Partial<Record<CoreTabKey, CoreTabKey>> = { roai: 'services', sc
 
 /** 章 id → その章が載っているタブ。既存の #リンクを生かすための対応表。 */
 const SECTION_TAB: Record<string, CoreTabKey> = {
+  'company-os-definition': 'home', 'company-os-pricing': 'home', 'company-os-action': 'home',
   // 変革 — この会社が何をするのか
   top: 'home', philosophy: 'home', whatwedo: 'home', difference: 'home', assessment: 'home',
   why: 'home', proof: 'home', overview: 'home', cta: 'home', values: 'home',
@@ -323,7 +332,7 @@ export default function CoreSite() {
       writeUrl(next, hash);
       // 章指定つきの場合は、描画が入れ替わってから位置を合わせる
       requestAnimationFrame(() => {
-        const el = document.getElementById(hash.replace('#', ''));
+        const el = revealAnchor(document.getElementById(hash.replace('#', '')));
         if (!el) { window.scrollTo({ top: 0, behavior: 'auto' }); return; }
         const header = document.querySelector('header');
         const offset = (header?.getBoundingClientRect().height ?? 64) + 8;
@@ -393,7 +402,7 @@ export default function CoreSite() {
       setTab(tabFromHash());
       const id = window.location.hash.replace('#', '');
       requestAnimationFrame(() => {
-        const el = id ? document.getElementById(id) : null;
+        const el = id ? revealAnchor(document.getElementById(id)) : null;
         if (!el) { window.scrollTo({ top: 0, behavior: 'instant' }); return; }
         const header = document.querySelector('header');
         const offset = (header?.getBoundingClientRect().height ?? 64) + 8;
@@ -402,6 +411,7 @@ export default function CoreSite() {
     };
     window.addEventListener('hashchange', onHash);
     window.addEventListener('popstate', onHash);
+    if (window.location.hash) onHash();
     return () => { window.removeEventListener('hashchange', onHash); window.removeEventListener('popstate', onHash); };
   }, []);
 
@@ -586,14 +596,16 @@ export default function CoreSite() {
             ホームから外した章（ExecutiveQuestion / Differentiation / WhyCore / ServicesEditorial / ApproachSection /
             PeopleMosaic / ProofStrip / FinalCta）は AI変革タブ・会社タブ・/return-on-ai に残る。 */}
         <Manifesto onAnchor={handleAnchor} />
+        <CompanyOsIntro />
+        <CompanyOsCommercial />
+        <RoaiModelSection onAnchor={handleAnchor} compact />
+        <CompanyOsProof />
+        <details className="company-os-legacy"><summary>COREの思想・製品・地域への取り組みを詳しく見る</summary>
+        <StudioSection />
         <Values />
         <TheChange />
-        <RoaiBand onAnchor={handleAnchor} />
         <ProcessContrast />
-        <RoaiModelSection onAnchor={handleAnchor} compact />
-        <ScoreTeaser onAnchor={handleAnchor} />
         <OneCore onAnchor={handleAnchor} />
-        <StudioSection />
         <NeriSection />
         <Bridge />
         <AshitakaHome onAnchor={handleAnchor} />
@@ -601,6 +613,7 @@ export default function CoreSite() {
         <Connection />
         <Core2035 />
         <ProductsProof onAnchor={handleAnchor} />
+        </details>
         <FounderMessage onAnchor={handleAnchor} />
         <CompanyOverview onAnchor={handleAnchor} />
         <Invitation onAnchor={handleAnchor} />
@@ -636,25 +649,11 @@ export default function CoreSite() {
       {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
       {tab === 'services' && (
       <>
-        {/* 2026-09-06: ホームから移した章。AI変革タブは「ROAI → 順序の違い → なぜCORE → 何をするか → 進め方」で始まる。 */}
-        <RoaiBand onAnchor={handleAnchor} />
-        <ExecutiveQuestion onAnchor={handleAnchor} />
-        <Differentiation />
-        <WhyCore />
-        <ServicesEditorial onAnchor={handleAnchor} />
-        <ApproachSection />
-        <ScoreTeaser onAnchor={handleAnchor} />
-        <ServiceLayersSection />
-        {/* 「何ができるか」の直後に「どう進むか・やめられるか」を置く（稟議に持ち込める形にする） */}
-        <EngagementSection onAnchor={handleAnchor} />
-        <AiNativeSection />
+        <CompanyOsCommercial />
         <TechnologySection />
-        {/* 技術の話の直後に「その情報はどこへ行くのか」を置く */}
         <SecuritySection />
-        <BusinessDevSection />
         <PartnerSection onAnchor={handleAnchor} />
-        <InvestmentSection onAnchor={handleAnchor} />
-        <FinalCta onAnchor={handleAnchor} />
+
       </>
       )}
 

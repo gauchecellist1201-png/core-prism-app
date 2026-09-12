@@ -67,6 +67,7 @@ export default function NeriHandoff({ where }: { where: 'home' | 'care' }) {
         公開したあとに増えるのは、<br />社長自身の仕事です。
       </H2>
 
+      <p style={{ color: D.body, lineHeight: 1.9, marginBottom: 24 }}>制作を入口に、SNS・集客の改善、営業の仕組み、会社の記憶へ。必要な業務からつなぎ、御社専用のAI Company OSへ育てます。<br /><a href="https://www.core-ai.jp/corp#company-os-pricing" style={{ color: D.gold }}>制作・集客改善・業務構築の3つのプランを見る →</a></p>
       <div className="st-neri">
         <div>
           <div className="st-serif" style={{ fontSize: 20, fontWeight: 700, color: D.ink, lineHeight: 1.7 }}>
