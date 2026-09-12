@@ -9,9 +9,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import HealthShortcutGuide from './HealthShortcutGuide';
+import { normalizeIngestedDays } from '../lib/healthIngest';
+import type { DailyHealth } from '../types/health';
 
 interface Props {
   email: string;
+  onSyncedDays?: (days: DailyHealth[]) => void;
 }
 
 interface ServerDay {
@@ -61,7 +64,7 @@ function fmtSleep(h: number | undefined): string {
   return `${hh}h ${mm}m`;
 }
 
-export default function TodaysBodyCard({ email }: Props) {
+export default function TodaysBodyCard({ email, onSyncedDays }: Props) {
   const [hash, setHash] = useState<string>('');
   const [day, setDay] = useState<ServerDay | null>(null);
   const [loading, setLoading] = useState(true);
@@ -93,6 +96,8 @@ export default function TodaysBodyCard({ email }: Props) {
         if (!alive) return;
         setConfigured(!!j?.configured);
         const days: ServerDay[] = Array.isArray(j?.days) ? j.days : [];
+        const syncedDays = normalizeIngestedDays(days);
+        if (syncedDays.length > 0) onSyncedDays?.(syncedDays);
         const t = today();
         const todayDay = days.find((d) => d.date === t);
         // 今日が無ければ最新を表示
@@ -101,7 +106,7 @@ export default function TodaysBodyCard({ email }: Props) {
       .catch((e) => { if (alive) setError(String(e?.message || e)); })
       .finally(() => { if (alive) setLoading(false); });
     return () => { alive = false; };
-  }, [hash]);
+  }, [hash, onSyncedDays]);
 
   const m = day?.metrics ?? {};
   const hr = m.restingHR ?? m.heartRate;

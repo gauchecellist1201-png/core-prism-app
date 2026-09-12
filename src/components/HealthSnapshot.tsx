@@ -3,6 +3,7 @@ import type { DailyHealth } from '../types/health';
 import type { HealthAnomaly } from '../data/healthAnomaly';
 import { isDemoActive } from '../lib/onboarding';
 import SampleDataCTA from './SampleDataCTA';
+import { isAppleHealthSyncSource } from '../lib/healthIngest';
 
 interface Props {
   today: DailyHealth | null;
@@ -107,6 +108,7 @@ export default function HealthSnapshot({ today, week, anomalies, onOpen }: Props
   }
 
   const alertCount = anomalies.filter(a => a.severity !== 'info').length;
+  const appleHealthSynced = isAppleHealthSyncSource(today.source);
 
   return (
     <motion.div
@@ -121,9 +123,24 @@ export default function HealthSnapshot({ today, week, anomalies, onOpen }: Props
         className="w-full px-3 pt-3 pb-2 hover:bg-surface transition-colors text-left"
       >
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap min-w-0">
             <span className="text-base">🩺</span>
             <p className="text-fg text-base font-medium">今日のヘルス</p>
+            {appleHealthSynced && (
+              <span
+                className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full font-medium"
+                style={{
+                  color: 'var(--fg)',
+                  background: 'rgba(56,189,248,0.10)',
+                  border: '1px solid rgba(56,189,248,0.32)',
+                  fontSize: 11.5,
+                  lineHeight: 1.2,
+                }}
+              >
+                <span aria-hidden style={{ width: 6, height: 6, borderRadius: 999, background: '#0369A1', flexShrink: 0 }} />
+                Apple Health 反映済
+              </span>
+            )}
             {alertCount > 0 && (
               <span
                 className="text-xs px-2 py-0.5 rounded-full font-medium"

@@ -1103,6 +1103,7 @@ function AppRoutes() {
             onRecomputeCashflow={recomputeCashflow}
             knowledgeForAgent={knowledgeItems}
             healthCtx={healthCtx}
+            onHealthDaysSynced={health.mergeDays}
           />
         )}
       </AnimatePresence>

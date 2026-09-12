@@ -14,6 +14,8 @@ export interface HealthSource {
 
 export interface DailyHealth {
   date: string; // YYYY-MM-DD
+  /** 実データの取得元。未指定は端末入力・旧データ・デモなど由来不明。 */
+  source?: string;
   // Sleep
   sleepHours: number;
   deepSleepMin: number;
@@ -165,4 +167,3 @@ export interface SymptomAnalysis {
   redFlags: string[];             // 「この症状があれば即受診」
   disclaimer: string;
 }
-

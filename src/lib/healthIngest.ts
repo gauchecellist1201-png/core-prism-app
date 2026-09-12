@@ -52,7 +52,7 @@ export function getLastPullAt(): number | null {
   }
 }
 
-interface ServerDailyMetric {
+export interface ServerDailyMetric {
   date: string;
   source?: string;
   metrics: Record<string, number | undefined>;
@@ -72,13 +72,15 @@ function endpoint(): string {
 }
 
 /** サーバー側 metrics を既存 DailyHealth 形に正規化 */
-function toDaily(d: ServerDailyMetric): DailyHealth {
+export function toDailyHealth(d: ServerDailyMetric): DailyHealth | null {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(d.date)) return null;
   const m = d.metrics || {};
   const num = (v: number | undefined, fallback = 0): number =>
     typeof v === 'number' && isFinite(v) ? v : fallback;
   // 必須プロパティをデフォルトで埋める。値が無い項目は 0 とし、欠損は UI 側で「—」表示。
   return {
     date: d.date,
+    source: typeof d.source === 'string' && d.source.trim() ? d.source.trim() : undefined,
     sleepHours: num(m.sleepHours),
     deepSleepMin: num(m.deepSleepMin),
     remSleepMin: num(m.remSleepMin),
@@ -89,7 +91,8 @@ function toDaily(d: ServerDailyMetric): DailyHealth {
     steps: num(m.steps),
     activeMinutes: num(m.activeMinutes),
     exerciseKcal: num(m.exerciseKcal),
-    stressLevel: num(m.stressLevel, 50),
+    // Apple Health が送っていない指標を「50」と見せない。0 は UI 側で欠損表示になる。
+    stressLevel: num(m.stressLevel),
     mindfulMinutes: num(m.mindfulMinutes),
     hydrationL: num(m.hydrationL),
     caffeineMg: num(m.caffeineMg),
@@ -99,6 +102,22 @@ function toDaily(d: ServerDailyMetric): DailyHealth {
     bp: m.bpSys && m.bpDia ? { sys: Number(m.bpSys), dia: Number(m.bpDia) } : undefined,
     glucoseMgDl: m.glucoseMgDl,
   };
+}
+
+export function normalizeIngestedDays(days: unknown): DailyHealth[] {
+  if (!Array.isArray(days)) return [];
+  return days
+    .map((day) => {
+      if (!day || typeof day !== 'object') return null;
+      return toDailyHealth(day as ServerDailyMetric);
+    })
+    .filter((day): day is DailyHealth => day !== null);
+}
+
+/** Apple Health / Watch の自動同期から来た実データだけを識別する。 */
+export function isAppleHealthSyncSource(source: unknown): boolean {
+  if (typeof source !== 'string') return false;
+  return ['ios-shortcut', 'apple-health', 'apple-watch', 'healthkit'].includes(source.trim().toLowerCase());
 }
 
 function calcSleepScore(hours: number, deep: number, rem: number): number {
@@ -127,7 +146,7 @@ export async function pullIngestedDays(token: string): Promise<IngestPullResult>
     }
     const j = await res.json();
     const days: ServerDailyMetric[] = Array.isArray(j?.days) ? j.days : [];
-    const merged = days.map(toDaily).filter((d) => !!d.date);
+    const merged = normalizeIngestedDays(days);
     try { localStorage.setItem(LAST_PULL_KEY, String(Date.now())); } catch { /* ignore */ }
     return {
       configured: !!j?.configured,

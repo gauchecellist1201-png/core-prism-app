@@ -160,6 +160,7 @@ interface Props {
   }>;
   knowledgeForAgent: KnowledgeItem[];
   healthCtx: { today: DailyHealth | null; week: DailyHealth[]; anomalies: HealthAnomaly[] };
+  onHealthDaysSynced: (days: DailyHealth[]) => void;
 }
 
 function PriorityDot({ priority }: { priority: string }) {
@@ -265,6 +266,7 @@ export default function IdentityDashboard({
   onRecomputeCashflow,
   knowledgeForAgent,
   healthCtx,
+  onHealthDaysSynced,
 }: Props) {
   const proactive = useProactiveAgent(settings, persona, knowledgeForAgent, healthCtx);
   const shadow = useShadowSecretary(settings, persona);
@@ -1728,7 +1730,10 @@ export default function IdentityDashboard({
                 onConnectHealth={() => setShowHealth(true)}
               />
 
-              <TodaysBodyCard email={loadBillingUser()?.email ?? ''} />
+              <TodaysBodyCard
+                email={loadBillingUser()?.email ?? ''}
+                onSyncedDays={onHealthDaysSynced}
+              />
 
               <HealthSnapshot
                 today={healthCtx.today}
