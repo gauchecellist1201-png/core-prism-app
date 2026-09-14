@@ -83,7 +83,7 @@ const UP_URL = (typeof process !== 'undefined' && process.env?.UPSTASH_REDIS_RES
 const UP_TOK = (typeof process !== 'undefined' && process.env?.UPSTASH_REDIS_REST_TOKEN) || '';
 const UPSTASH_CONFIGURED = !!(UP_URL && UP_TOK);
 
-async function upstash(cmd: (string | number)[]): Promise<any> {
+async function upstash(cmd: (string | number)[]): Promise<{ result?: unknown }> {
   if (!UPSTASH_CONFIGURED) throw new Error('UPSTASH_NOT_CONFIGURED');
   const res = await fetch(UP_URL, {
     method: 'POST',
@@ -97,7 +97,7 @@ async function upstash(cmd: (string | number)[]): Promise<any> {
     const txt = await res.text().catch(() => '');
     throw new Error(`upstash ${res.status}: ${txt.slice(0, 200)}`);
   }
-  return res.json();
+  return res.json() as Promise<{ result?: unknown }>;
 }
 
 // 直近 60 日分の DailyHealth を JSON で保存
@@ -107,19 +107,12 @@ async function storeDays(ident: { kind: 'token' | 'hash'; id: string }, days: Da
   let existing: DailyMetric[] = [];
   try {
     const r = await upstash(['GET', key]);
-    if (r?.result) existing = JSON.parse(r.result);
+    if (typeof r?.result === 'string') existing = JSON.parse(r.result);
     if (!Array.isArray(existing)) existing = [];
   } catch {
     existing = [];
   }
-  const map = new Map<string, DailyMetric>();
-  for (const d of existing) if (d?.date) map.set(d.date, d);
-  for (const d of days) {
-    if (!d?.date) continue;
-    const prev = map.get(d.date);
-    map.set(d.date, prev ? { ...prev, ...d, metrics: { ...prev.metrics, ...d.metrics } } : d);
-  }
-  const merged = [...map.values()]
+  const merged = mergeDailyMetrics(existing, days)
     .filter((d) => /^\d{4}-\d{2}-\d{2}$/.test(d.date))
     .sort((a, b) => a.date.localeCompare(b.date))
     .slice(-60);
@@ -131,7 +124,7 @@ async function storeDays(ident: { kind: 'token' | 'hash'; id: string }, days: Da
 async function loadDays(ident: { kind: 'token' | 'hash'; id: string }): Promise<DailyMetric[]> {
   try {
     const r = await upstash(['GET', storeKey(ident)]);
-    if (!r?.result) return [];
+    if (typeof r?.result !== 'string') return [];
     const parsed = JSON.parse(r.result);
     return Array.isArray(parsed) ? parsed : [];
   } catch {
@@ -163,9 +156,11 @@ interface MetricBag {
   [k: string]: number | undefined;
 }
 
-interface DailyMetric {
+export interface DailyMetric {
   date: string;          // YYYY-MM-DD (ローカル日)
   source?: string;       // "ios-shortcut" など
+  /** 同日の別ソースで source が上書きされても、Apple Health受信の事実を保持する。 */
+  appleHealthReceived?: true;
   metrics: MetricBag;
   ts?: number;           // 取得時刻 (ms)
 }
@@ -225,6 +220,33 @@ function sanitizeMetrics(raw: MetricBag | undefined): MetricBag {
   return out;
 }
 
+function isAppleHealthSource(source: unknown): boolean {
+  return typeof source === 'string'
+    && ['ios-shortcut', 'apple-health', 'apple-watch', 'healthkit'].includes(source.trim().toLowerCase());
+}
+
+/** 同じ日の複数ソースを統合しつつ、Apple Healthを受信した事実は失わない。 */
+export function mergeDailyMetrics(existing: DailyMetric[], incoming: DailyMetric[]): DailyMetric[] {
+  const map = new Map<string, DailyMetric>();
+  for (const day of existing) if (day?.date) map.set(day.date, day);
+  for (const day of incoming) {
+    if (!day?.date) continue;
+    const previous = map.get(day.date);
+    const appleHealthReceived = Boolean(
+      day.appleHealthReceived
+      || previous?.appleHealthReceived
+      || isAppleHealthSource(day.source)
+      || isAppleHealthSource(previous?.source),
+    );
+    const merged = previous
+      ? { ...previous, ...day, metrics: { ...previous.metrics, ...day.metrics } }
+      : { ...day };
+    if (appleHealthReceived) merged.appleHealthReceived = true;
+    map.set(day.date, merged);
+  }
+  return [...map.values()];
+}
+
 function today(): string {
   const d = new Date();
   const y = d.getFullYear();
@@ -243,7 +265,14 @@ function normalizeBody(body: IngestBody): DailyMetric[] {
       const date = typeof d.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d.date) ? d.date : today();
       const m = sanitizeMetrics(d.metrics);
       if (Object.keys(m).length === 0) continue;
-      out.push({ date, source: d.source || src, metrics: m, ts: Date.now() });
+      const source = d.source || src;
+      out.push({
+        date,
+        source,
+        ...(isAppleHealthSource(source) ? { appleHealthReceived: true as const } : {}),
+        metrics: m,
+        ts: Date.now(),
+      });
     }
     return out;
   }
@@ -268,7 +297,13 @@ function normalizeBody(body: IngestBody): DailyMetric[] {
   const combined = { ...flat, ...(body.metrics || {}) };
   const m = sanitizeMetrics(combined);
   if (Object.keys(m).length > 0) {
-    out.push({ date, source: src, metrics: m, ts: Date.now() });
+    out.push({
+      date,
+      source: src,
+      ...(isAppleHealthSource(src) ? { appleHealthReceived: true as const } : {}),
+      metrics: m,
+      ts: Date.now(),
+    });
   }
   return out;
 }
@@ -335,7 +370,8 @@ export default async function handler(req: Request): Promise<Response> {
   try {
     const total = await storeDays(ident, days);
     return json({ ok: true, persisted: true, configured: true, identity: ident.kind, accepted: days.length, totalDays: total }, 200, ch);
-  } catch (e: any) {
-    return json({ ok: false, error: 'store_failed', detail: String(e?.message || e).slice(0, 200) }, 500, ch);
+  } catch (e: unknown) {
+    const detail = e instanceof Error ? e.message : String(e);
+    return json({ ok: false, error: 'store_failed', detail: detail.slice(0, 200) }, 500, ch);
   }
 }

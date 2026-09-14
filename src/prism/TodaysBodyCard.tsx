@@ -9,7 +9,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import HealthShortcutGuide from './HealthShortcutGuide';
-import { normalizeIngestedDays } from '../lib/healthIngest';
+import {
+  getAppleHealthSyncState,
+  normalizeIngestedDays,
+  type AppleHealthSyncState,
+} from '../lib/healthIngest';
 import type { DailyHealth } from '../types/health';
 
 interface Props {
@@ -20,6 +24,7 @@ interface Props {
 interface ServerDay {
   date: string;
   source?: string;
+  appleHealthReceived?: boolean;
   metrics: {
     steps?: number;
     restingHR?: number;
@@ -64,49 +69,100 @@ function fmtSleep(h: number | undefined): string {
   return `${hh}h ${mm}m`;
 }
 
+function presentSyncStatus(syncState: AppleHealthSyncState, loading: boolean, error: string | null) {
+  if (loading) return { label: '同期を確認中', tone: 'neutral' as const };
+  if (error) return { label: '状態を確認できません', tone: 'neutral' as const };
+  if (syncState.kind === 'stale') return { label: '同期が止まっています', tone: 'warning' as const };
+  if (syncState.kind === 'current') {
+    return {
+      label: syncState.daysBehind === 0 ? '今朝 同期済み' : '昨日まで同期済み',
+      tone: 'ok' as const,
+    };
+  }
+  return { label: 'Apple Health 未接続', tone: 'neutral' as const };
+}
+
 export default function TodaysBodyCard({ email, onSyncedDays }: Props) {
-  const [hash, setHash] = useState<string>('');
-  const [day, setDay] = useState<ServerDay | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [configured, setConfigured] = useState<boolean | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [remote, setRemote] = useState<{
+    email: string;
+    day: ServerDay | null;
+    syncState: AppleHealthSyncState;
+    configured: boolean | null;
+    error: string | null;
+  } | null>(null);
   const [showGuide, setShowGuide] = useState(false);
 
   useEffect(() => {
     let alive = true;
-    // メール未登録の人 (無料で触り始めた直後・マスターキー利用) は hash が作れない。
-    // ここで return するだけだと loading が true のまま固まり、
-    // 「読み込み中…」が永久に回って設定の案内に一生たどり着けなかった。
-    // 待つものが無いと分かった時点で、待つのをやめて案内を出す。(2026-08-08)
-    if (!email) { setLoading(false); return; }
-    sha256Hex(email).then((h) => { if (alive) setHash(h); });
-    return () => { alive = false; };
-  }, [email]);
-
-  useEffect(() => {
-    if (!hash) return;
-    let alive = true;
-    setLoading(true);
-    fetch(`/api/health/ingest?hash=${hash}`, {
-      method: 'GET',
-      headers: { 'X-User-Email-Hash': hash },
-    })
-      .then((r) => r.json())
+    if (!email) return;
+    const controller = new AbortController();
+    sha256Hex(email)
+      .then((hash) => fetch(`/api/health/ingest?hash=${hash}`, {
+        method: 'GET',
+        headers: { 'X-User-Email-Hash': hash },
+        signal: controller.signal,
+      }))
+      .then(async (response) => {
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const json: unknown = await response.json();
+        if (!json || typeof json !== 'object') throw new Error('invalid_response');
+        return json as { configured?: boolean; days?: unknown };
+      })
       .then((j) => {
         if (!alive) return;
-        setConfigured(!!j?.configured);
         const days: ServerDay[] = Array.isArray(j?.days) ? j.days : [];
         const syncedDays = normalizeIngestedDays(days);
         if (syncedDays.length > 0) onSyncedDays?.(syncedDays);
         const t = today();
         const todayDay = days.find((d) => d.date === t);
-        // 今日が無ければ最新を表示
-        setDay(todayDay ?? days[days.length - 1] ?? null);
+        setRemote({
+          email,
+          day: todayDay ?? days[days.length - 1] ?? null,
+          syncState: getAppleHealthSyncState(days, t),
+          configured: typeof j.configured === 'boolean' ? j.configured : null,
+          error: null,
+        });
       })
-      .catch((e) => { if (alive) setError(String(e?.message || e)); })
-      .finally(() => { if (alive) setLoading(false); });
-    return () => { alive = false; };
-  }, [hash, onSyncedDays]);
+      .catch((error: unknown) => {
+        if (!alive || controller.signal.aborted) return;
+        setRemote({
+          email,
+          day: null,
+          syncState: { kind: 'not-connected' },
+          configured: null,
+          error: error instanceof Error ? error.message : String(error),
+        });
+      });
+    return () => {
+      alive = false;
+      controller.abort();
+    };
+  }, [email, onSyncedDays, refreshKey]);
+
+  // ショートカット実行後にアプリへ戻った時と、日付が変わった時に状態を再確認する。
+  useEffect(() => {
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === 'visible') setRefreshKey((key) => key + 1);
+    };
+    document.addEventListener('visibilitychange', refreshWhenVisible);
+    const now = new Date();
+    const nextDay = new Date(now);
+    nextDay.setHours(24, 1, 0, 0);
+    const midnightTimer = window.setTimeout(() => setRefreshKey((key) => key + 1), nextDay.getTime() - now.getTime());
+    return () => {
+      document.removeEventListener('visibilitychange', refreshWhenVisible);
+      window.clearTimeout(midnightTimer);
+    };
+  }, [refreshKey]);
+
+  // emailと結び付かない結果は描画しない。アカウント切替中に前の健康情報を見せない。
+  const currentRemote = remote?.email === email ? remote : null;
+  const loading = Boolean(email) && currentRemote === null;
+  const day = currentRemote?.day ?? null;
+  const syncState: AppleHealthSyncState = currentRemote?.syncState ?? { kind: 'not-connected' };
+  const configured = currentRemote?.configured ?? null;
+  const error = currentRemote?.error ?? null;
 
   const m = day?.metrics ?? {};
   const hr = m.restingHR ?? m.heartRate;
@@ -123,6 +179,7 @@ export default function TodaysBodyCard({ email, onSyncedDays }: Props) {
   }, [loading, error, day, isToday]);
 
   const empty = !loading && !day;
+  const syncStatus = presentSyncStatus(syncState, loading, error);
 
   return (
     <>
@@ -136,12 +193,33 @@ export default function TodaysBodyCard({ email, onSyncedDays }: Props) {
         }}
       >
         <header className="flex items-start justify-between gap-3">
-          <div>
+          <div className="min-w-0">
             <div className="text-[10px] tracking-[0.18em] font-semibold uppercase opacity-60">今日のカラダ</div>
             <div className="text-base sm:text-lg font-semibold mt-1">
               {isToday ? '今朝のあなた' : day ? `${day.date} のあなた` : 'まだ届いていません'}
             </div>
             <div className="text-xs opacity-70 mt-0.5">{subtitle}</div>
+            <div
+              className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 mt-2 text-xs font-semibold"
+              style={{
+                color: syncStatus.tone === 'warning' ? '#FDE68A' : syncStatus.tone === 'ok' ? '#A7F3D0' : 'rgba(255,255,255,0.78)',
+                background: syncStatus.tone === 'warning' ? 'rgba(180,83,9,0.28)' : syncStatus.tone === 'ok' ? 'rgba(5,150,105,0.20)' : 'rgba(255,255,255,0.08)',
+                border: syncStatus.tone === 'warning' ? '1px solid rgba(251,191,36,0.45)' : syncStatus.tone === 'ok' ? '1px solid rgba(52,211,153,0.34)' : '1px solid rgba(255,255,255,0.12)',
+              }}
+              role="status"
+            >
+              <span
+                aria-hidden
+                style={{
+                  width: 7,
+                  height: 7,
+                  borderRadius: 999,
+                  background: syncStatus.tone === 'warning' ? '#FBBF24' : syncStatus.tone === 'ok' ? '#34D399' : '#94A3B8',
+                  flexShrink: 0,
+                }}
+              />
+              {syncStatus.label}
+            </div>
           </div>
           <button
             type="button"
@@ -170,6 +248,36 @@ export default function TodaysBodyCard({ email, onSyncedDays }: Props) {
               label="気分"
               value={typeof m.mood === 'number' ? `${Math.round(m.mood)} / 5` : '—'}
             />
+          </div>
+        )}
+
+        {syncState.kind === 'stale' && !loading && !error && (
+          <div
+            className="mt-4 rounded-xl p-3 sm:p-4"
+            style={{
+              background: 'rgba(180,83,9,0.20)',
+              border: '1px solid rgba(251,191,36,0.42)',
+            }}
+          >
+            <div className="text-sm font-semibold" style={{ color: '#FDE68A' }}>
+              {syncState.daysBehind}日間、Apple Healthから届いていません
+            </div>
+            <p className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.78)', lineHeight: 1.7 }}>
+              最後に届いたのは {syncState.latestDate} です。iPhoneの「ショートカット」→「オートメーション」で、毎朝の実行がオンか確認してください。
+            </p>
+            <button
+              type="button"
+              onClick={() => setShowGuide(true)}
+              className="mt-3 rounded-lg px-4 text-sm font-semibold"
+              style={{
+                minHeight: 44,
+                color: '#111827',
+                background: '#FDE68A',
+                border: '1px solid #FBBF24',
+              }}
+            >
+              同期の設定を確認する
+            </button>
           </div>
         )}
 

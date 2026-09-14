@@ -16,6 +16,8 @@ export interface DailyHealth {
   date: string; // YYYY-MM-DD
   /** 実データの取得元。未指定は端末入力・旧データ・デモなど由来不明。 */
   source?: string;
+  /** 同日の別ソース統合後も、Apple Healthが含まれることを保持する。 */
+  appleHealthReceived?: boolean;
   // Sleep
   sleepHours: number;
   deepSleepMin: number;

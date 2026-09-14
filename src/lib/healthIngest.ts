@@ -55,6 +55,7 @@ export function getLastPullAt(): number | null {
 export interface ServerDailyMetric {
   date: string;
   source?: string;
+  appleHealthReceived?: boolean;
   metrics: Record<string, number | undefined>;
   ts?: number;
 }
@@ -81,6 +82,7 @@ export function toDailyHealth(d: ServerDailyMetric): DailyHealth | null {
   return {
     date: d.date,
     source: typeof d.source === 'string' && d.source.trim() ? d.source.trim() : undefined,
+    appleHealthReceived: d.appleHealthReceived === true || isAppleHealthSyncSource(d.source),
     sleepHours: num(m.sleepHours),
     deepSleepMin: num(m.deepSleepMin),
     remSleepMin: num(m.remSleepMin),
@@ -120,6 +122,58 @@ export function isAppleHealthSyncSource(source: unknown): boolean {
   return ['ios-shortcut', 'apple-health', 'apple-watch', 'healthkit'].includes(source.trim().toLowerCase());
 }
 
+export type AppleHealthSyncState =
+  | { kind: 'not-connected' }
+  | { kind: 'current'; latestDate: string; daysBehind: 0 | 1 }
+  | { kind: 'stale'; latestDate: string; daysBehind: number };
+
+function utcDayNumber(date: string): number | null {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date);
+  if (!match) return null;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const ms = Date.UTC(year, month - 1, day);
+  const parsed = new Date(ms);
+  if (
+    parsed.getUTCFullYear() !== year
+    || parsed.getUTCMonth() !== month - 1
+    || parsed.getUTCDate() !== day
+  ) return null;
+  return Math.floor(ms / 86_400_000);
+}
+
+/**
+ * Apple Health 由来の最新日だけを使って、毎朝同期が止まっていないか判定する。
+ * 前日分までは正常（朝の自動実行前を誤警告しない）、2日以上空いた時だけ stale。
+ * 手入力や Bluetooth の新しい記録で、止まった Apple Health 同期を隠さない。
+ */
+export function getAppleHealthSyncState(
+  days: Array<Pick<ServerDailyMetric, 'date' | 'source' | 'appleHealthReceived'>>,
+  currentDate: string,
+): AppleHealthSyncState {
+  const currentDay = utcDayNumber(currentDate);
+  if (currentDay === null) return { kind: 'not-connected' };
+
+  const latest = days
+    .filter((day) => {
+      const dayNumber = utcDayNumber(day.date);
+      return (day.appleHealthReceived === true || isAppleHealthSyncSource(day.source))
+        && dayNumber !== null
+        // 翌日までの端末時刻ずれは許容するが、遠い未来日の破損値は同期証拠にしない。
+        && dayNumber <= currentDay + 1;
+    })
+    .sort((a, b) => b.date.localeCompare(a.date))[0];
+  if (!latest) return { kind: 'not-connected' };
+
+  const latestDay = utcDayNumber(latest.date)!;
+  const daysBehind = currentDay - latestDay;
+  // 端末時刻のずれ等で未来日が来た場合は、途切れたとは断定しない。
+  if (daysBehind <= 0) return { kind: 'current', latestDate: latest.date, daysBehind: 0 };
+  if (daysBehind === 1) return { kind: 'current', latestDate: latest.date, daysBehind: 1 };
+  return { kind: 'stale', latestDate: latest.date, daysBehind };
+}
+
 function calcSleepScore(hours: number, deep: number, rem: number): number {
   if (!hours) return 0;
   const base = Math.min(100, (hours / 8) * 70);
@@ -153,13 +207,22 @@ export async function pullIngestedDays(token: string): Promise<IngestPullResult>
       daysFetched: merged.length,
       merged,
     };
-  } catch (e: any) {
-    return { configured: false, daysFetched: 0, merged: [], error: String(e?.message || e) };
+  } catch (e: unknown) {
+    return {
+      configured: false,
+      daysFetched: 0,
+      merged: [],
+      error: e instanceof Error ? e.message : String(e),
+    };
   }
 }
 
 /** テスト用に手動でデータを送る (主にデバッグ) */
-export async function pushTestMetric(token: string, metrics: Record<string, number>): Promise<{ ok: boolean; status: number; body: any }> {
+export async function pushTestMetric(token: string, metrics: Record<string, number>): Promise<{
+  ok: boolean;
+  status: number;
+  body: { configured?: boolean; accepted?: number; [key: string]: unknown };
+}> {
   const res = await fetch(endpoint(), {
     method: 'POST',
     headers: {
@@ -168,7 +231,7 @@ export async function pushTestMetric(token: string, metrics: Record<string, numb
     },
     body: JSON.stringify({ source: 'iris-web-test', metrics }),
   });
-  const body = await res.json().catch(() => ({}));
+  const body = await res.json().catch(() => ({})) as { configured?: boolean; accepted?: number; [key: string]: unknown };
   return { ok: res.ok, status: res.status, body };
 }
 

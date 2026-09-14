@@ -12,8 +12,10 @@ interface Props {
   onOpen: () => void;
 }
 
+type HealthMetricKey = 'sleepHours' | 'recoveryScore' | 'hrv' | 'steps' | 'stressLevel' | 'mindfulMinutes';
+
 interface MetricSpec {
-  key: keyof DailyHealth | 'recovery' | 'sleep' | 'steps' | 'mind';
+  key: HealthMetricKey;
   label: string;
   emoji: string;
   format: (v: number) => string;
@@ -103,12 +105,12 @@ export default function HealthSnapshot({ today, week, anomalies, onOpen }: Props
 
   const avgs: Record<string, number> = {};
   for (const k of ['sleepHours', 'recoveryScore', 'hrv', 'steps', 'stressLevel', 'mindfulMinutes']) {
-    const vals = week.map(d => Number((d as any)[k] || 0));
+    const vals = week.map(d => Number(d[k as HealthMetricKey] || 0));
     avgs[k] = vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : 0;
   }
 
   const alertCount = anomalies.filter(a => a.severity !== 'info').length;
-  const appleHealthSynced = isAppleHealthSyncSource(today.source);
+  const appleHealthSynced = today.appleHealthReceived === true || isAppleHealthSyncSource(today.source);
 
   return (
     <motion.div
@@ -157,7 +159,7 @@ export default function HealthSnapshot({ today, week, anomalies, onOpen }: Props
 
       <div className="grid grid-cols-3 md:grid-cols-6 gap-1.5 px-3 pb-3">
         {METRICS.map((m, i) => {
-          const rawVal = (today as any)[m.key];
+          const rawVal = today[m.key];
           const missing = rawVal == null || rawVal === 0;
           const raw = rawVal ?? 0;
           const avg = avgs[m.key as string] ?? 0;
