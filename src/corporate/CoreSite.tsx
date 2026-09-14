@@ -35,9 +35,10 @@ import {
   UseCasesSection, ServiceLayersSection, BusinessDevSection,
   IndustryOsSection, PartnerSection, AiNativeSection, TechnologySection,
   CoreNumbersSection, InvestmentSection,
-  EngagementSection, SecuritySection, FaqSection,
+  EngagementSection, SecuritySection,
 } from './TransformSections';
 import { ContactSection } from './CorpContactForm';
+import WorkflowScan from './WorkflowScan';
 import {
   HomeHero, ProofStrip, WhyCore, ServicesEditorial, ProductsProof,
   ApproachSection, FounderMessage, CompanyOverview, FinalCta,
@@ -150,7 +151,7 @@ const TAB_META: Record<CoreTabKey, { title: string; desc: string; path: string }
   ashitaka: { title: 'ASHITAKA PROJECT × REGIONAL OS — 文化を入口に、街と村のDXへ | 株式会社CORE', desc: '文化で接点をつくる ASHITAKA PROJECT と、自治体・地域事業者の業務をAI前提で再設計する REGIONAL OS。演奏するのは代表取締役本人。自治体・地域事業者へいま提供できることと、構想段階のものを分けて伝えます。', path: '/ashitaka' },
   energy: { title: 'CORE ENERGY — AIの電力需要に、地域の分散資源で応える | 株式会社CORE', desc: 'エネルギー事業者との協業領域。Energy Intelligence、AI最適化（需要予測・需給最適化・DR/VPP・設備保全）、地域プロジェクトの組成、計測。資産を持たず、AI・データ解析・設計・地域との合意形成から始めます。', path: '/energy' },
   company: { title: '会社について | 株式会社CORE', desc: 'いつの時代も、変わらない核を。核とは、人。会社概要・理念・代表。', path: '/corp#company' },
-  contact: { title: 'AI Transformationを相談する | 株式会社CORE', desc: 'どこへ、いくらAI投資すると、どの程度のReturnが期待できるか。ROAI戦略相談・お問い合わせ。', path: '/corp#contact' },
+  contact: { title: '無料AI業務診断・ご相談 | 株式会社CORE', desc: '業種と業務を選び、年間工数・時間価値・AI実装適性・30日間の検証順序を約5分で整理。登録不要の無料診断。', path: '/corp#contact' },
 };
 
 /**
@@ -208,6 +209,7 @@ const SECTION_TAB: Record<string, CoreTabKey> = {
   services: 'services', 'ai-native': 'services', technology: 'services',
   'business-dev': 'services', partner: 'services', investment: 'services',
   engagement: 'services', security: 'services',
+  'workflow-scan': 'contact',
   // プロダクト — 自社で開発し、本番で運用しているもの
   connect: 'products',
   finder: 'products', products: 'products', platform: 'products', screens: 'products',
@@ -534,7 +536,7 @@ export default function CoreSite() {
               className="lp-nav-link"
             >NERI</a>
             <a href="/studio" style={navLink} className="lp-nav-link">制作スタジオ</a>
-            <a href="/roai-score" onClick={e => { track('corp_cta_click', 'header'); handleAnchor(e, '/roai-score'); }} style={ctaSmall}>ROAIを診断</a>
+            <a href="#workflow-scan" onClick={e => { track('corp_cta_click', 'header'); handleAnchor(e, '#workflow-scan'); }} style={ctaSmall}>無料業務診断</a>
           </nav>
         </div>
 
@@ -1907,11 +1909,10 @@ export default function CoreSite() {
 
       {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
       {/*  14 CONTACT                 */}
-      {/*  すべての章の CTA がここに集まる（2026-08-21 §16）。   */}
-      {/*  メールだけの窓口から、要件を書いて送れるフォームへ。   */}
+      {/*  ご相談タブは、無料の業務診断から実データ相談へつなぐ。 */}
       {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
       {tab === 'contact' && (
-      <FaqSection />
+      <WorkflowScan />
       )}
 
       {tab === 'contact' && (
